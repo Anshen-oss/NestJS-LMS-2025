@@ -1,0 +1,220 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type AuthPayload {
+  accessToken: String!
+  user: User!
+}
+
+type Chapter {
+  completedLessonsCount: Int
+  course: Course!
+  createdAt: DateTime!
+  id: ID!
+  lessons: [Lesson!]
+  lessonsCount: Int
+  position: Int!
+  title: String!
+  updatedAt: DateTime!
+}
+
+type Course {
+  category: String!
+  chapters: [Chapter!]
+  chaptersCount: Int
+  createdAt: DateTime!
+  createdBy: User!
+  description: String!
+  duration: Int
+  id: ID!
+  imageUrl: String
+  level: CourseLevel!
+  price: Float!
+  publishedAt: DateTime
+  slug: String!
+  smallDescription: String!
+  status: CourseStatus!
+  stripePriceId: String
+  title: String!
+  updatedAt: DateTime!
+}
+
+"""The difficulty level of a course"""
+enum CourseLevel {
+  """Advanced level course"""
+  Advanced
+
+  """Beginner level course"""
+  Beginner
+
+  """Intermediate level course"""
+  Intermediate
+}
+
+"""The publication status of a course"""
+enum CourseStatus {
+  """Course is archived"""
+  Archived
+
+  """Course is in draft mode"""
+  Draft
+
+  """Course is published and visible to users"""
+  Published
+}
+
+input CreateCourseInput {
+  category: String
+  description: String!
+  imageUrl: String
+  level: CourseLevel
+  price: Float!
+  smallDescription: String
+  stripePriceId: String
+  title: String!
+}
+
+input CreateLessonInput {
+  description: String
+  duration: Int
+  isFree: Boolean = false
+  position: Int
+  thumbnailKey: String
+  title: String!
+  videoKey: String
+  videoUrl: String
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+input EnrollInCourseInput {
+  courseId: String!
+}
+
+type EnrollmentResponse {
+  checkoutUrl: String
+  enrollmentId: String
+  message: String!
+  success: Boolean!
+}
+
+type Lesson {
+  chapter: Chapter!
+  createdAt: DateTime!
+  description: String
+  duration: Int
+  id: ID!
+  isCompleted: Boolean
+  isFree: Boolean!
+  lessonProgress: [LessonProgress!]
+  position: Int!
+  thumbnailKey: String
+  title: String!
+  updatedAt: DateTime!
+  videoKey: String
+  videoUrl: String
+}
+
+type LessonProgress {
+  completedAt: DateTime
+  createdAt: DateTime!
+  id: ID!
+  isCompleted: Boolean!
+  lastWatchedAt: DateTime
+  lesson: Lesson!
+  updatedAt: DateTime!
+  user: User!
+  watchedDuration: Int
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+type Mutation {
+  archiveCourse(id: String!): Course!
+  createCourse(input: CreateCourseInput!): Course!
+  createLesson(chapterId: String!, input: CreateLessonInput!): Lesson!
+  deleteCourse(id: String!): Boolean!
+  deleteLesson(id: String!): Boolean!
+  enrollInCourse(input: EnrollInCourseInput!): EnrollmentResponse!
+  login(input: LoginInput!): AuthPayload!
+  markLessonAsCompleted(lessonId: String!): LessonProgress!
+  publishCourse(id: String!): Course!
+  register(input: RegisterInput!): AuthPayload!
+  updateCourse(id: String!, input: UpdateCourseInput!): Course!
+  updateLesson(id: String!, input: UpdateLessonInput!): Lesson!
+  updateLessonProgress(input: UpdateProgressInput!, lessonId: String!): LessonProgress!
+}
+
+type Query {
+  course(id: String!): Course!
+  courseBySlug(slug: String!): Course!
+  courses(status: CourseStatus): [Course!]!
+  hello: String!
+  lesson(id: String!): Lesson!
+  lessonsByChapter(chapterId: String!): [Lesson!]!
+  me: User!
+
+  """API version"""
+  version: String!
+}
+
+input RegisterInput {
+  email: String!
+  name: String
+  password: String!
+}
+
+input UpdateCourseInput {
+  category: String
+  description: String
+  duration: Float
+  imageUrl: String
+  level: CourseLevel
+  price: Float
+  smallDescription: String
+  status: CourseStatus
+  stripePriceId: String
+  title: String
+}
+
+input UpdateLessonInput {
+  description: String
+  duration: Int
+  isFree: Boolean = false
+  position: Int
+  thumbnailKey: String
+  title: String
+  videoKey: String
+  videoUrl: String
+}
+
+input UpdateProgressInput {
+  watchedDuration: Int!
+}
+
+type User {
+  createdAt: DateTime!
+  email: String!
+  id: ID!
+  name: String
+  role: UserRole
+}
+
+"""The role of a user in the system"""
+enum UserRole {
+  """Administrator with full permissions"""
+  ADMIN
+
+  """Instructor who can create and manage courses"""
+  INSTRUCTOR
+
+  """Regular user with basic permissions"""
+  USER
+}

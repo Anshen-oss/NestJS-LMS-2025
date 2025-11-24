@@ -1,17 +1,5 @@
-import { authClient } from "@/lib/auth-client";
+import { LoginFormGraphQL } from './_components/LoginFormGraphQL';
 
-import { LoginForm } from "./_components/LoginForm";
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
-
-export default async function LoginPage() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (session) {
-    return redirect("/");
-  }
-  return <LoginForm />;
+export default function LoginPage() {
+  return <LoginFormGraphQL />;
 }

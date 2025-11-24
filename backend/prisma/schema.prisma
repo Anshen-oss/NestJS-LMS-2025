@@ -17,6 +17,7 @@ datasource db {
 enum UserRole {
   USER
   ADMIN
+  INSTRUCTOR
 }
 
 model User {
@@ -25,7 +26,7 @@ model User {
   email            String    @unique
   emailVerified    Boolean
   image            String?
-  role             UserRole  @default(USER) // ✨ Changé de String? à enum
+  role             UserRole  @default(USER)
   createdAt        DateTime
   updatedAt        DateTime
 
@@ -44,7 +45,7 @@ model User {
   // Relations LMS
   coursesCreated   Course[]       @relation("CourseCreator")
   enrollments      Enrollment[]
-  lessonProgress   LessonProgress[] // ✨ AJOUT: Tracking progression
+  lessonProgress   LessonProgress[]
 
   @@map("user")
 }
@@ -117,25 +118,26 @@ model Course {
   title            String
   slug             String       @unique
   description      String       @db.Text
-  smallDescription String       // ✨ Description courte pour cards
+  smallDescription String
 
   // Media
-  imageUrl         String?      // ✨ AJOUT: Image de couverture
-  fileKey          String?      // S3 key pour fichiers additionnels
+  imageUrl         String?
+  fileKey          String?
 
   // Pricing
-  price            Float        // ✨ Changé de Int à Float (49.99€)
+  price            Float
   stripePriceId    String?      @unique
 
   // Organization
   category         String
   level            CourseLevel  @default(Beginner)
   status           CourseStatus @default(Draft)
-  duration         Int?         // Durée totale en minutes
+  duration         Int?
 
   // Metadata
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
+  publishedAt      DateTime?    // ✨ AJOUT: Date de publication
 
   // Relations
   userId           String
@@ -173,13 +175,13 @@ model Lesson {
   position     Int
 
   // Media
-  thumbnailKey String?  // S3 key thumbnail
-  videoKey     String?  // S3 key video
-  videoUrl     String?  // ✨ AJOUT: URL directe (alternative à videoKey)
+  thumbnailKey String?
+  videoKey     String?
+  videoUrl     String?
 
   // Properties
-  duration     Int?     // ✨ AJOUT: Durée en secondes
-  isFree       Boolean  @default(false) // ✨ AJOUT: Preview gratuit
+  duration     Int?
+  isFree       Boolean  @default(false)
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -187,7 +189,7 @@ model Lesson {
   chapterId    String
   chapter      Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
-  lessonProgress LessonProgress[] // ✨ AJOUT: Tracking
+  lessonProgress LessonProgress[]
 
   @@index([chapterId])
   @@index([position])
@@ -198,14 +200,14 @@ model Lesson {
 // ========================================
 
 enum EnrollmentStatus {
-  Pending   // Payment en cours
-  Active    // Inscrit et payé
-  Cancelled // Annulé/Remboursé
+  Pending
+  Active
+  Cancelled
 }
 
 model Enrollment {
   id        String           @id @default(uuid())
-  amount    Float            // ✨ Changé de Int à Float
+  amount    Float
   status    EnrollmentStatus @default(Pending)
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
@@ -222,14 +224,13 @@ model Enrollment {
   @@index([status])
 }
 
-// ✨ NOUVEAU MODEL: Tracking progression des leçons
 model LessonProgress {
   id          String    @id @default(uuid())
   isCompleted Boolean   @default(false)
   completedAt DateTime?
 
   // Optionnel: tracking avancé
-  watchedDuration Int?     // Secondes regardées
+  watchedDuration Int?
   lastWatchedAt   DateTime?
 
   createdAt   DateTime  @default(now())

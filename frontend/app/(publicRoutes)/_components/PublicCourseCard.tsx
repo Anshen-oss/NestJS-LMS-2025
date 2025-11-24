@@ -1,18 +1,32 @@
-import { PublicCourseType } from "@/app/data/course/get-all-courses";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useConstructUrl } from "@/hooks/use-construct-url";
 import { School, TimerIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
+// ✅ Interface définie localement (pas d'import de Server Action)
+interface PublicCourseType {
+  id: string;
+  title: string;
+  slug: string;
+  smallDescription: string;
+  price: number;
+  duration: number;
+  level: string;
+  category: string;
+  imageUrl: string | null;
+}
+
 interface iAppProps {
   data: PublicCourseType;
 }
+
 export function PublicCourseCard({ data }: iAppProps) {
-  const thumbnailUrl = useConstructUrl(data.fileKey);
+  // ✅ Utilise directement imageUrl (pas de useConstructUrl)
+const thumbnailUrl = data.imageUrl || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&h=400&fit=crop';
+
   return (
     <Card className="group relative py-0 gap-0">
       {/* Badge avec le niveau du cours */}

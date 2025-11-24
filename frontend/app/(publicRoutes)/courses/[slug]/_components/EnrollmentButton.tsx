@@ -1,43 +1,53 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
-import { tryCatch } from "@/hooks/try-catch";
-import { useTransition } from "react";
-import { enrollInCourseAction } from "../_v1actions";
-import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Button } from '@/components/ui/button';
+import { ENROLL_IN_COURSE } from '@/lib/graphql/enrollment';
+import { useMutation } from '@apollo/client';
+import { Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 export function EnrollmentButton({ courseId }: { courseId: string }) {
-  const [pending, startTransition] = useTransition();
+  const router = useRouter();
 
-  function onSubmit() {
-    startTransition(async () => {
-      const { data: result, error } = await tryCatch(
-        enrollInCourseAction(courseId)
-      );
+  const [enrollInCourse, { loading }] = useMutation(ENROLL_IN_COURSE, {
+    onCompleted: (data) => {
+      const { success, message, checkoutUrl } = data.enrollInCourse;
 
-      if (error) {
-        toast.error("An unexpected error occurred");
-        return;
+      if (success) {
+        if (checkoutUrl) {
+          // Rediriger vers Stripe Checkout
+          window.location.href = checkoutUrl;
+        } else {
+          // Déjà enrollé
+          toast.success(message);
+          router.push('/dashboard');
+        }
+      } else {
+        toast.error(message);
       }
+    },
+    onError: (error) => {
+      console.error('Enrollment error:', error);
+      toast.error(error.message || 'An unexpected error occurred');
+    },
+  });
 
-      if (result.status === "success") {
-        toast.success(result.message);
-      } else if (result.status === "error") {
-        toast.error(result.message);
-      }
+  const handleEnroll = () => {
+    enrollInCourse({
+      variables: { courseId },
     });
-  }
+  };
 
   return (
-    <Button onClick={onSubmit} disabled={pending} className="w-full">
-      {pending ? (
+    <Button onClick={handleEnroll} disabled={loading} className="w-full">
+      {loading ? (
         <>
           <Loader2 className="size-4 animate-spin" />
           Loading...
         </>
       ) : (
-        "Enroll now!"
+        'Enroll now!'
       )}
     </Button>
   );

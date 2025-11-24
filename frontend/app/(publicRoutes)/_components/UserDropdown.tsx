@@ -18,8 +18,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import Link from "next/link";
 import { useSignout } from "@/hooks/use-signout";
+import Link from "next/link";
 
 interface iAppProps {
   name: string;
@@ -67,7 +67,7 @@ export function UserDropdown({ email, name, image }: iAppProps) {
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href="/course">
+            <Link href="/courses">
               <BookOpenIcon
                 size={16}
                 className="opacity-60"
