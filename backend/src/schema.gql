@@ -24,7 +24,7 @@ type Course {
   chapters: [Chapter!]
   chaptersCount: Int
   createdAt: DateTime!
-  createdBy: User!
+  createdBy: User
   description: String!
   duration: Int
   id: ID!
@@ -95,6 +95,18 @@ input EnrollInCourseInput {
   courseId: String!
 }
 
+type Enrollment {
+  completedAt: DateTime
+  course: Course!
+  courseId: String!
+  createdAt: DateTime!
+  expiresAt: DateTime
+  id: ID!
+  status: String!
+  user: User
+  userId: String!
+}
+
 type EnrollmentResponse {
   checkoutUrl: String
   enrollmentId: String
@@ -103,7 +115,7 @@ type EnrollmentResponse {
 }
 
 type Lesson {
-  chapter: Chapter!
+  chapter: Chapter
   createdAt: DateTime!
   description: String
   duration: Int
@@ -160,6 +172,7 @@ type Query {
   lesson(id: String!): Lesson!
   lessonsByChapter(chapterId: String!): [Lesson!]!
   me: User!
+  myEnrollments: [Enrollment!]!
 
   """API version"""
   version: String!

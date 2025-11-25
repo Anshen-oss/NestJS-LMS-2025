@@ -10,3 +10,26 @@ export const ENROLL_IN_COURSE = gql`
     }
   }
 `;
+
+// 🆕 NOUVELLE QUERY pour le dashboard
+export const GET_MY_ENROLLMENTS = gql`
+  query GetMyEnrollments {
+    myEnrollments {
+      id
+      status
+      createdAt
+      course {
+        id
+        title
+        slug
+        description
+        smallDescription
+        imageUrl
+        price
+        category
+        level
+        duration
+      }
+    }
+  }
+`;

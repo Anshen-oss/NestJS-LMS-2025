@@ -3,7 +3,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+
 import { ConfigService } from '@nestjs/config';
+import { EnrollmentStatus } from '@prisma/client'; // ← Ajoute cet import en haut
 import Stripe from 'stripe';
 import { PrismaService } from '../../prisma/prisma.service';
 import { EnrollmentResponse } from './types/enrollment-response.type';
@@ -193,5 +195,36 @@ export class EnrollmentService {
       }
       throw error;
     }
+  }
+
+  async getMyEnrollments(userId: string) {
+    const enrollments = await this.prisma.enrollment.findMany({
+      where: {
+        userId,
+      },
+      include: {
+        course: {
+          include: {
+            chapters: {
+              include: {
+                lessons: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return enrollments;
+  }
+
+  async updateEnrollmentStatus(enrollmentId: string, status: EnrollmentStatus) {
+    return this.prisma.enrollment.update({
+      where: { id: enrollmentId },
+      data: { status },
+    });
   }
 }

@@ -24,14 +24,14 @@ export class Chapter {
   // ═══════════════════════════════════════════
 
   @Field(() => Course)
-  course: Course;
+  course?: Course | null;
 
   @Field(() => [Lesson], { nullable: true })
-  lessons?: Lesson[];
+  lessons?: Lesson[] | null;
 
   // Champs calculés (optionnels)
   @Field(() => Int, { nullable: true })
-  lessonsCount?: number;
+  lessonsCount?: number | null;
 
   @Field(() => Int, { nullable: true })
   completedLessonsCount?: number; // Pour l'user courant

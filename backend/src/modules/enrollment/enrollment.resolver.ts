@@ -1,10 +1,11 @@
 import { UseGuards } from '@nestjs/common';
-import { Args, Mutation, Resolver } from '@nestjs/graphql';
-import type { User } from '@prisma/client';
+import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { User } from '../auth/entities/user.entity';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 import { EnrollInCourseInput } from './dto/enroll-in-course.input';
 import { EnrollmentService } from './enrollment.service';
+import { Enrollment } from './entities/enrollment.entity';
 import { EnrollmentResponse } from './types/enrollment-response.type';
 
 @Resolver()
@@ -18,5 +19,12 @@ export class EnrollmentResolver {
     @CurrentUser() user: User,
   ): Promise<EnrollmentResponse> {
     return this.enrollmentService.enrollInCourse(input.courseId, user.id);
+  }
+
+  // 🆕 NOUVELLE QUERY
+  @Query(() => [Enrollment])
+  @UseGuards(GqlAuthGuard)
+  async myEnrollments(@CurrentUser() user: User): Promise<Enrollment[]> {
+    return this.enrollmentService.getMyEnrollments(user.id);
   }
 }
