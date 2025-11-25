@@ -10,25 +10,25 @@ export class Lesson {
   @Field()
   title: string;
 
-  @Field({ nullable: true })
-  description?: string;
+  @Field(() => String, { nullable: true }) // ← Type explicite
+  description?: string | null;
 
   @Field(() => Int)
   position: number;
 
   // Media
-  @Field({ nullable: true })
-  thumbnailKey?: string;
+  @Field(() => String, { nullable: true }) // ← Type explicite
+  thumbnailKey?: string | null;
 
-  @Field({ nullable: true })
-  videoKey?: string;
+  @Field(() => String, { nullable: true }) // ← Type explicite
+  videoKey?: string | null;
 
-  @Field({ nullable: true })
-  videoUrl?: string;
+  @Field(() => String, { nullable: true }) // ← Type explicite
+  videoUrl?: string | null;
 
   // Properties
   @Field(() => Int, { nullable: true })
-  duration?: number; // Durée en secondes
+  duration?: number | null;
 
   @Field({ defaultValue: false })
   isFree: boolean;
@@ -43,13 +43,13 @@ export class Lesson {
   //              RELATIONS
   // ═══════════════════════════════════════════
 
-  @Field(() => Chapter)
-  chapter: Chapter;
+  @Field(() => Chapter, { nullable: true }) // ← Ajouté nullable: true
+  chapter?: Chapter | null;
 
   @Field(() => [LessonProgress], { nullable: true })
-  lessonProgress?: LessonProgress[];
+  lessonProgress?: LessonProgress[] | null;
 
   // Champ calculé pour l'utilisateur courant (optionnel)
-  @Field({ nullable: true })
-  isCompleted?: boolean; // True si l'user a complété cette leçon
+  @Field(() => Boolean, { nullable: true }) // ← Type explicite
+  isCompleted?: boolean;
 }

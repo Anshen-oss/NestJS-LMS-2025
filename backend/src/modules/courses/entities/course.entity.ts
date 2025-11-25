@@ -1,10 +1,7 @@
 import { Field, Float, ID, Int, ObjectType } from '@nestjs/graphql';
-import { CourseLevel, CourseStatus } from '@prisma/client'; // ✅ Import depuis Prisma
+import { CourseLevel, CourseStatus } from '@prisma/client';
 import { User } from '../../auth/entities/user.entity';
 import { Chapter } from '../../chapters/entities/chapter.entity';
-
-// ❌ SUPPRIMÉ : Les définitions d'enums (maintenant dans @prisma/client)
-// ❌ SUPPRIMÉ : Les registerEnumType (maintenant dans enums.ts)
 
 @ObjectType()
 export class Course {
@@ -23,8 +20,8 @@ export class Course {
   @Field()
   smallDescription: string;
 
-  @Field({ nullable: true })
-  imageUrl?: string;
+  @Field(() => String, { nullable: true }) // ← Type explicite
+  imageUrl?: string | null;
 
   @Field(() => Float)
   price: number;
@@ -32,17 +29,17 @@ export class Course {
   @Field()
   category: string;
 
-  @Field(() => CourseLevel) // ✅ Utilise l'enum Prisma (déjà enregistré dans enums.ts)
+  @Field(() => CourseLevel)
   level: CourseLevel;
 
-  @Field(() => CourseStatus) // ✅ Utilise l'enum Prisma (déjà enregistré dans enums.ts)
+  @Field(() => CourseStatus)
   status: CourseStatus;
 
   @Field(() => Int, { nullable: true })
-  duration?: number;
+  duration?: number | null;
 
-  @Field({ nullable: true })
-  stripePriceId?: string;
+  @Field(() => String, { nullable: true }) // ← Type explicite
+  stripePriceId?: string | null;
 
   @Field()
   createdAt: Date;
@@ -50,19 +47,18 @@ export class Course {
   @Field()
   updatedAt: Date;
 
-  @Field({ nullable: true })
-  publishedAt?: Date; // ✅ AJOUTÉ : Nouveau champ du schéma Prisma
+  @Field(() => Date, { nullable: true })
+  publishedAt?: Date | null;
 
   // ═══════════════════════════════════════════
   //              RELATIONS
   // ═══════════════════════════════════════════
-  @Field(() => User)
-  createdBy: User;
+  @Field(() => User, { nullable: true })
+  createdBy?: User | null;
 
   @Field(() => [Chapter], { nullable: true })
-  chapters?: Chapter[];
+  chapters?: Chapter[] | null;
 
-  // Champ calculé (optionnel, utile pour l'UI)
   @Field(() => Int, { nullable: true })
-  chaptersCount?: number;
+  chaptersCount?: number | null;
 }
