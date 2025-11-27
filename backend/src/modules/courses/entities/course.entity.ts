@@ -20,8 +20,17 @@ export class Course {
   @Field()
   smallDescription: string;
 
-  @Field(() => String, { nullable: true }) // ← Type explicite
+  @Field(() => String, { nullable: true })
+  requirements?: string | null;
+
+  @Field(() => String, { nullable: true })
+  outcomes?: string | null;
+
+  @Field(() => String, { nullable: true })
   imageUrl?: string | null;
+
+  @Field(() => String, { nullable: true })
+  fileKey?: string | null;
 
   @Field(() => Float)
   price: number;

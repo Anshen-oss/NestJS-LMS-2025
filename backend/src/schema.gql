@@ -27,11 +27,14 @@ type Course {
   createdBy: User
   description: String!
   duration: Int
+  fileKey: String
   id: ID!
   imageUrl: String
   level: CourseLevel!
+  outcomes: String
   price: Float!
   publishedAt: DateTime
+  requirements: String
   slug: String!
   smallDescription: String!
   status: CourseStatus!
@@ -67,10 +70,14 @@ enum CourseStatus {
 input CreateCourseInput {
   category: String
   description: String!
+  duration: Int
   imageUrl: String
   level: CourseLevel
+  outcomes: String
   price: Float!
+  requirements: String
   smallDescription: String
+  status: CourseStatus
   stripePriceId: String
   title: String!
 }
@@ -153,13 +160,15 @@ type Mutation {
   createCourse(input: CreateCourseInput!): Course!
   createLesson(chapterId: String!, input: CreateLessonInput!): Lesson!
   deleteCourse(id: String!): Boolean!
+  deleteFile(url: String!): Boolean!
   deleteLesson(id: String!): Boolean!
   enrollInCourse(input: EnrollInCourseInput!): EnrollmentResponse!
+  getUploadUrl(contentType: String!, fileName: String!): UploadUrlResponse!
   login(input: LoginInput!): AuthPayload!
   markLessonAsCompleted(lessonId: String!): LessonProgress!
   publishCourse(id: String!): Course!
   register(input: RegisterInput!): AuthPayload!
-  updateCourse(id: String!, input: UpdateCourseInput!): Course!
+  updateCourse(input: UpdateCourseInput!): Course!
   updateLesson(id: String!, input: UpdateLessonInput!): Lesson!
   updateLessonProgress(input: UpdateProgressInput!, lessonId: String!): LessonProgress!
 }
@@ -172,6 +181,7 @@ type Query {
   lesson(id: String!): Lesson!
   lessonsByChapter(chapterId: String!): [Lesson!]!
   me: User!
+  myCourses: [Course!]!
   myEnrollments: [Enrollment!]!
 
   """API version"""
@@ -188,9 +198,12 @@ input UpdateCourseInput {
   category: String
   description: String
   duration: Float
+  id: String!
   imageUrl: String
   level: CourseLevel
+  outcomes: String
   price: Float
+  requirements: String
   smallDescription: String
   status: CourseStatus
   stripePriceId: String
@@ -210,6 +223,12 @@ input UpdateLessonInput {
 
 input UpdateProgressInput {
   watchedDuration: Int!
+}
+
+type UploadUrlResponse {
+  key: String!
+  publicUrl: String!
+  uploadUrl: String!
 }
 
 type User {

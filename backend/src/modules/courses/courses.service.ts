@@ -148,6 +148,9 @@ export class CoursesService {
         description: input.description,
         smallDescription:
           input.smallDescription || input.description.substring(0, 100),
+        requirements: input.requirements,
+        outcomes: input.outcomes,
+        duration: input.duration,
         price: input.price,
         category: input.category || 'General',
         level: input.level || CourseLevel.Beginner, // ✅ CORRIGÉ: Utilise l'enum au lieu de string
@@ -171,12 +174,9 @@ export class CoursesService {
    * Met à jour un cours
    * RÈGLE : Admin peut tout modifier, User seulement ses cours
    */
-  async update(
-    id: string,
-    userId: string,
-    userRole: UserRole,
-    input: UpdateCourseInput,
-  ) {
+  async update(userId: string, userRole: UserRole, input: UpdateCourseInput) {
+    const { id, ...updateData } = input; // 🆕 Extrait l'id de l'input
+
     // 1️⃣ Récupérer le cours
     const course = await this.prisma.course.findUnique({
       where: { id },
@@ -190,10 +190,8 @@ export class CoursesService {
     await this.checkPermissions(course, userId, userRole, 'update');
 
     // 3️⃣ Si le titre change, régénérer le slug
-    const updateData: any = { ...input };
-
-    if (input.title && input.title !== course.title) {
-      const newSlug = generateSlug(input.title);
+    if (updateData.title && updateData.title !== course.title) {
+      const newSlug = generateSlug(updateData.title);
 
       // Vérifier que le nouveau slug n'existe pas
       const existingCourse = await this.prisma.course.findFirst({
@@ -209,7 +207,7 @@ export class CoursesService {
         );
       }
 
-      updateData.slug = newSlug;
+      updateData['slug'] = newSlug;
     }
 
     // 4️⃣ Mettre à jour
@@ -220,6 +218,7 @@ export class CoursesService {
         createdBy: {
           select: { id: true, name: true, email: true },
         },
+        chapters: true,
       },
     });
   }
@@ -232,7 +231,7 @@ export class CoursesService {
    * Supprime un cours
    * RÈGLE : Admin peut tout supprimer, User seulement ses cours
    */
-  async delete(id: string, userId: string, userRole: UserRole) {
+  async deleteCourse(id: string, userId: string, userRole: UserRole) {
     // 1️⃣ Récupérer le cours
     const course = await this.prisma.course.findUnique({
       where: { id },
@@ -314,6 +313,27 @@ export class CoursesService {
     });
   }
 
+  /**
+   * Récupère les cours créés par un utilisateur (Instructor)
+   */
+  async getMyCourses(userId: string) {
+    return this.prisma.course.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        chapters: {
+          orderBy: { position: 'asc' },
+        },
+        _count: {
+          select: {
+            enrollments: true,
+            chapters: true,
+          },
+        },
+      },
+    });
+  }
+
   // ═══════════════════════════════════════════════════════════
   //                     HELPER METHODS
   // ═══════════════════════════════════════════════════════════
@@ -322,7 +342,7 @@ export class CoursesService {
    * Vérifie les permissions pour une action sur un cours
    * @private
    */
-  private async checkPermissions(
+  private checkPermissions(
     course: { userId: string },
     userId: string,
     userRole: UserRole,

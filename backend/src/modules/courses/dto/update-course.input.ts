@@ -61,10 +61,24 @@ export class UpdateCourseInput {
   @IsOptional()
   status?: CourseStatus;
 
+  @Field()
+  @IsString()
+  id: string;
+
   // ✅ AJOUTÉ : duration
   @Field({ nullable: true })
   @IsNumber()
   @IsOptional()
   @Min(0)
   duration?: number;
+
+  @Field({ nullable: true })
+  @IsString()
+  @IsOptional()
+  requirements?: string; // JSON Tiptap
+
+  @Field({ nullable: true })
+  @IsString()
+  @IsOptional()
+  outcomes?: string; // JSON Tiptap
 }

@@ -7,7 +7,8 @@ const httpLink = createHttpLink({
 
 const authLink = setContext((_, { headers }) => {
   // Récupérer le token depuis localStorage
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null; // ← Change 'token' en 'accessToken'
+
 
   return {
     headers: {
