@@ -68,7 +68,6 @@ export class CoursesResolver {
   @UseGuards(GqlAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
   async updateCourse(
-    @Args('id') id: string,
     @Args('input') input: UpdateCourseInput,
     @CurrentUser() user: User,
   ) {
@@ -77,7 +76,7 @@ export class CoursesResolver {
         'User role is required to perform this action',
       );
     }
-    return this.coursesService.update(id, user.id, user.role, input);
+    return this.coursesService.update(user.id, user.role, input);
   }
 
   /**
@@ -93,12 +92,23 @@ export class CoursesResolver {
         'User role is required to perform this action',
       );
     }
-    return this.coursesService.delete(id, user.id, user.role);
+    return this.coursesService.deleteCourse(id, user.id, user.role);
   }
 
   @Query(() => Course)
   async courseBySlug(@Args('slug') slug: string) {
     return this.coursesService.findBySlug(slug);
+  }
+
+  /**
+   * Récupérer mes cours (Instructor/Admin)
+   * AUTORISÉ : ADMIN, INSTRUCTOR
+   */
+  @Query(() => [Course], { name: 'myCourses' })
+  @UseGuards(GqlAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
+  async getMyCourses(@CurrentUser() user: User) {
+    return this.coursesService.getMyCourses(user.id);
   }
 
   /**

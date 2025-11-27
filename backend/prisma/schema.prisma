@@ -120,6 +120,10 @@ model Course {
   description      String       @db.Text
   smallDescription String
 
+  // 🆕 Nouveaux champs pour Tiptap
+  requirements     String?      @db.Text
+  outcomes         String?      @db.Text
+
   // Media
   imageUrl         String?
   fileKey          String?
@@ -137,7 +141,7 @@ model Course {
   // Metadata
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
-  publishedAt      DateTime?    // ✨ AJOUT: Date de publication
+  publishedAt      DateTime?
 
   // Relations
   userId           String
@@ -150,6 +154,7 @@ model Course {
   @@index([status])
   @@index([userId])
   @@index([category])
+  @@index([level])
 }
 
 model Chapter {

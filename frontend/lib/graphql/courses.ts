@@ -53,3 +53,70 @@ export const CHECK_ENROLLMENT = gql`
     isEnrolled(courseId: $courseId)
   }
 `;
+
+export const CREATE_COURSE = gql`
+  mutation CreateCourse($input: CreateCourseInput!) {
+    createCourse(input: $input) {
+      id
+      title
+      slug
+      description
+      smallDescription
+      imageUrl
+      requirements
+      outcomes
+      price
+      category
+      level
+      status
+      duration
+      createdAt
+    }
+  }
+`;
+
+export const UPDATE_COURSE = gql`
+  mutation UpdateCourse($input: UpdateCourseInput!) {
+    updateCourse(input: $input) {
+      id
+      title
+      slug
+      description
+      smallDescription
+      imageUrl
+      requirements
+      outcomes
+      price
+      category
+      level
+      status
+      duration
+      updatedAt
+    }
+  }
+`;
+
+export const DELETE_COURSE = gql`
+  mutation DeleteCourse($id: String!) {
+    deleteCourse(id: $id)
+  }
+`;
+
+export const GET_MY_COURSES = gql`
+  query GetMyCourses {
+    myCourses {
+      id
+      title
+      slug
+      smallDescription
+      imageUrl
+      price
+      category
+      level
+      status
+      duration
+      createdAt
+      updatedAt
+    }
+  }
+`;

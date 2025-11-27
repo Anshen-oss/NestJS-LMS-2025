@@ -32,29 +32,28 @@ export function useAuth() {
   const [registerMutation, { loading: registerLoading }] = useMutation(REGISTER_MUTATION);
 
     // 3. useCallback : Mémorise les fonctions login/register
-  const login = useCallback(
-    async (email: string, password: string) => {
-      try {
-        const { data } = await loginMutation({
-          variables: { email, password },
-        });
+const login = useCallback(
+  async (email: string, password: string) => {
+    try {
+      const { data } = await loginMutation({
+        variables: { input: { email, password } },  // ← Change ça aussi (input)
+      });
 
-        if (data?.login) {
-          // Stocker le token
-          localStorage.setItem('token', data.login.accessToken);
+      if (data?.login) {
+        // ✅ CORRIGÉ : Utiliser 'accessToken' au lieu de 'token'
+        localStorage.setItem('accessToken', data.login.accessToken);
 
-          // ✅ MODIFIÉ : Reset le cache Apollo et refetch
-          await apolloClient.resetStore();
+        await apolloClient.resetStore();
 
-          return { success: true, user: data.login.user };
-        }
-      } catch (error: any) {
-        console.error('Login error:', error);
-        return { success: false, error: error.message };
+        return { success: true, user: data.login.user };
       }
-    },
-    [loginMutation, apolloClient]
-  );
+    } catch (error: any) {
+      console.error('Login error:', error);
+      return { success: false, error: error.message };
+    }
+  },
+  [loginMutation, apolloClient]
+);
 
   const register = useCallback(
     async (email: string, password: string, name?: string) => {

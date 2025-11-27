@@ -10,6 +10,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { CoursesModule } from './modules/courses/courses.module';
 import { EnrollmentModule } from './modules/enrollment/enrollment.module';
 import { LessonsModule } from './modules/lessons/lessons.module';
+import { S3Module } from './modules/s3/s3.module';
 import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
@@ -26,6 +27,7 @@ import { PrismaModule } from './prisma/prisma.module';
     CoursesModule,
     LessonsModule,
     EnrollmentModule,
+    S3Module,
   ],
   controllers: [AppController],
   providers: [AppService, AppResolver],

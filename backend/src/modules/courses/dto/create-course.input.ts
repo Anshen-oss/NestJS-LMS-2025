@@ -1,11 +1,11 @@
-import { Field, Float, InputType } from '@nestjs/graphql';
-import { CourseLevel } from '@prisma/client'; // ✅ AJOUTÉ
+import { Field, Float, InputType, Int } from '@nestjs/graphql';
+import { CourseLevel, CourseStatus } from '@prisma/client';
 import {
-  IsEnum, // ✅ AJOUTÉ
+  IsEnum,
   IsNumber,
   IsOptional,
   IsString,
-  Min, // ✅ AJOUTÉ
+  Min,
   MinLength,
 } from 'class-validator';
 
@@ -53,4 +53,25 @@ export class CreateCourseInput {
   @IsString()
   @IsOptional()
   imageUrl?: string;
+
+  @Field({ nullable: true })
+  @IsString()
+  @IsOptional()
+  requirements?: string; // JSON Tiptap
+
+  @Field({ nullable: true })
+  @IsString()
+  @IsOptional()
+  outcomes?: string; // JSON Tiptap
+
+  @Field(() => Int, { nullable: true })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  duration?: number;
+
+  @Field(() => CourseStatus, { nullable: true })
+  @IsEnum(CourseStatus)
+  @IsOptional()
+  status?: CourseStatus;
 }
