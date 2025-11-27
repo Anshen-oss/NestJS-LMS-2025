@@ -11,6 +11,10 @@ import {
 
 @InputType()
 export class UpdateCourseInput {
+  @Field()
+  @IsString()
+  id: string;
+
   @Field({ nullable: true })
   @IsString()
   @IsOptional()
@@ -60,10 +64,6 @@ export class UpdateCourseInput {
   @IsEnum(CourseStatus) // ✅ AJOUTÉ : Validation
   @IsOptional()
   status?: CourseStatus;
-
-  @Field()
-  @IsString()
-  id: string;
 
   // ✅ AJOUTÉ : duration
   @Field({ nullable: true })

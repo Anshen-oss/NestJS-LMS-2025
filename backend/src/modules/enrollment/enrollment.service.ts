@@ -210,6 +210,13 @@ export class EnrollmentService {
                 lessons: true,
               },
             },
+            createdBy: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
           },
         },
       },

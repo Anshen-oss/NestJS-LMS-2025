@@ -1,7 +1,7 @@
 import { Field, Float, ID, Int, ObjectType } from '@nestjs/graphql';
 import { CourseLevel, CourseStatus } from '@prisma/client';
-import { User } from '../../auth/entities/user.entity';
 import { Chapter } from '../../chapters/entities/chapter.entity';
+import { CourseCreator } from './course-creator.entity';
 
 @ObjectType()
 export class Course {
@@ -62,8 +62,8 @@ export class Course {
   // ═══════════════════════════════════════════
   //              RELATIONS
   // ═══════════════════════════════════════════
-  @Field(() => User, { nullable: true })
-  createdBy?: User | null;
+  @Field(() => CourseCreator) // ✅ MODIFIÉ (était User)
+  createdBy: CourseCreator;
 
   @Field(() => [Chapter], { nullable: true })
   chapters?: Chapter[] | null;

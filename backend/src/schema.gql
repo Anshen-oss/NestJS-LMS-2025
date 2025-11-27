@@ -19,12 +19,17 @@ type Chapter {
   updatedAt: DateTime!
 }
 
+input ChapterPositionInput {
+  id: String!
+  position: Int!
+}
+
 type Course {
   category: String!
   chapters: [Chapter!]
   chaptersCount: Int
   createdAt: DateTime!
-  createdBy: User
+  createdBy: CourseCreator!
   description: String!
   duration: Int
   fileKey: String
@@ -41,6 +46,12 @@ type Course {
   stripePriceId: String
   title: String!
   updatedAt: DateTime!
+}
+
+type CourseCreator {
+  email: String!
+  id: String!
+  name: String!
 }
 
 """The difficulty level of a course"""
@@ -65,6 +76,13 @@ enum CourseStatus {
 
   """Course is published and visible to users"""
   Published
+}
+
+input CreateChapterInput {
+  courseId: String!
+  description: String
+  position: Int
+  title: String!
 }
 
 input CreateCourseInput {
@@ -138,6 +156,11 @@ type Lesson {
   videoUrl: String
 }
 
+input LessonPositionInput {
+  id: String!
+  position: Int!
+}
+
 type LessonProgress {
   completedAt: DateTime
   createdAt: DateTime!
@@ -157,6 +180,7 @@ input LoginInput {
 
 type Mutation {
   archiveCourse(id: String!): Course!
+  createChapter(input: CreateChapterInput!): Chapter!
   createCourse(input: CreateCourseInput!): Course!
   createLesson(chapterId: String!, input: CreateLessonInput!): Lesson!
   deleteCourse(id: String!): Boolean!
@@ -168,6 +192,9 @@ type Mutation {
   markLessonAsCompleted(lessonId: String!): LessonProgress!
   publishCourse(id: String!): Course!
   register(input: RegisterInput!): AuthPayload!
+  reorderChapters(input: ReorderChaptersInput!): [Chapter!]!
+  reorderLessons(input: ReorderLessonsInput!): [Lesson!]!
+  updateChapter(input: UpdateChapterInput!): Chapter!
   updateCourse(input: UpdateCourseInput!): Course!
   updateLesson(id: String!, input: UpdateLessonInput!): Lesson!
   updateLessonProgress(input: UpdateProgressInput!, lessonId: String!): LessonProgress!
@@ -192,6 +219,23 @@ input RegisterInput {
   email: String!
   name: String
   password: String!
+}
+
+input ReorderChaptersInput {
+  chapters: [ChapterPositionInput!]!
+  courseId: String!
+}
+
+input ReorderLessonsInput {
+  chapterId: String!
+  lessons: [LessonPositionInput!]!
+}
+
+input UpdateChapterInput {
+  description: String
+  id: String!
+  position: Int
+  title: String
 }
 
 input UpdateCourseInput {

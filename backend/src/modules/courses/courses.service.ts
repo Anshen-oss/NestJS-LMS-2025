@@ -6,8 +6,14 @@ import {
 } from '@nestjs/common';
 import { CourseLevel, CourseStatus, UserRole } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { CreateChapterInput } from './dto/create-chapter.input';
 import { CreateCourseInput } from './dto/create-course.input';
+import { CreateLessonInput } from './dto/create-lesson.input';
+import { ReorderChaptersInput } from './dto/reorder-chapters.input';
+import { ReorderLessonsInput } from './dto/reorder-lessons.input';
+import { UpdateChapterInput } from './dto/update-chapter.input';
 import { UpdateCourseInput } from './dto/update-course.input';
+import { UpdateLessonInput } from './dto/update-lesson.input';
 
 // Fonction helper pour générer un slug
 function generateSlug(title: string): string {
@@ -166,6 +172,45 @@ export class CoursesService {
     });
   }
 
+  async createLesson(
+    userId: string,
+    userRole: UserRole,
+    input: CreateLessonInput,
+  ) {
+    const { chapterId, position, ...lessonData } = input;
+
+    // 1️⃣ Récupérer le chapitre avec son cours
+    const chapter = await this.prisma.chapter.findUnique({
+      where: { id: chapterId },
+      include: { course: true },
+    });
+
+    if (!chapter) {
+      throw new NotFoundException(`Chapter #${chapterId} not found`);
+    }
+
+    // 2️⃣ Vérifier les permissions sur le cours parent
+    this.checkPermissions(chapter.course, userId, userRole, 'update');
+
+    // 3️⃣ Si position non fournie, mettre à la fin
+    let finalPosition = position;
+    if (finalPosition === undefined) {
+      const lastLesson = await this.prisma.lesson.findFirst({
+        where: { chapterId },
+        orderBy: { position: 'desc' },
+      });
+      finalPosition = lastLesson ? lastLesson.position + 1 : 0;
+    }
+
+    // 4️⃣ Créer la leçon
+    return this.prisma.lesson.create({
+      data: {
+        ...lessonData,
+        chapterId,
+        position: finalPosition,
+      },
+    });
+  }
   // ═══════════════════════════════════════════════════════════
   //                    MUTATIONS (UPDATE)
   // ═══════════════════════════════════════════════════════════
@@ -174,7 +219,11 @@ export class CoursesService {
    * Met à jour un cours
    * RÈGLE : Admin peut tout modifier, User seulement ses cours
    */
-  async update(userId: string, userRole: UserRole, input: UpdateCourseInput) {
+  async updateCourse(
+    userId: string,
+    userRole: UserRole,
+    input: UpdateCourseInput,
+  ) {
     const { id, ...updateData } = input; // 🆕 Extrait l'id de l'input
 
     // 1️⃣ Récupérer le cours
@@ -187,7 +236,7 @@ export class CoursesService {
     }
 
     // 2️⃣ Vérifier les permissions
-    await this.checkPermissions(course, userId, userRole, 'update');
+    this.checkPermissions(course, userId, userRole, 'update');
 
     // 3️⃣ Si le titre change, régénérer le slug
     if (updateData.title && updateData.title !== course.title) {
@@ -216,10 +265,46 @@ export class CoursesService {
       data: updateData,
       include: {
         createdBy: {
-          select: { id: true, name: true, email: true },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
         },
         chapters: true,
       },
+    });
+  }
+
+  async updateLesson(
+    userId: string,
+    userRole: UserRole,
+    input: UpdateLessonInput,
+  ) {
+    const { id, ...updateData } = input;
+
+    // 1️⃣ Récupérer la leçon avec son chapitre et cours
+
+    const lesson = await this.prisma.lesson.findUnique({
+      where: { id },
+      include: {
+        chapter: {
+          include: { course: true },
+        },
+      },
+    });
+
+    if (!lesson) {
+      throw new NotFoundException(`Lesson #${id} not found`);
+    }
+
+    // 2️⃣ Vérifier les permissions sur le cours parent
+    this.checkPermissions(lesson.chapter.course, userId, userRole, 'update');
+
+    // 3️⃣ Mettre à jour
+    return this.prisma.lesson.update({
+      where: { id },
+      data: updateData,
     });
   }
 
@@ -249,7 +334,7 @@ export class CoursesService {
     }
 
     // 2️⃣ Vérifier les permissions
-    await this.checkPermissions(course, userId, userRole, 'delete');
+    this.checkPermissions(course, userId, userRole, 'delete');
 
     // 3️⃣ RÈGLE MÉTIER : Vérifier qu'il n'y a pas d'inscriptions
     if (course._count.enrollments > 0) {
@@ -262,6 +347,189 @@ export class CoursesService {
     await this.prisma.course.delete({ where: { id } });
 
     return true;
+  }
+
+  async deleteLesson(userId: string, userRole: UserRole, id: string) {
+    // 1️⃣ Récupérer la leçon avec son chapitre et cours
+    const lesson = await this.prisma.lesson.findUnique({
+      where: { id },
+      include: {
+        chapter: {
+          include: { course: true },
+        },
+      },
+    });
+
+    if (!lesson) {
+      throw new NotFoundException(`Lesson #${id} not found`);
+    }
+
+    // 2️⃣ Vérifier les permissions sur le cours parent
+    this.checkPermissions(lesson.chapter.course, userId, userRole, 'delete');
+
+    // 3️⃣ Supprimer la leçon
+    return this.prisma.lesson.delete({
+      where: { id },
+    });
+  }
+
+  async reorderLessons(
+    userId: string,
+    userRole: UserRole,
+    input: ReorderLessonsInput,
+  ) {
+    const { chapterId, lessons } = input;
+    const chapter = await this.prisma.chapter.findUnique({
+      where: { id: chapterId },
+      include: { course: true },
+    });
+
+    if (!chapter) {
+      throw new NotFoundException(`Chapter #${chapterId} not found`);
+    }
+
+    // 2️⃣ Vérifier les permissions sur le cours parent
+    this.checkPermissions(chapter.course, userId, userRole, 'update');
+
+    // 3️⃣ Mettre à jour les positions en transaction
+    await this.prisma.$transaction(
+      lessons.map((lesson) =>
+        this.prisma.lesson.update({
+          where: { id: lesson.id },
+          data: { position: lesson.position },
+        }),
+      ),
+    );
+
+    // 4️⃣ Retourner les leçons réorganisées
+    return this.prisma.lesson.findMany({
+      where: { chapterId },
+      orderBy: { position: 'asc' },
+    });
+  }
+
+  /**
+   * Créer un chapter
+   * RÈGLE : Admin peut tout supprimer, User seulement ses cours
+   */
+  async createChapter(
+    userId: string,
+    userRole: UserRole,
+    input: CreateChapterInput,
+  ) {
+    const { courseId, position, ...chapterData } = input;
+
+    // 1️⃣ Récupérer le cours
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+    });
+
+    if (!course) {
+      throw new NotFoundException(`Course #${courseId} not found`);
+    }
+
+    // 2️⃣ Vérifier les permissions
+    this.checkPermissions(course, userId, userRole, 'update');
+
+    // 3️⃣ Si position non fournie, mettre à la fin
+    let finalPosition = position;
+    if (finalPosition === undefined) {
+      const lastChapter = await this.prisma.chapter.findFirst({
+        where: { courseId },
+        orderBy: { position: 'desc' },
+      });
+      finalPosition = lastChapter ? lastChapter.position + 1 : 0;
+    }
+
+    // 4️⃣ Créer le chapitre
+    return this.prisma.chapter.create({
+      data: {
+        ...chapterData,
+        courseId,
+        position: finalPosition,
+      },
+    });
+  }
+
+  /**
+   * Met à jour un chapter
+   * RÈGLE : Admin peut tout supprimer, User seulement ses cours
+   */
+  async updateChapter(
+    userId: string,
+    userRole: UserRole,
+    input: UpdateChapterInput,
+  ) {
+    const { id, ...updateData } = input;
+
+    // 1️⃣ Récupérer le chapitre avec son cours
+    const chapter = await this.prisma.chapter.findUnique({
+      where: { id },
+      include: { course: true },
+    });
+
+    if (!chapter) {
+      throw new NotFoundException(`Chapter #${id} not found`);
+    }
+
+    // 2️⃣ Vérifier les permissions sur le cours parent
+    this.checkPermissions(chapter.course, userId, userRole, 'update');
+
+    // 3️⃣ Mettre à jour
+    return this.prisma.chapter.update({
+      where: { id },
+      data: updateData,
+    });
+  }
+
+  async deleteChapter(userId: string, userRole: UserRole, id: string) {
+    // 1️⃣ Récupérer le chapitre avec son cours
+    const chapter = await this.prisma.chapter.findUnique({
+      where: { id },
+      include: { course: true },
+    });
+
+    if (!chapter) {
+      throw new NotFoundException(`Chapter #${id} not found`);
+    }
+    // 2️⃣ Vérifier les permissions sur le cours parent
+    this.checkPermissions(chapter.course, userId, userRole, 'delete');
+  }
+
+  async reorderChapters(
+    userId: string,
+    userRole: UserRole,
+    input: ReorderChaptersInput,
+  ) {
+    const { courseId, chapters } = input;
+
+    // 1️⃣ Récupérer le cours
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+    });
+
+    if (!course) {
+      throw new NotFoundException(`Course #${courseId} not found`);
+    }
+
+    // 2️⃣ Vérifier les permissions
+    this.checkPermissions(course, userId, userRole, 'update');
+
+    // 3️⃣ Mettre à jour les positions en transaction
+    await this.prisma.$transaction(
+      chapters.map((chapter) =>
+        this.prisma.chapter.update({
+          where: { id: chapter.id },
+          data: { position: chapter.position },
+        }),
+      ),
+    );
+
+    // 4️⃣ Retourner les chapitres réorganisés
+    return this.prisma.chapter.findMany({
+      where: { courseId },
+      orderBy: { position: 'asc' },
+    });
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -281,7 +549,7 @@ export class CoursesService {
       throw new NotFoundException(`Course #${id} not found`);
     }
 
-    await this.checkPermissions(course, userId, userRole, 'archive');
+    this.checkPermissions(course, userId, userRole, 'archive');
 
     return this.prisma.course.update({
       where: { id },
@@ -302,7 +570,7 @@ export class CoursesService {
       throw new NotFoundException(`Course #${id} not found`);
     }
 
-    await this.checkPermissions(course, userId, userRole, 'publish');
+    this.checkPermissions(course, userId, userRole, 'publish');
 
     return this.prisma.course.update({
       where: { id },
