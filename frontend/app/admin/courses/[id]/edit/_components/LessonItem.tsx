@@ -12,6 +12,8 @@ import {
 import {
   useDeleteLessonMutation,
 } from "@/lib/generated/graphql";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   Clock,
   GripVertical,
@@ -44,6 +46,22 @@ interface LessonItemProps {
 export function LessonItem({ lesson, onUpdate }: LessonItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [deleteLesson, { loading: deleting }] = useDeleteLessonMutation();
+
+  // Sortable hook
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: lesson.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
 
   const handleDelete = async () => {
     if (!confirm(`Delete lesson "${lesson.title}"?`)) {
@@ -86,9 +104,17 @@ export function LessonItem({ lesson, onUpdate }: LessonItemProps) {
 
   // Mode affichage normal
   return (
-    <div className="group flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="group flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+    >
       {/* Drag Handle */}
-      <button className="cursor-grab text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+      >
         <GripVertical className="w-4 h-4" />
       </button>
 
