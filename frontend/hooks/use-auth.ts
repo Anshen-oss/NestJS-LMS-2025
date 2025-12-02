@@ -1,6 +1,6 @@
 'use client';
 
-import { LOGIN_MUTATION, ME_QUERY, REGISTER_MUTATION } from '@/lib/graphql/auth';
+import { LOGIN_MUTATION, ME_QUERY, REGISTER_MUTATION } from '@/lib/__TODELETEgraphql/auth';
 import { useApolloClient, useMutation, useQuery } from '@apollo/client';
 import { useRouter } from 'next/navigation';
 import { useCallback } from 'react';

@@ -1,6 +1,6 @@
 'use client';
 
-import { GET_ALL_COURSES } from '@/lib/graphql/courses';
+import { GET_ALL_COURSES } from '@/lib/__TODELETEgraphql/courses';
 import { useQuery } from '@apollo/client';
 import { PublicCourseCard, PublicCourseCardSkeleton } from '../_components/PublicCourseCard';
 

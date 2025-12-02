@@ -1,0 +1,3 @@
+query IsEnrolled($courseId: String!) {
+  isEnrolled(courseId: $courseId)
+}

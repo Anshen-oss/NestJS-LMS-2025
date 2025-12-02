@@ -70,4 +70,7 @@ export class Course {
 
   @Field(() => Int, { nullable: true })
   chaptersCount?: number | null;
+
+  @Field(() => Int, { nullable: true })
+  enrollmentsCount?: number;
 }

@@ -1,31 +1,52 @@
-import { ReactNode } from "react";
-import { CourseSidebar } from "../_components/CourseSidebar";
-import { getCourseSidebarData } from "@/app/data/course/get-course-sidebar-data";
-/*
-interface iAppProps {
+'use client';
+
+import { Skeleton } from '@/components/ui/skeleton';
+import { useGetCourseBySlugQuery } from '@/lib/generated/graphql';
+import { ReactNode, use } from 'react';
+//import { CourseSidebar } from '../_components/CourseSidebar';
+
+interface CourseLayoutProps {
   params: Promise<{ slug: string }>;
   children: ReactNode;
-} */
-
-interface iAppProps {
-  params: { slug: string }; // 👈 pas une Promise
-  children: React.ReactNode;
 }
 
-export default async function CourseLayout({ children, params }: iAppProps) {
-  const { slug } = await params;
+export default function CourseLayout({ children, params }: CourseLayoutProps) {
+  const { slug } = use(params);
 
-  // sserver-side security check and lightweight data fetching
-  const course = await getCourseSidebarData(slug);
+  // Query GraphQL pour récupérer le cours
+  const { data, loading, error } = useGetCourseBySlugQuery({
+    variables: { slug },
+  });
+
+  if (loading) {
+    return (
+      <div className="flex flex-1">
+        <div className="w-80 border-r border-border shrink-0 p-4">
+          <Skeleton className="h-12 w-full mb-4" />
+          <Skeleton className="h-8 w-full mb-2" />
+          <Skeleton className="h-8 w-full mb-2" />
+          <Skeleton className="h-8 w-full" />
+        </div>
+        <div className="flex-1 overflow-hidden">{children}</div>
+      </div>
+    );
+  }
+
+  if (error || !data?.courseBySlug) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <p className="text-destructive">Erreur : Cours introuvable</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-1">
-      {/*   Sidebar - 30% */}
+      {/* Sidebar - 30% */}
       <div className="w-80 border-r border-border shrink-0">
-        <CourseSidebar course={course.course} />
+        {/* <CourseSidebar course={data.courseBySlug} /> */}
       </div>
-
-      {/** Main - 70% */}
-
+      {/* Main - 70% */}
       <div className="flex-1 overflow-hidden">{children}</div>
     </div>
   );

@@ -1,0 +1,43 @@
+query GetCourseBySlug($slug: String!) {
+  courseBySlug(slug: $slug) {
+    id
+    title
+    slug
+    description
+    smallDescription
+    imageUrl
+    price
+    category
+    level
+    duration
+    chapters {
+      id
+      title
+      position
+      lessons {
+        id
+        title
+        position
+      }
+    }
+  }
+}
+
+query GetMyCourses {
+  myCourses {
+    id
+    title
+    slug
+    smallDescription
+    imageUrl
+    price
+    category
+    level
+    status
+    duration
+    createdAt
+    updatedAt
+    chaptersCount
+    enrollmentsCount
+  }
+}

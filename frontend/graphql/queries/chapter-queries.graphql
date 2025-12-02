@@ -1,0 +1,26 @@
+# ============================================
+# CHAPTER QUERIES
+# ============================================
+
+query GetChaptersByCourse($courseId: String!) {
+  chaptersByCourse(courseId: $courseId) {
+    id
+    title
+    position
+    createdAt
+    updatedAt
+    lessonsCount
+    lessons {
+      id
+      title
+      description
+      videoUrl
+      duration
+      position
+      isFree
+      createdAt
+      updatedAt
+    }
+  }
+}
+

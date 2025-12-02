@@ -47,6 +47,16 @@ export class CoursesResolver {
     return this.coursesService.findOne(id, user?.role || UserRole.USER);
   }
 
+  @Query(() => Course, { name: 'getCourseForEdit' })
+  @UseGuards(GqlAuthGuard)
+  async getCourseForEdit(@Args('id') id: string, @CurrentUser() user: User) {
+    if (!user || !user.role) {
+      throw new UnauthorizedException('You must be logged in');
+    }
+
+    return this.coursesService.findOneForEdit(id, user.id, user.role);
+  }
+
   // ═══════════════════════════════════════════════════════════
   //                        MUTATIONS
   // ═══════════════════════════════════════════════════════════
@@ -125,6 +135,26 @@ export class CoursesResolver {
     }
 
     return this.coursesService.updateChapter(user.id, user.role, input);
+  }
+
+  @Mutation(() => Boolean)
+  @UseGuards(GqlAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
+  async deleteChapter(
+    @Args('id') id: string,
+    @CurrentUser() user: User,
+  ): Promise<boolean> {
+    if (!user.role) {
+      throw new UnauthorizedException(
+        'User role is required to perform this action',
+      );
+    }
+    return this.coursesService.deleteChapter(user.id, user.role, id);
+  }
+
+  @Query(() => [Chapter], { name: 'chaptersByCourse' })
+  async getChaptersByCourse(@Args('courseId') courseId: string) {
+    return this.coursesService.getChaptersByCourse(courseId);
   }
 
   /**
@@ -253,6 +283,7 @@ export class CoursesResolver {
   @UseGuards(GqlAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
   async updateLesson(
+    @Args('id') id: string,
     @Args('input') input: UpdateLessonInput,
     @CurrentUser() user: User,
   ): Promise<Lesson> {
@@ -262,7 +293,7 @@ export class CoursesResolver {
       );
     }
 
-    return this.coursesService.updateLesson(user.id, user.role, input);
+    return this.coursesService.updateLesson(user.id, user.role, id, input);
   }
 
   @Mutation(() => Lesson)

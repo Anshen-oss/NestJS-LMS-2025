@@ -7,8 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { GET_COURSE_BY_SLUG } from '@/lib/graphql/courses';
-import { useQuery } from '@apollo/client';
+import { useGetCourseBySlugQuery, useIsEnrolledQuery } from '@/lib/generated/graphql';
 import { CollapsibleTrigger } from '@radix-ui/react-collapsible';
 import {
   IconBook,
@@ -27,23 +26,19 @@ import { EnrollmentButton } from './_components/EnrollmentButton';
 type Params = Promise<{ slug: string }>;
 
 export default function CourseSlugPage({ params }: { params: Params }) {
-  // ✅ Unwrap params (Next.js 15)
   const { slug } = use(params);
 
-  // ✅ Query GraphQL pour le cours
-  const { data, loading, error } = useQuery(GET_COURSE_BY_SLUG, {
+  // Query GraphQL pour le cours
+  const { data, loading, error } = useGetCourseBySlugQuery({
     variables: { slug },
   });
 
-  // ✅ TODO : Query pour vérifier enrollment (Phase 4.2)
-  // const { data: enrollmentData } = useQuery(CHECK_ENROLLMENT, {
-  //   variables: { courseId: data?.courseBySlug?.id },
-  //   skip: !data?.courseBySlug?.id,
-  // });
-  // const isEnrolled = enrollmentData?.isEnrolled || false;
-
-  // ✅ Pour l'instant, pas d'enrollment check
-  const isEnrolled = false;
+  // Vérifier si l'utilisateur est enrollé
+  const { data: enrollmentData } = useIsEnrolledQuery({
+    variables: { courseId: data?.courseBySlug?.id || '' },
+    skip: !data?.courseBySlug?.id,
+  });
+  const isEnrolled = enrollmentData?.isEnrolled || false;
 
   if (loading) {
     return <CourseDetailSkeleton />;
@@ -78,7 +73,6 @@ export default function CourseSlugPage({ params }: { params: Params }) {
     );
   }
 
-  // ✅ Utilise directement imageUrl
   const thumbnailUrl = course.imageUrl || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&h=675&fit=crop';
 
   return (
@@ -130,23 +124,23 @@ export default function CourseSlugPage({ params }: { params: Params }) {
               Course description
             </h2>
             {course.description && (
-    <>
-      {(() => {
-        try {
-          const jsonDescription = JSON.parse(course.description);
-          return <RenderDescription json={jsonDescription} />;
-        } catch (error) {
-          return (
-            <div className="prose prose-slate max-w-none">
-              <p className="text-muted-foreground whitespace-pre-wrap">
-                {course.description}
-              </p>
-            </div>
-          );
-        }
-      })()}
-    </>
-  )}
+              <>
+                {(() => {
+                  try {
+                    const jsonDescription = JSON.parse(course.description);
+                    return <RenderDescription json={jsonDescription} />;
+                  } catch (error) {
+                    return (
+                      <div className="prose prose-slate max-w-none">
+                        <p className="text-muted-foreground whitespace-pre-wrap">
+                          {course.description}
+                        </p>
+                      </div>
+                    );
+                  }
+                })()}
+              </>
+            )}
           </div>
         </div>
 
@@ -238,77 +232,83 @@ export default function CourseSlugPage({ params }: { params: Params }) {
         <div className="sticky top-20">
           <Card className="py-0">
             <CardContent className="py-6">
-              <div className="flex items-center justify-between mb-6">
-                <span className="text-lg font-medium">Price:</span>
-                <span className="text-2xl font-bold text-primary">
-                  {new Intl.NumberFormat('fr-FR', {
-                    style: 'currency',
-                    currency: 'EUR',
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 0,
-                  }).format(course.price)}
-                </span>
-              </div>
+              {/* Prix et "What you will get" - Cachés si enrollé */}
+              {!isEnrolled && (
+                <>
+                  <div className="flex items-center justify-between mb-6">
+                    <span className="text-lg font-medium">Price:</span>
+                    <span className="text-2xl font-bold text-primary">
+                      {new Intl.NumberFormat('fr-FR', {
+                        style: 'currency',
+                        currency: 'EUR',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      }).format(course.price)}
+                    </span>
+                  </div>
 
-              <div className="mb-6 space-y-3 rounded-lg bg-muted p-4">
-                <h4 className="font-medium">What you will get:</h4>
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-                      <IconClock className="size-4" />
+                  <div className="mb-6 space-y-3 rounded-lg bg-muted p-4">
+                    <h4 className="font-medium">What you will get:</h4>
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+                          <IconClock className="size-4" />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium mr-3">
+                            Course duration
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {course.duration} hours
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+                          <IconChartBar className="size-4" />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium mr-3">Level</p>
+                          <p className="text-sm text-muted-foreground">
+                            {course.level}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+                          <IconCategory className="size-4" />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium mr-3">Category</p>
+                          <p className="text-sm text-muted-foreground">
+                            {course.category}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+                          <IconBook className="size-4" />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium mr-3">Total Lessons</p>
+                          <p className="text-sm text-muted-foreground">
+                            {course.chapters.reduce(
+                              (total, chapter) => total + chapter.lessons.length,
+                              0
+                            ) || 0}{' '}
+                            Lessons
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium mr-3">
-                        Course duration
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {course.duration} hours
-                      </p>
-                    </div>
                   </div>
-                </div>
+                </>
+              )}
 
-                <div className="flex items-center gap-3">
-                  <div className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    <IconChartBar className="size-4" />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium mr-3">Level</p>
-                    <p className="text-sm text-muted-foreground">
-                      {course.level}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    <IconCategory className="size-4" />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium mr-3">Category</p>
-                    <p className="text-sm text-muted-foreground">
-                      {course.category}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    <IconBook className="size-4" />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium mr-3">Total Lessons</p>
-                    <p className="text-sm text-muted-foreground">
-                      {course.chapters.reduce(
-                        (total, chapter) => total + chapter.lessons.length,
-                        0
-                      ) || 0}{' '}
-                      Lessons
-                    </p>
-                  </div>
-                </div>
-              </div>
-
+              {/* "This course includes" - Toujours visible */}
               <div className="mb-6 space-y-6">
                 <h4>This course includes:</h4>
                 <ul className="space-y-2">
@@ -335,20 +335,22 @@ export default function CourseSlugPage({ params }: { params: Params }) {
                 </ul>
               </div>
 
+              {/* Bouton - Change selon enrollment */}
               {isEnrolled ? (
                 <Link
                   className={buttonVariants({ className: 'w-full' })}
-                  href="/dashboard"
+                   href={`/dashboard/${course.slug}`}
                 >
                   Watch Course
                 </Link>
               ) : (
-                <EnrollmentButton courseId={course.id} />
+                <>
+                  <EnrollmentButton courseId={course.id} />
+                  <p className="mt-3 text-center text-xs text-muted-foreground">
+                    30-day money-back guarantee
+                  </p>
+                </>
               )}
-
-              <p className="mt-3 text-center text-xs text-muted-foreground">
-                30-day money-back guarantee
-              </p>
             </CardContent>
           </Card>
         </div>
@@ -357,7 +359,7 @@ export default function CourseSlugPage({ params }: { params: Params }) {
   );
 }
 
-// ✅ Skeleton pour le loading
+// Skeleton pour le loading
 function CourseDetailSkeleton() {
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 mt-5">

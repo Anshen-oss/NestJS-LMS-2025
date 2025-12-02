@@ -27,4 +27,13 @@ export class EnrollmentResolver {
   async myEnrollments(@CurrentUser() user: User): Promise<Enrollment[]> {
     return this.enrollmentService.getMyEnrollments(user.id);
   }
+
+  @Query(() => Boolean)
+  @UseGuards(GqlAuthGuard)
+  async isEnrolled(
+    @Args('courseId') courseId: string,
+    @CurrentUser() user: User,
+  ): Promise<boolean> {
+    return this.enrollmentService.isEnrolled(user.id, courseId);
+  }
 }

@@ -1,0 +1,16 @@
+query GetLessonsByChapter($chapterId: String!) {
+  lessonsByChapter(chapterId: $chapterId) {
+    id
+    title
+    description
+    content
+    videoUrl
+    thumbnailKey
+    videoKey
+    duration
+    position
+    isFree
+    createdAt
+    updatedAt
+  }
+}

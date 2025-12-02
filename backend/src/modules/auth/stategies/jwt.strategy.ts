@@ -22,13 +22,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   ) {
     super({
       // 🔍 Où chercher le token ? Dans le header Authorization: Bearer <token>
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(), // 1️⃣ Extrait le token
 
       // ⚠️ Rejeter les tokens expirés
       ignoreExpiration: false,
 
       // 🔑 Secret pour vérifier la signature
-      secretOrKey: configService.getOrThrow<string>('JWT_SECRET'),
+      secretOrKey: configService.getOrThrow<string>('JWT_SECRET'), // 2️⃣ Clé pour décoder
     });
   }
 

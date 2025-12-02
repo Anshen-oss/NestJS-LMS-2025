@@ -1,8 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { ENROLL_IN_COURSE } from '@/lib/graphql/enrollment';
-import { useMutation } from '@apollo/client';
+import { useEnrollInCourseMutation } from '@/lib/generated/graphql';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -10,7 +9,7 @@ import { toast } from 'sonner';
 export function EnrollmentButton({ courseId }: { courseId: string }) {
   const router = useRouter();
 
-  const [enrollInCourse, { loading }] = useMutation(ENROLL_IN_COURSE, {
+  const [enrollInCourse, { loading }] = useEnrollInCourseMutation({
     onCompleted: (data) => {
       const { success, message, checkoutUrl } = data.enrollInCourse;
 
@@ -35,7 +34,9 @@ export function EnrollmentButton({ courseId }: { courseId: string }) {
 
   const handleEnroll = () => {
     enrollInCourse({
-      variables: { courseId },
+      variables: {
+        input: { courseId }  // ⬅️ CHANGEMENT ICI : input au lieu de courseId direct
+      },
     });
   };
 

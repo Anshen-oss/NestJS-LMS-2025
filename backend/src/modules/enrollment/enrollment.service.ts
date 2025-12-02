@@ -215,6 +215,7 @@ export class EnrollmentService {
                 id: true,
                 name: true,
                 email: true,
+                role: true, //
               },
             },
           },
@@ -233,5 +234,17 @@ export class EnrollmentService {
       where: { id: enrollmentId },
       data: { status },
     });
+  }
+
+  async isEnrolled(userId: string, courseId: string): Promise<boolean> {
+    const enrollment = await this.prisma.enrollment.findFirst({
+      where: {
+        userId,
+        courseId,
+        status: EnrollmentStatus.Active,
+      },
+    });
+
+    return !!enrollment;
   }
 }

@@ -177,6 +177,7 @@ model Lesson {
   id           String   @id @default(uuid())
   title        String
   description  String?  @db.Text
+  content     String?  @db.Text
   position     Int
 
   // Media
