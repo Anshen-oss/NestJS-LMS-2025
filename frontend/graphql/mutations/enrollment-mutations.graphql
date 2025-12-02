@@ -1,0 +1,7 @@
+mutation EnrollInCourse($input: EnrollInCourseInput!) {
+  enrollInCourse(input: $input) {
+    success
+    message
+    checkoutUrl
+  }
+}

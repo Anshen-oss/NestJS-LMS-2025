@@ -102,6 +102,48 @@ export class CoursesService {
     return course;
   }
 
+  /**
+   * 📝 Récupère un cours pour l'édition avec vérification stricte des permissions
+   * - ADMIN : peut éditer tous les cours
+   * - INSTRUCTOR : peut éditer seulement ses propres cours
+   */
+  async findOneForEdit(id: string, userId: string, userRole: UserRole) {
+    const course = await this.prisma.course.findUnique({
+      where: { id },
+      include: {
+        createdBy: {
+          select: { id: true, name: true, email: true, role: true },
+        },
+        chapters: {
+          orderBy: { position: 'asc' },
+          include: {
+            lessons: {
+              orderBy: { position: 'asc' },
+            },
+          },
+        },
+      },
+    });
+
+    if (!course) {
+      throw new NotFoundException(`Course #${id} not found`);
+    }
+
+    // 🔒 Vérification des permissions pour l'édition
+    if (userRole === UserRole.USER) {
+      throw new ForbiddenException('Students cannot edit courses');
+    }
+
+    if (userRole === UserRole.INSTRUCTOR && course.userId !== userId) {
+      throw new ForbiddenException('You can only edit your own courses');
+    }
+
+    // ✅ ADMIN peut éditer tous les cours
+    // ✅ INSTRUCTOR peut éditer ses propres cours
+
+    return course;
+  }
+
   async findBySlug(slug: string) {
     const course = await this.prisma.course.findUnique({
       where: { slug },
@@ -122,6 +164,32 @@ export class CoursesService {
     }
 
     return course;
+  }
+
+  /**
+   * Récupère tous les chapitres d'un cours avec leurs leçons
+   */
+  async getChaptersByCourse(courseId: string) {
+    const chapters = await this.prisma.chapter.findMany({
+      where: { courseId },
+      orderBy: { position: 'asc' },
+      include: {
+        lessons: {
+          orderBy: { position: 'asc' },
+        },
+        _count: {
+          select: {
+            lessons: true,
+          },
+        },
+      },
+    });
+
+    // Mapper les counts
+    return chapters.map((chapter) => ({
+      ...chapter,
+      lessonsCount: chapter._count.lessons,
+    }));
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -160,8 +228,9 @@ export class CoursesService {
         price: input.price,
         category: input.category || 'General',
         level: input.level || CourseLevel.Beginner, // ✅ CORRIGÉ: Utilise l'enum au lieu de string
-        status: CourseStatus.Draft, // ✅ Toujours Draft au départ
+        status: input.status || CourseStatus.Draft, // ✅ Toujours Draft au départ
         imageUrl: input.imageUrl,
+        stripePriceId: input.stripePriceId,
         userId,
       },
       include: {
@@ -269,6 +338,7 @@ export class CoursesService {
             id: true,
             name: true,
             email: true,
+            role: true,
           },
         },
         chapters: true,
@@ -279,9 +349,10 @@ export class CoursesService {
   async updateLesson(
     userId: string,
     userRole: UserRole,
+    id: string,
     input: UpdateLessonInput,
   ) {
-    const { id, ...updateData } = input;
+    const updateData = input;
 
     // 1️⃣ Récupérer la leçon avec son chapitre et cours
 
@@ -313,8 +384,9 @@ export class CoursesService {
   // ═══════════════════════════════════════════════════════════
 
   /**
-   * Supprime un cours
-   * RÈGLE : Admin peut tout supprimer, User seulement ses cours
+   * 🗑️ Supprime un cours avec vérification des permissions
+   * - ADMIN : peut supprimer tous les cours
+   * - INSTRUCTOR : peut supprimer seulement ses propres cours
    */
   async deleteCourse(id: string, userId: string, userRole: UserRole) {
     // 1️⃣ Récupérer le cours
@@ -371,6 +443,36 @@ export class CoursesService {
     return this.prisma.lesson.delete({
       where: { id },
     });
+  }
+
+  async deleteChapter(
+    userId: string,
+    userRole: UserRole,
+    id: string,
+  ): Promise<boolean> {
+    // Récupérer le chapitre avec son cours
+    const chapter = await this.prisma.chapter.findUnique({
+      where: { id },
+      include: { course: true },
+    });
+
+    if (!chapter) {
+      throw new NotFoundException(`Chapter with ID ${id} not found`);
+    }
+
+    // Vérifier les permissions
+    if (userRole !== UserRole.ADMIN && chapter.course.userId !== userId) {
+      throw new ForbiddenException(
+        'You do not have permission to delete this chapter',
+      );
+    }
+
+    // Supprimer le chapitre (les leçons seront supprimées en cascade)
+    await this.prisma.chapter.delete({
+      where: { id },
+    });
+
+    return true;
   }
 
   async reorderLessons(
@@ -442,13 +544,26 @@ export class CoursesService {
     }
 
     // 4️⃣ Créer le chapitre
-    return this.prisma.chapter.create({
+    const chapter = await this.prisma.chapter.create({
       data: {
         ...chapterData,
         courseId,
         position: finalPosition,
       },
+      include: {
+        // ← AJOUTE CET INCLUDE
+        course: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+        lessons: true,
+      },
     });
+
+    // ✅ Cast pour satisfaire TypeScript
+    return chapter as any;
   }
 
   /**
@@ -480,20 +595,6 @@ export class CoursesService {
       where: { id },
       data: updateData,
     });
-  }
-
-  async deleteChapter(userId: string, userRole: UserRole, id: string) {
-    // 1️⃣ Récupérer le chapitre avec son cours
-    const chapter = await this.prisma.chapter.findUnique({
-      where: { id },
-      include: { course: true },
-    });
-
-    if (!chapter) {
-      throw new NotFoundException(`Chapter #${id} not found`);
-    }
-    // 2️⃣ Vérifier les permissions sur le cours parent
-    this.checkPermissions(chapter.course, userId, userRole, 'delete');
   }
 
   async reorderChapters(
@@ -585,7 +686,7 @@ export class CoursesService {
    * Récupère les cours créés par un utilisateur (Instructor)
    */
   async getMyCourses(userId: string) {
-    return this.prisma.course.findMany({
+    const courses = await this.prisma.course.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
       include: {
@@ -600,6 +701,12 @@ export class CoursesService {
         },
       },
     });
+    // ✅ Mapper les counts pour GraphQL
+    return courses.map((course) => ({
+      ...course,
+      chaptersCount: course._count.chapters,
+      enrollmentsCount: course._count.enrollments,
+    }));
   }
 
   // ═══════════════════════════════════════════════════════════

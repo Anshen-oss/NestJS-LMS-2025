@@ -13,6 +13,9 @@ export class Lesson {
   @Field(() => String, { nullable: true }) // ← Type explicite
   description?: string | null;
 
+  @Field(() => String, { nullable: true })
+  content?: string | null;
+
   @Field(() => Int)
   position: number;
 

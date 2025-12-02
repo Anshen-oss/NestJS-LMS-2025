@@ -1,0 +1,47 @@
+# ============================================
+# CHAPTER MUTATIONS
+# ============================================
+
+mutation CreateChapter($input: CreateChapterInput!) {
+  createChapter(input: $input) {
+    id
+    title
+    position
+    createdAt
+    updatedAt
+    course {
+      id
+      title
+    }
+    lessons {
+      id
+      title
+      position
+    }
+  }
+}
+
+mutation UpdateChapter($input: UpdateChapterInput!) {
+  updateChapter(input: $input) {
+    id
+    title
+    position
+    updatedAt
+    course {
+      id
+      title
+    }
+  }
+}
+
+mutation DeleteChapter($id: String!) {
+  deleteChapter(id: $id)
+}
+
+mutation ReorderChapters($input: ReorderChaptersInput!) {
+  reorderChapters(input: $input) {
+    id
+    title
+    position
+  }
+}

@@ -1,0 +1,49 @@
+
+mutation CreateLesson($chapterId: String!, $input: CreateLessonInput!) {
+  createLesson(chapterId: $chapterId, input: $input) {
+    id
+    title
+    description
+    content
+    videoUrl
+    duration
+    position
+    isFree
+    createdAt
+    updatedAt
+    chapter {
+      id
+      title
+    }
+  }
+}
+
+mutation UpdateLesson($id: String!, $input: UpdateLessonInput!) {
+  updateLesson(id: $id, input: $input) {
+    id
+    title
+    description
+    content
+    videoUrl
+    duration
+    position
+    isFree
+    updatedAt
+    chapter {
+      id
+      title
+    }
+  }
+}
+
+mutation DeleteLesson($id: String!) {
+  deleteLesson(id: $id)
+}
+
+mutation ReorderLessons($input: ReorderLessonsInput!) {
+  reorderLessons(input: $input) {
+    id
+    title
+    position
+  }
+}

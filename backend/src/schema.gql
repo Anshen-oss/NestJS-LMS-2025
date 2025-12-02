@@ -32,6 +32,7 @@ type Course {
   createdBy: CourseCreator!
   description: String!
   duration: Int
+  enrollmentsCount: Int
   fileKey: String
   id: ID!
   imageUrl: String
@@ -52,6 +53,7 @@ type CourseCreator {
   email: String!
   id: String!
   name: String!
+  role: UserRole!
 }
 
 """The difficulty level of a course"""
@@ -141,6 +143,7 @@ type EnrollmentResponse {
 
 type Lesson {
   chapter: Chapter
+  content: String
   createdAt: DateTime!
   description: String
   duration: Int
@@ -183,6 +186,7 @@ type Mutation {
   createChapter(input: CreateChapterInput!): Chapter!
   createCourse(input: CreateCourseInput!): Course!
   createLesson(chapterId: String!, input: CreateLessonInput!): Lesson!
+  deleteChapter(id: String!): Boolean!
   deleteCourse(id: String!): Boolean!
   deleteFile(url: String!): Boolean!
   deleteLesson(id: String!): Boolean!
@@ -201,10 +205,13 @@ type Mutation {
 }
 
 type Query {
+  chaptersByCourse(courseId: String!): [Chapter!]!
   course(id: String!): Course!
   courseBySlug(slug: String!): Course!
   courses(status: CourseStatus): [Course!]!
+  getCourseForEdit(id: String!): Course!
   hello: String!
+  isEnrolled(courseId: String!): Boolean!
   lesson(id: String!): Lesson!
   lessonsByChapter(chapterId: String!): [Lesson!]!
   me: User!

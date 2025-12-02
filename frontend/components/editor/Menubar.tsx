@@ -11,6 +11,7 @@ import {
   AlignLeft,
   AlignRight,
   Bold,
+  FileText,
   Heading1Icon,
   Heading2Icon,
   Heading3Icon,
@@ -178,6 +179,24 @@ export function Menubar({ editor }: iAppProps) {
             <TooltipContent>Heading 3</TooltipContent>
           </Tooltip>
 
+
+<Tooltip>
+  <TooltipTrigger asChild>
+    <Toggle
+      size="sm"
+      pressed={editor.isActive("paragraph")}
+      onPressedChange={() =>
+        editor.chain().focus().setParagraph().run()
+      }
+      className={cn(
+        editor.isActive("paragraph") && "bg-muted text-muted-foreground"
+      )}
+    >
+      <FileText />
+    </Toggle>
+  </TooltipTrigger>
+  <TooltipContent>Paragraph</TooltipContent>
+</Tooltip>
           {/* Lists */}
           <Tooltip>
             <TooltipTrigger asChild>

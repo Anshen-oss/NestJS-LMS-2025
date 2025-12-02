@@ -1,0 +1,41 @@
+# ============================================
+# COURSE MUTATIONS
+# ============================================
+
+mutation UpdateCourse($input: UpdateCourseInput!) {
+  updateCourse(input: $input) {
+    id
+    title
+    slug
+    description
+    smallDescription
+    requirements
+    outcomes
+    imageUrl
+    fileKey
+    price
+    category
+    stripePriceId
+    status
+    level
+    duration
+    createdAt
+    updatedAt
+    publishedAt
+    createdBy {
+      id
+      name
+      email
+      role
+    }
+    chapters {
+      id
+      title
+      position
+    }
+  }
+}
+
+mutation DeleteCourse($id: String!) {
+  deleteCourse(id: $id)
+}

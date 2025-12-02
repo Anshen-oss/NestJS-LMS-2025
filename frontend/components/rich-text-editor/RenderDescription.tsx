@@ -1,38 +1,14 @@
-// "use client";
-
-// import { useMemo } from "react";
-// import { generateHTML } from "@tiptap/html";
-// import { type JSONContent } from "@tiptap/react";
-// import StarterKit from "@tiptap/starter-kit";
-// import TextAlign from "@tiptap/extension-text-align";
-// import parse from "html-react-parser";
-
-// export function RenderDescription({ json }: { json: JSONContent }) {
-//   const output = useMemo(() => {
-//     return generateHTML(json, [
-//       StarterKit,
-//       TextAlign.configure({
-//         types: ["heading", "paragraph"],
-//       }),
-//     ]);
-//   }, [json]);
-
-//   return (
-//     <div className="prose dark:prose-invert prose-li:marker:text-primary">
-//       {parse(output)}
-//     </div>
-//   );
-// }
-
 "use client";
 
-import { useEffect, useState } from "react";
 import type { JSONContent } from "@tiptap/react";
 import parse from "html-react-parser";
+import { useEffect, useState } from "react";
 
 // extensions importées normalement
-import StarterKit from "@tiptap/starter-kit";
+import TiptapImage from "@tiptap/extension-image";
+import TiptapLink from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
+import StarterKit from "@tiptap/starter-kit";
 
 export function RenderDescription({ json }: { json: JSONContent }) {
   const [html, setHtml] = useState("");
@@ -43,14 +19,21 @@ export function RenderDescription({ json }: { json: JSONContent }) {
       const out = generateHTML(json, [
         StarterKit,
         TextAlign.configure({ types: ["heading", "paragraph"] }),
+        TiptapImage,
+         TiptapLink.configure({                      // ← Ajoute cette extension
+          openOnClick: false,
+          HTMLAttributes: {
+            class: "text-primary underline cursor-pointer hover:text-primary/80",
+          },
+        }),
       ]);
       setHtml(out);
     });
   }, [json]);
 
   return (
-    <div className="prose dark:prose-invert prose-li:marker:text-primary">
-      {parse(html)}
-    </div>
+  <div className="tiptap-content prose dark:prose-invert max-w-none">
+    {parse(html)}
+  </div>
   );
 }

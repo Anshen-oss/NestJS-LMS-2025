@@ -5,10 +5,6 @@ import { IsBoolean, IsInt, IsOptional, IsString, Min } from 'class-validator';
 
 @InputType()
 export class UpdateLessonInput {
-  @Field()
-  @IsString()
-  id: string;
-
   @Field({ nullable: true })
   @IsString()
   @IsOptional()

@@ -1,0 +1,48 @@
+# ============================================
+# QUERY FOR COURSE EDITING PAGE
+# ============================================
+
+# ============================================
+# QUERY FOR COURSE EDITING PAGE
+# ============================================
+
+query GetCourseForEdit($id: String!) {
+  getCourseForEdit(id: $id) {
+    id
+    title
+    description
+    smallDescription
+    requirements
+    outcomes
+    imageUrl
+    price
+    category
+    stripePriceId
+    status
+    level
+    slug
+    duration
+    createdAt
+    updatedAt
+    publishedAt
+    createdBy {
+      id
+      name
+      email
+      role
+    }
+    chapters {
+      id
+      title
+      position
+      lessons {
+        id
+        title
+        description
+        videoUrl
+        position
+        isFree
+      }
+    }
+  }
+}

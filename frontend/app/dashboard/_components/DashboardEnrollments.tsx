@@ -1,7 +1,7 @@
 'use client';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { GET_MY_ENROLLMENTS } from '@/lib/graphql/enrollment';
+import { GET_MY_ENROLLMENTS } from '@/lib/__TODELETEgraphql/enrollment';
 import { useQuery } from '@apollo/client';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { EnrolledCourseCard } from './EnrolledCourseCard';
