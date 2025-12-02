@@ -78,7 +78,7 @@ export function CurriculumTab({ courseId }: CurriculumTabProps) {
           </CardContent>
         </Card>
       ) : (
-        <ChapterList chapters={chapters} onUpdate={refetch} />
+        <ChapterList chapters={chapters} courseId={courseId} onUpdate={refetch} />
       )}
 
       {/* Stats */}

@@ -183,7 +183,7 @@ export class CoursesResolver {
   async reorderChapters(
     @Args('input') input: ReorderChaptersInput,
     @CurrentUser() user: User,
-  ): Promise<Chapter[]> {
+  ): Promise<any> {
     if (!user.role) {
       throw new UnauthorizedException(
         'User role is required to perform this action',
@@ -318,7 +318,7 @@ export class CoursesResolver {
   async reorderLessons(
     @Args('input') input: ReorderLessonsInput,
     @CurrentUser() user: User,
-  ): Promise<Lesson[]> {
+  ): Promise<any> {
     if (!user.role) {
       throw new UnauthorizedException(
         'User role is required to perform this action',

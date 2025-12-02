@@ -1,6 +1,6 @@
 "use client";
 
-import { useReorderChaptersMutation } from "@/lib/generated/graphql";
+import { useReorderLessonsMutation } from "@/lib/generated/graphql";
 import {
   DndContext,
   DragEndEvent,
@@ -16,15 +16,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { toast } from "sonner";
-import { ChapterItem } from "./ChapterItem";
-
-interface Chapter {
-  id: string;
-  title: string;
-  position: number;
-  lessons?: Lesson[];
-  lessonsCount?: number;
-}
+import { LessonItem } from "./LessonItem";
 
 interface Lesson {
   id: string;
@@ -36,14 +28,14 @@ interface Lesson {
   isFree: boolean;
 }
 
-interface ChapterListProps {
-  chapters: Chapter[];
-  courseId: string;
+interface LessonsListProps {
+  lessons: Lesson[];
+  chapterId: string;
   onUpdate: () => void;
 }
 
-export function ChapterList({ chapters, courseId, onUpdate }: ChapterListProps) {
-  const [reorderChapters] = useReorderChaptersMutation();
+export function LessonsList({ lessons, chapterId, onUpdate }: LessonsListProps) {
+  const [reorderLessons] = useReorderLessonsMutation();
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -59,43 +51,43 @@ export function ChapterList({ chapters, courseId, onUpdate }: ChapterListProps) 
       return;
     }
 
-    const oldIndex = chapters.findIndex((ch) => ch.id === active.id);
-    const newIndex = chapters.findIndex((ch) => ch.id === over.id);
+    const oldIndex = lessons.findIndex((l) => l.id === active.id);
+    const newIndex = lessons.findIndex((l) => l.id === over.id);
 
     if (oldIndex === -1 || newIndex === -1) {
       return;
     }
 
     // Créer le nouvel ordre
-    const reorderedChapters = [...chapters];
-    const [movedChapter] = reorderedChapters.splice(oldIndex, 1);
-    reorderedChapters.splice(newIndex, 0, movedChapter);
+    const reorderedLessons = [...lessons];
+    const [movedLesson] = reorderedLessons.splice(oldIndex, 1);
+    reorderedLessons.splice(newIndex, 0, movedLesson);
 
     // Mettre à jour les positions
-    const chaptersWithNewPositions = reorderedChapters.map((chapter, index) => ({
-      id: chapter.id,
+    const lessonsWithNewPositions = reorderedLessons.map((lesson, index) => ({
+      id: lesson.id,
       position: index,
     }));
 
     try {
-      console.log("📤 Sending reorder:", {
-        courseId,
-        chapters: chaptersWithNewPositions,
-      });
-      await reorderChapters({
+      console.log("📤 Sending reorder lessons:", {
+  chapterId,
+  lessons: lessonsWithNewPositions,
+});
+      await reorderLessons({
         variables: {
           input: {
-            courseId,
-            chapters: chaptersWithNewPositions,
+            chapterId,
+            lessons: lessonsWithNewPositions,
           },
         },
       });
 
-      toast.success("Chapters reordered");
+      toast.success("Lessons reordered");
       onUpdate();
     } catch (error: any) {
       console.error("Reorder error:", error);
-      toast.error(error.message || "Failed to reorder chapters");
+      toast.error(error.message || "Failed to reorder lessons");
     }
   };
 
@@ -106,16 +98,12 @@ export function ChapterList({ chapters, courseId, onUpdate }: ChapterListProps) 
       onDragEnd={handleDragEnd}
     >
       <SortableContext
-        items={chapters.map((ch) => ch.id)}
+        items={lessons.map((l) => l.id)}
         strategy={verticalListSortingStrategy}
       >
-        <div className="space-y-4">
-          {chapters.map((chapter) => (
-            <ChapterItem
-              key={chapter.id}
-              chapter={chapter}
-              onUpdate={onUpdate}
-            />
+        <div className="space-y-2">
+          {lessons.map((lesson) => (
+            <LessonItem key={lesson.id} lesson={lesson} onUpdate={onUpdate} />
           ))}
         </div>
       </SortableContext>

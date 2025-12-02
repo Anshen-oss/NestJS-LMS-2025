@@ -14,6 +14,8 @@ import {
   useDeleteChapterMutation,
   useUpdateChapterMutation,
 } from "@/lib/generated/graphql";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   ChevronDown,
   ChevronRight,
@@ -29,7 +31,7 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 import { CreateLessonForm } from "./CreateLessonForm";
-import { LessonItem } from "./LessonItem";
+import { LessonsList } from "./LessonsList";
 
 interface Chapter {
   id: string;
@@ -62,6 +64,22 @@ export function ChapterItem({ chapter, onUpdate }: ChapterItemProps) {
 
   const [updateChapter, { loading: updating }] = useUpdateChapterMutation();
   const [deleteChapter, { loading: deleting }] = useDeleteChapterMutation();
+
+  // Sortable hook
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: chapter.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
 
   const handleSave = async () => {
     if (!editedTitle.trim()) {
@@ -109,11 +127,15 @@ export function ChapterItem({ chapter, onUpdate }: ChapterItemProps) {
   const lessonsCount = chapter.lessons?.length || 0;
 
   return (
-    <Card>
+    <Card ref={setNodeRef} style={style}>
       <CardHeader className="p-4">
         <div className="flex items-center gap-3">
           {/* Drag Handle */}
-          <button className="cursor-grab text-muted-foreground hover:text-foreground">
+          <button
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
+          >
             <GripVertical className="w-5 h-5" />
           </button>
 
@@ -146,11 +168,7 @@ export function ChapterItem({ chapter, onUpdate }: ChapterItemProps) {
                   autoFocus
                   disabled={updating}
                 />
-                <Button
-                  size="sm"
-                  onClick={handleSave}
-                  disabled={updating}
-                >
+                <Button size="sm" onClick={handleSave} disabled={updating}>
                   {updating ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
@@ -172,7 +190,7 @@ export function ChapterItem({ chapter, onUpdate }: ChapterItemProps) {
             ) : (
               <div className="flex items-center gap-3">
                 <h3 className="font-semibold">
-                  Chapter {chapter.position}: {chapter.title}
+                  Chapter {chapter.position + 1}: {chapter.title}
                 </h3>
                 <span className="text-sm text-muted-foreground">
                   ({lessonsCount} {lessonsCount === 1 ? "lesson" : "lessons"})
@@ -252,10 +270,12 @@ export function ChapterItem({ chapter, onUpdate }: ChapterItemProps) {
               </Button>
             </div>
           ) : (
-            <div className="space-y-2">
-              {chapter.lessons?.map((lesson) => (
-                <LessonItem key={lesson.id} lesson={lesson} onUpdate={onUpdate} />
-              ))}
+            <>
+              <LessonsList
+                lessons={chapter.lessons || []}
+                chapterId={chapter.id}
+                onUpdate={onUpdate}
+              />
 
               {/* Add Lesson Button */}
               {!showCreateLesson && (
@@ -269,7 +289,7 @@ export function ChapterItem({ chapter, onUpdate }: ChapterItemProps) {
                   Add Lesson
                 </Button>
               )}
-            </div>
+            </>
           )}
         </CardContent>
       )}
