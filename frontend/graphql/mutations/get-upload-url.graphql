@@ -1,0 +1,7 @@
+mutation GetUploadUrl($fileName: String!, $contentType: String!) {
+  getUploadUrl(fileName: $fileName, contentType: $contentType) {
+    uploadUrl
+    key
+    publicUrl
+  }
+}

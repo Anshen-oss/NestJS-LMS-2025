@@ -531,6 +531,14 @@ export type EnrollInCourseMutationVariables = Exact<{
 
 export type EnrollInCourseMutation = { __typename?: 'Mutation', enrollInCourse: { __typename?: 'EnrollmentResponse', success: boolean, message: string, checkoutUrl?: string | null } };
 
+export type GetUploadUrlMutationVariables = Exact<{
+  fileName: Scalars['String']['input'];
+  contentType: Scalars['String']['input'];
+}>;
+
+
+export type GetUploadUrlMutation = { __typename?: 'Mutation', getUploadUrl: { __typename?: 'UploadUrlResponse', uploadUrl: string, key: string, publicUrl: string } };
+
 export type CreateLessonMutationVariables = Exact<{
   chapterId: Scalars['String']['input'];
   input: CreateLessonInput;
@@ -949,6 +957,42 @@ export function useEnrollInCourseMutation(baseOptions?: Apollo.MutationHookOptio
 export type EnrollInCourseMutationHookResult = ReturnType<typeof useEnrollInCourseMutation>;
 export type EnrollInCourseMutationResult = Apollo.MutationResult<EnrollInCourseMutation>;
 export type EnrollInCourseMutationOptions = Apollo.BaseMutationOptions<EnrollInCourseMutation, EnrollInCourseMutationVariables>;
+export const GetUploadUrlDocument = gql`
+    mutation GetUploadUrl($fileName: String!, $contentType: String!) {
+  getUploadUrl(fileName: $fileName, contentType: $contentType) {
+    uploadUrl
+    key
+    publicUrl
+  }
+}
+    `;
+export type GetUploadUrlMutationFn = Apollo.MutationFunction<GetUploadUrlMutation, GetUploadUrlMutationVariables>;
+
+/**
+ * __useGetUploadUrlMutation__
+ *
+ * To run a mutation, you first call `useGetUploadUrlMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useGetUploadUrlMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [getUploadUrlMutation, { data, loading, error }] = useGetUploadUrlMutation({
+ *   variables: {
+ *      fileName: // value for 'fileName'
+ *      contentType: // value for 'contentType'
+ *   },
+ * });
+ */
+export function useGetUploadUrlMutation(baseOptions?: Apollo.MutationHookOptions<GetUploadUrlMutation, GetUploadUrlMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<GetUploadUrlMutation, GetUploadUrlMutationVariables>(GetUploadUrlDocument, options);
+      }
+export type GetUploadUrlMutationHookResult = ReturnType<typeof useGetUploadUrlMutation>;
+export type GetUploadUrlMutationResult = Apollo.MutationResult<GetUploadUrlMutation>;
+export type GetUploadUrlMutationOptions = Apollo.BaseMutationOptions<GetUploadUrlMutation, GetUploadUrlMutationVariables>;
 export const CreateLessonDocument = gql`
     mutation CreateLesson($chapterId: String!, $input: CreateLessonInput!) {
   createLesson(chapterId: $chapterId, input: $input) {
