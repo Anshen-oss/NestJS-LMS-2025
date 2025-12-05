@@ -1,7 +1,11 @@
 'use client';
 
-import { LOGIN_MUTATION, ME_QUERY, REGISTER_MUTATION } from '@/lib/__TODELETEgraphql/auth';
-import { useApolloClient, useMutation, useQuery } from '@apollo/client';
+import {
+  useLoginMutation,
+  useMeQuery,
+  useRegisterMutation
+} from '@/lib/generated/graphql';
+import { useApolloClient } from '@apollo/client';
 import { useRouter } from 'next/navigation';
 import { useCallback } from 'react';
 
@@ -9,8 +13,8 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  image: string | null;
-  role: 'USER' | 'ADMIN';
+  // image: string | null; // ❌ Enlève cette ligne
+  role: 'USER' | 'ADMIN' | 'INSTRUCTOR' | 'STUDENT';
 }
 
 export interface AuthResponse {
@@ -20,57 +24,67 @@ export interface AuthResponse {
 
 export function useAuth() {
   const router = useRouter();
-  const apolloClient = useApolloClient(); // ✅ Ajouté pour resetStore
+  const apolloClient = useApolloClient();
 
-  // 1. useQuery : Vérifie si l'utilisateur est connecté
-  const { data, loading, error, refetch } = useQuery(ME_QUERY, {
+  // 1. Query : Vérifie si l'utilisateur est connecté
+  const { data, loading, error, refetch } = useMeQuery({
     errorPolicy: 'ignore', // Ne pas throw d'erreur si non authentifié
   });
 
-    // 2. useMutation : Login et Register
-  const [loginMutation, { loading: loginLoading }] = useMutation(LOGIN_MUTATION);
-  const [registerMutation, { loading: registerLoading }] = useMutation(REGISTER_MUTATION);
+  // 2. Mutations : Login et Register
+  const [loginMutation, { loading: loginLoading }] = useLoginMutation();
+  const [registerMutation, { loading: registerLoading }] = useRegisterMutation();
 
-    // 3. useCallback : Mémorise les fonctions login/register
-const login = useCallback(
-  async (email: string, password: string) => {
-    try {
-      const { data } = await loginMutation({
-        variables: { input: { email, password } },  // ← Change ça aussi (input)
-      });
+  // 3. Login
+  const login = useCallback(
+    async (email: string, password: string) => {
+      try {
+        const { data } = await loginMutation({
+          variables: {
+            input: { email, password }
+          },
+        });
 
-      if (data?.login) {
-        // ✅ CORRIGÉ : Utiliser 'accessToken' au lieu de 'token'
-        localStorage.setItem('accessToken', data.login.accessToken);
+        if (data?.login) {
+          // Stocker le token
+          localStorage.setItem('accessToken', data.login.accessToken);
 
-        await apolloClient.resetStore();
+          // Reset le cache Apollo
+          await apolloClient.resetStore();
 
-        return { success: true, user: data.login.user };
+          return { success: true, user: data.login.user };
+        }
+
+        return { success: false, error: 'Login failed' };
+      } catch (error: any) {
+        console.error('Login error:', error);
+        return { success: false, error: error.message };
       }
-    } catch (error: any) {
-      console.error('Login error:', error);
-      return { success: false, error: error.message };
-    }
-  },
-  [loginMutation, apolloClient]
-);
+    },
+    [loginMutation, apolloClient]
+  );
 
+  // 4. Register
   const register = useCallback(
     async (email: string, password: string, name?: string) => {
       try {
         const { data } = await registerMutation({
-          variables: { email, password, name },
+          variables: {
+            input: { email, password, name }
+          },
         });
 
         if (data?.register) {
           // Stocker le token
-          localStorage.setItem('token', data.register.accessToken);
+          localStorage.setItem('accessToken', data.register.accessToken);
 
-          // ✅ MODIFIÉ : Reset le cache Apollo et refetch
+          // Reset le cache Apollo
           await apolloClient.resetStore();
 
           return { success: true, user: data.register.user };
         }
+
+        return { success: false, error: 'Registration failed' };
       } catch (error: any) {
         console.error('Register error:', error);
         return { success: false, error: error.message };
@@ -79,11 +93,12 @@ const login = useCallback(
     [registerMutation, apolloClient]
   );
 
+  // 5. Logout
   const logout = useCallback(() => {
     // Supprimer le token
-    localStorage.removeItem('token');
+    localStorage.removeItem('accessToken');
 
-    // ✅ MODIFIÉ : Clear le cache Apollo
+    // Clear le cache Apollo
     apolloClient.clearStore();
 
     // Rediriger vers la page de login
@@ -101,5 +116,6 @@ const login = useCallback(
     logout,
     loginLoading,
     registerLoading,
+    refetch,
   };
 }

@@ -37,6 +37,9 @@ export class Lesson {
   isFree: boolean;
 
   @Field()
+  isPublished: boolean; // 👈 NOUVEAU
+
+  @Field()
   createdAt: Date;
 
   @Field()

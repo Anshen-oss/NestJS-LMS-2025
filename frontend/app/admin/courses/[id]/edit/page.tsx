@@ -10,7 +10,6 @@ import { use } from "react";
 import { CourseInfoTab } from "./_components/CourseInfoTab";
 import { CurriculumTab } from "./_components/CurriculumTab";
 
-
 interface EditCoursePageProps {
   params: Promise<{
     id: string;
@@ -22,12 +21,20 @@ export default function EditCoursePage({ params }: EditCoursePageProps) {
   const router = useRouter();
 
   // Query
-  const { data, loading, error } = useGetCourseForEditQuery({
+  const { data, loading, error, refetch } = useGetCourseForEditQuery({ // 👈 Ajoute refetch
     variables: { id: courseId },
     fetchPolicy: "network-only",
     nextFetchPolicy: "network-only",
   });
 
+  // 👇 NOUVEAU : Fonction de refetch avec log
+const handleUpdate = async () => {
+  console.log("🔄 handleUpdate appelé - refetch en cours...");
+  await refetch();
+  console.log("✅ Refetch terminé");
+};
+
+  // 1. LOADING
   if (loading) {
     return (
       <div className="container max-w-7xl py-8 flex items-center justify-center min-h-[400px]">
@@ -39,6 +46,7 @@ export default function EditCoursePage({ params }: EditCoursePageProps) {
     );
   }
 
+  // 2. ERROR
   if (error || !data?.getCourseForEdit) {
     return (
       <div className="container max-w-7xl py-8">
@@ -59,6 +67,7 @@ export default function EditCoursePage({ params }: EditCoursePageProps) {
     );
   }
 
+  // 3. SUCCESS
   const course = data.getCourseForEdit;
 
   return (
@@ -97,9 +106,13 @@ export default function EditCoursePage({ params }: EditCoursePageProps) {
           <CourseInfoTab course={course} />
         </TabsContent>
 
-        <TabsContent value="curriculum">
-          <CurriculumTab courseId={courseId} />
-        </TabsContent>
+      <TabsContent value="curriculum">
+        <CurriculumTab
+          courseId={courseId}
+          chapters={course.chapters} // 👈 NOUVEAU : Passe les chapters
+          onUpdate={handleUpdate}
+        />
+      </TabsContent>
       </Tabs>
     </div>
   );

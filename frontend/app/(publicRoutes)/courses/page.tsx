@@ -1,7 +1,6 @@
 'use client';
 
-import { GET_ALL_COURSES } from '@/lib/__TODELETEgraphql/courses';
-import { useQuery } from '@apollo/client';
+import { useGetAllCoursesQuery } from '@/lib/generated/graphql';
 import { PublicCourseCard, PublicCourseCardSkeleton } from '../_components/PublicCourseCard';
 
 interface Course {
@@ -17,7 +16,7 @@ interface Course {
 }
 
 export default function CoursesPage() {
-  const { data, loading, error } = useQuery(GET_ALL_COURSES);
+  const { data, loading, error } = useGetAllCoursesQuery();
 
   if (error) {
     return (

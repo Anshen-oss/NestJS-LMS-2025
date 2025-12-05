@@ -14,6 +14,7 @@ import { User } from '../auth/entities/user.entity';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { CreateLessonInput } from './dto/create-lesson.input';
+import { UpdateLessonContentInput } from './dto/update-lesson-content.input';
 import { UpdateLessonInput } from './dto/update-lesson.input';
 import { UpdateProgressInput } from './dto/update-progress.input';
 import { LessonProgress } from './entities/lesson-progress.entity';
@@ -131,7 +132,8 @@ export class LessonsResolver {
    * AUTORISÉ : Utilisateurs connectés
    */
   @Mutation(() => LessonProgress)
-  @UseGuards(GqlAuthGuard)
+  @UseGuards(GqlAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
   async updateLessonProgress(
     @Args('lessonId') lessonId: string,
     @Args('input') input: UpdateProgressInput,
@@ -141,6 +143,18 @@ export class LessonsResolver {
       lessonId,
       user.id,
       input.watchedDuration,
+    );
+  }
+
+  @Mutation(() => Lesson)
+  @UseGuards(GqlAuthGuard, RolesGuard)
+  async updateLessonContent(
+    @Args('input') input: UpdateLessonContentInput,
+  ): Promise<Lesson> {
+    return this.lessonsService.updateLessonContent(
+      input.lessonId,
+      input.content,
+      input.isPublished,
     );
   }
 

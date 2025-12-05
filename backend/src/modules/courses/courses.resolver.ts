@@ -107,7 +107,7 @@ export class CoursesResolver {
   async createChapter(
     @Args('input') input: CreateChapterInput,
     @CurrentUser() user: User,
-  ): Promise<Chapter> {
+  ): Promise<any> {
     if (!user.role) {
       throw new UnauthorizedException(
         'User role is required to perform this action',

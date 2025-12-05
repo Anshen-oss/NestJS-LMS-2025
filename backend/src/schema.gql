@@ -150,6 +150,7 @@ type Lesson {
   id: ID!
   isCompleted: Boolean
   isFree: Boolean!
+  isPublished: Boolean!
   lessonProgress: [LessonProgress!]
   position: Int!
   thumbnailKey: String
@@ -201,6 +202,7 @@ type Mutation {
   updateChapter(input: UpdateChapterInput!): Chapter!
   updateCourse(input: UpdateCourseInput!): Course!
   updateLesson(id: String!, input: UpdateLessonInput!): Lesson!
+  updateLessonContent(input: UpdateLessonContentInput!): Lesson!
   updateLessonProgress(input: UpdateProgressInput!, lessonId: String!): LessonProgress!
 }
 
@@ -259,6 +261,12 @@ input UpdateCourseInput {
   status: CourseStatus
   stripePriceId: String
   title: String
+}
+
+input UpdateLessonContentInput {
+  content: String
+  isPublished: Boolean
+  lessonId: String!
 }
 
 input UpdateLessonInput {

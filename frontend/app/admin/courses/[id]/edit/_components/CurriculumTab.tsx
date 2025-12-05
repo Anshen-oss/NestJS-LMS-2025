@@ -2,39 +2,25 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useGetChaptersByCourseQuery } from "@/lib/generated/graphql";
-import { BookOpen, Loader2, Plus } from "lucide-react";
+import { GetCourseForEditQuery } from "@/lib/generated/graphql"; // 👈 NOUVEAU
+import { BookOpen, Plus } from "lucide-react";
 import { useState } from "react";
 import { ChapterList } from "./ChapterList";
 import { CreateChapterForm } from "./CreateChapterForm";
 
+type Chapter = NonNullable<GetCourseForEditQuery['getCourseForEdit']>['chapters'][number];
+
+
 interface CurriculumTabProps {
   courseId: string;
+  chapters: Chapter[]; // 👈 NOUVEAU : Reçoit les chapters
+  onUpdate: () => void;
 }
 
-export function CurriculumTab({ courseId }: CurriculumTabProps) {
+export function CurriculumTab({ courseId, chapters, onUpdate }: CurriculumTabProps) {
   const [showCreateForm, setShowCreateForm] = useState(false);
 
-  // Fetch chapters
-  const { data, loading, refetch } = useGetChaptersByCourseQuery({
-    variables: { courseId },
-    fetchPolicy: "network-only",
-  });
-
-  const chapters = data?.chaptersByCourse || [];
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Loading curriculum...</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
+return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -56,7 +42,7 @@ export function CurriculumTab({ courseId }: CurriculumTabProps) {
           courseId={courseId}
           onSuccess={() => {
             setShowCreateForm(false);
-            refetch();
+            onUpdate(); // 👈 MODIFIÉ : Appelle onUpdate au lieu de refetch
           }}
           onCancel={() => setShowCreateForm(false)}
         />
@@ -78,7 +64,7 @@ export function CurriculumTab({ courseId }: CurriculumTabProps) {
           </CardContent>
         </Card>
       ) : (
-        <ChapterList chapters={chapters} courseId={courseId} onUpdate={refetch} />
+        <ChapterList chapters={chapters} courseId={courseId} onUpdate={onUpdate} />
       )}
 
       {/* Stats */}

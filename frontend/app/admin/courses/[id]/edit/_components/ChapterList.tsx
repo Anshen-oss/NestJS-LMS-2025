@@ -1,6 +1,6 @@
 "use client";
 
-import { useReorderChaptersMutation } from "@/lib/generated/graphql";
+import { GetCourseForEditQuery, useReorderChaptersMutation } from "@/lib/generated/graphql";
 import {
   DndContext,
   DragEndEvent,
@@ -18,23 +18,8 @@ import {
 import { toast } from "sonner";
 import { ChapterItem } from "./ChapterItem";
 
-interface Chapter {
-  id: string;
-  title: string;
-  position: number;
-  lessons?: Lesson[];
-  lessonsCount?: number;
-}
-
-interface Lesson {
-  id: string;
-  title: string;
-  description?: string | null;
-  videoUrl?: string | null;
-  duration?: number | null;
-  position: number;
-  isFree: boolean;
-}
+// 👇 Utilise le type généré par Codegen
+type Chapter = NonNullable<GetCourseForEditQuery['getCourseForEdit']>['chapters'][number];
 
 interface ChapterListProps {
   chapters: Chapter[];
