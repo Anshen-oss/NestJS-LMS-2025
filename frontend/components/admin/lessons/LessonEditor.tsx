@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   useGetUploadUrlMutation,
   useUpdateLessonContentMutation,
@@ -23,6 +24,8 @@ import StarterKit from "@tiptap/starter-kit";
 import { common, createLowlight } from "lowlight";
 import {
   Code,
+  Edit,
+  Eye,
   ImageIcon,
   Link as LinkIcon,
   Loader2,
@@ -47,6 +50,11 @@ export function LessonEditor({
   isPublished = false,
   onSave,
 }: LessonEditorProps) {
+  if (!lessonId) {
+    console.error("❌ LessonEditor: lessonId is missing!");
+    return <div className="text-red-500">Error: Lesson ID is missing</div>;
+  }
+
   const [updateLessonContent, { loading }] = useUpdateLessonContentMutation();
   const [getUploadUrl] = useGetUploadUrlMutation();
 
@@ -59,6 +67,66 @@ export function LessonEditor({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+
+  // States pour publication et preview
+  const [isPublishedLocal, setIsPublishedLocal] = useState(isPublished);
+  const [showPreview, setShowPreview] = useState(false);
+
+  // Fonction pour toggle la publication
+  const handleTogglePublish = async () => {
+    console.log("🚀 START handleTogglePublish");
+    console.log("🔍 lessonId:", lessonId);
+    console.log("🔍 typeof lessonId:", typeof lessonId);
+    console.log("🔍 isPublishedLocal:", isPublishedLocal);
+
+    if (!lessonId) {
+      console.error("❌ No lessonId!");
+      return;
+    }
+
+    if (!editor) return;
+
+    const newPublishedState = !isPublishedLocal;
+    console.log("🔄 New state:", newPublishedState);
+
+    console.log("🔄 Toggle publish:", {
+      lessonId,
+      newPublishedState,
+    });
+
+    try {
+      const result = await updateLessonContent({
+        variables: {
+          input: {
+            lessonId,
+            isPublished: newPublishedState,
+          },
+        },
+      });
+
+      console.log("✅ Mutation result:", result);
+      setIsPublishedLocal(newPublishedState);
+      toast.success(
+        newPublishedState
+          ? "Lesson published successfully!"
+          : "Lesson unpublished successfully!"
+      );
+
+      if (onSave) {
+        onSave();
+      }
+    } catch (error: any) {
+      console.error("❌ Full error:", error);
+      console.error("❌ Error message:", error.message);
+      console.error("❌ Error graphQLErrors:", error.graphQLErrors);
+      toast.error("Failed to update publication status");
+    }
+  };
+
+  // Sync avec les props
+  useEffect(() => {
+    setIsPublishedLocal(isPublished);
+  }, [isPublished]);
 
   // Initialiser Tiptap avec Image extension
   const editor = useEditor({
@@ -245,135 +313,211 @@ export function LessonEditor({
 
   return (
     <div className="space-y-4">
-      {/* Toolbar enrichie */}
-      <div className="flex items-center gap-1 p-2 border rounded-lg bg-muted/50 flex-wrap">
-        {/* Formatage de base */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().toggleBold().run()}
-          className={editor.isActive("bold") ? "bg-muted" : ""}
-        >
-          <strong>B</strong>
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-          className={editor.isActive("italic") ? "bg-muted" : ""}
-        >
-          <em>I</em>
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().toggleStrike().run()}
-          className={editor.isActive("strike") ? "bg-muted" : ""}
-        >
-          <s>S</s>
-        </Button>
+      {/* Section Publication Status */}
+      <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={isPublishedLocal}
+              onCheckedChange={handleTogglePublish}
+              disabled={loading}
+            />
+            <Label className="cursor-pointer font-medium">
+              {isPublishedLocal ? "Published" : "Draft"}
+            </Label>
+          </div>
+          {isPublishedLocal ? (
+            <span className="px-2 py-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full">
+              ✓ Visible to students
+            </span>
+          ) : (
+            <span className="px-2 py-1 text-xs font-semibold text-gray-700 bg-gray-100 rounded-full">
+              ⚠ Not visible to students
+            </span>
+          )}
+        </div>
 
-        <div className="w-px h-6 bg-border mx-1" />
-
-        {/* Headings */}
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-          className={editor.isActive("heading", { level: 1 }) ? "bg-muted" : ""}
+          onClick={() => setShowPreview(!showPreview)}
         >
-          H1
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          className={editor.isActive("heading", { level: 2 }) ? "bg-muted" : ""}
-        >
-          H2
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-          className={editor.isActive("heading", { level: 3 }) ? "bg-muted" : ""}
-        >
-          H3
-        </Button>
-
-        <div className="w-px h-6 bg-border mx-1" />
-
-        {/* Listes */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className={editor.isActive("bulletList") ? "bg-muted" : ""}
-        >
-          • List
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          className={editor.isActive("orderedList") ? "bg-muted" : ""}
-        >
-          1. List
-        </Button>
-
-        <div className="w-px h-6 bg-border mx-1" />
-
-        {/* Lien */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleAddLink}
-          className={editor.isActive("link") ? "bg-muted" : ""}
-        >
-          <LinkIcon className="w-4 h-4" />
-        </Button>
-
-        {/* Code block */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-          className={editor.isActive("codeBlock") ? "bg-muted" : ""}
-        >
-          <Code className="w-4 h-4" />
-        </Button>
-
-        {/* Image */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowImageDialog(true)}
-        >
-          <ImageIcon className="w-4 h-4" />
-        </Button>
-
-        <div className="flex-1" />
-
-        {/* Bouton sauvegarder */}
-        <Button onClick={handleSave} disabled={loading} size="sm">
-          {loading ? (
+          {showPreview ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Saving...
+              <Edit className="w-4 h-4 mr-2" />
+              Edit
             </>
           ) : (
             <>
-              <Save className="mr-2 h-4 w-4" />
-              Save
+              <Eye className="w-4 h-4 mr-2" />
+              Preview
             </>
           )}
         </Button>
       </div>
 
-      {/* Zone d'édition */}
-      <div className="border rounded-lg bg-white">
-        <EditorContent editor={editor} />
-      </div>
+      {/* Toolbar enrichie et éditeur OU Preview */}
+      {!showPreview ? (
+        <>
+          {/* Toolbar */}
+          <div className="flex items-center gap-1 p-2 border rounded-lg bg-muted/50 flex-wrap">
+            {/* Formatage de base */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => editor.chain().focus().toggleBold().run()}
+              className={editor.isActive("bold") ? "bg-muted" : ""}
+            >
+              <strong>B</strong>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => editor.chain().focus().toggleItalic().run()}
+              className={editor.isActive("italic") ? "bg-muted" : ""}
+            >
+              <em>I</em>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => editor.chain().focus().toggleStrike().run()}
+              className={editor.isActive("strike") ? "bg-muted" : ""}
+            >
+              <s>S</s>
+            </Button>
+
+            <div className="w-px h-6 bg-border mx-1" />
+
+            {/* Headings */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                editor.chain().focus().toggleHeading({ level: 1 }).run()
+              }
+              className={
+                editor.isActive("heading", { level: 1 }) ? "bg-muted" : ""
+              }
+            >
+              H1
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                editor.chain().focus().toggleHeading({ level: 2 }).run()
+              }
+              className={
+                editor.isActive("heading", { level: 2 }) ? "bg-muted" : ""
+              }
+            >
+              H2
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                editor.chain().focus().toggleHeading({ level: 3 }).run()
+              }
+              className={
+                editor.isActive("heading", { level: 3 }) ? "bg-muted" : ""
+              }
+            >
+              H3
+            </Button>
+
+            <div className="w-px h-6 bg-border mx-1" />
+
+            {/* Listes */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => editor.chain().focus().toggleBulletList().run()}
+              className={editor.isActive("bulletList") ? "bg-muted" : ""}
+            >
+              • List
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => editor.chain().focus().toggleOrderedList().run()}
+              className={editor.isActive("orderedList") ? "bg-muted" : ""}
+            >
+              1. List
+            </Button>
+
+            <div className="w-px h-6 bg-border mx-1" />
+
+            {/* Lien */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleAddLink}
+              className={editor.isActive("link") ? "bg-muted" : ""}
+            >
+              <LinkIcon className="w-4 h-4" />
+            </Button>
+
+            {/* Code block */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+              className={editor.isActive("codeBlock") ? "bg-muted" : ""}
+            >
+              <Code className="w-4 h-4" />
+            </Button>
+
+            {/* Image */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowImageDialog(true)}
+            >
+              <ImageIcon className="w-4 h-4" />
+            </Button>
+
+            <div className="flex-1" />
+
+            {/* Bouton sauvegarder */}
+            <Button onClick={handleSave} disabled={loading} size="sm">
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save
+                </>
+              )}
+            </Button>
+          </div>
+
+          {/* Zone d'édition */}
+          <div className="border rounded-lg bg-white">
+            <EditorContent editor={editor} />
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Mode Preview */}
+          <div className="border rounded-lg bg-white p-8">
+            <div
+              className="prose prose-lg max-w-none
+               prose-ul:list-disc prose-ul:pl-6
+               prose-ol:list-decimal prose-ol:pl-6
+               prose-li:ml-0"
+            >
+              <div
+                dangerouslySetInnerHTML={{ __html: editor?.getHTML() || "" }}
+              />
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Dialog pour ajouter un lien */}
       <Dialog open={showLinkDialog} onOpenChange={setShowLinkDialog}>

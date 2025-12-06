@@ -220,7 +220,7 @@ export function LessonItem({ lesson, onUpdate }: LessonItemProps) {
       <LessonEditor
         lessonId={lesson.id}
         initialContent={lesson.content}
-        isPublished={lesson.isPublished}
+        isPublished={lesson.isPublished ?? false}
         onSave={onUpdate}
       />
     </div>

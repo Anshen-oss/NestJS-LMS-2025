@@ -1,10 +1,10 @@
 import { Field, InputType } from '@nestjs/graphql';
-import { IsBoolean, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 
 @InputType()
 export class UpdateLessonContentInput {
   @Field()
-  @IsUUID()
+  @IsString()
   lessonId: string;
 
   @Field({ nullable: true })

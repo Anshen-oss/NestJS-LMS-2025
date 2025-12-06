@@ -1,0 +1,13 @@
+query GetLesson($id: String!) {
+  lesson(id: $id) {
+    id
+    title
+    description
+    content
+    isPublished
+    videoUrl
+    duration
+    position
+    isFree
+  }
+}

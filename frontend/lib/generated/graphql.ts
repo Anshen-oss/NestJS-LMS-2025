@@ -621,6 +621,13 @@ export type GetCourseForEditQueryVariables = Exact<{
 
 export type GetCourseForEditQuery = { __typename?: 'Query', getCourseForEdit: { __typename?: 'Course', id: string, title: string, description: string, smallDescription: string, requirements?: string | null, outcomes?: string | null, imageUrl?: string | null, price: number, category: string, stripePriceId?: string | null, status: CourseStatus, level: CourseLevel, slug: string, duration?: number | null, createdAt: any, updatedAt: any, publishedAt?: any | null, createdBy: { __typename?: 'CourseCreator', id: string, name: string, email: string, role: UserRole }, chapters?: Array<{ __typename?: 'Chapter', id: string, title: string, position: number, lessons?: Array<{ __typename?: 'Lesson', id: string, title: string, description?: string | null, content?: string | null, isPublished: boolean, videoUrl?: string | null, position: number, isFree: boolean }> | null }> | null } };
 
+export type GetLessonQueryVariables = Exact<{
+  id: Scalars['String']['input'];
+}>;
+
+
+export type GetLessonQuery = { __typename?: 'Query', lesson: { __typename?: 'Lesson', id: string, title: string, description?: string | null, content?: string | null, isPublished: boolean, videoUrl?: string | null, duration?: number | null, position: number, isFree: boolean } };
+
 export type GetLessonsByChapterQueryVariables = Exact<{
   chapterId: Scalars['String']['input'];
 }>;
@@ -1557,6 +1564,54 @@ export type GetCourseForEditQueryHookResult = ReturnType<typeof useGetCourseForE
 export type GetCourseForEditLazyQueryHookResult = ReturnType<typeof useGetCourseForEditLazyQuery>;
 export type GetCourseForEditSuspenseQueryHookResult = ReturnType<typeof useGetCourseForEditSuspenseQuery>;
 export type GetCourseForEditQueryResult = Apollo.QueryResult<GetCourseForEditQuery, GetCourseForEditQueryVariables>;
+export const GetLessonDocument = gql`
+    query GetLesson($id: String!) {
+  lesson(id: $id) {
+    id
+    title
+    description
+    content
+    isPublished
+    videoUrl
+    duration
+    position
+    isFree
+  }
+}
+    `;
+
+/**
+ * __useGetLessonQuery__
+ *
+ * To run a query within a React component, call `useGetLessonQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetLessonQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetLessonQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useGetLessonQuery(baseOptions: Apollo.QueryHookOptions<GetLessonQuery, GetLessonQueryVariables> & ({ variables: GetLessonQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetLessonQuery, GetLessonQueryVariables>(GetLessonDocument, options);
+      }
+export function useGetLessonLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetLessonQuery, GetLessonQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetLessonQuery, GetLessonQueryVariables>(GetLessonDocument, options);
+        }
+export function useGetLessonSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetLessonQuery, GetLessonQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetLessonQuery, GetLessonQueryVariables>(GetLessonDocument, options);
+        }
+export type GetLessonQueryHookResult = ReturnType<typeof useGetLessonQuery>;
+export type GetLessonLazyQueryHookResult = ReturnType<typeof useGetLessonLazyQuery>;
+export type GetLessonSuspenseQueryHookResult = ReturnType<typeof useGetLessonSuspenseQuery>;
+export type GetLessonQueryResult = Apollo.QueryResult<GetLessonQuery, GetLessonQueryVariables>;
 export const GetLessonsByChapterDocument = gql`
     query GetLessonsByChapter($chapterId: String!) {
   lessonsByChapter(chapterId: $chapterId) {
