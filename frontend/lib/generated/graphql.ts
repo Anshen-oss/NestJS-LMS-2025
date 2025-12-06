@@ -524,6 +524,13 @@ export type DeleteCourseMutationVariables = Exact<{
 
 export type DeleteCourseMutation = { __typename?: 'Mutation', deleteCourse: boolean };
 
+export type CreateCourseMutationVariables = Exact<{
+  input: CreateCourseInput;
+}>;
+
+
+export type CreateCourseMutation = { __typename?: 'Mutation', createCourse: { __typename?: 'Course', id: string, title: string, slug: string, description: string, price: number, createdAt: any } };
+
 export type EnrollInCourseMutationVariables = Exact<{
   input: EnrollInCourseInput;
 }>;
@@ -627,6 +634,11 @@ export type GetLessonQueryVariables = Exact<{
 
 
 export type GetLessonQuery = { __typename?: 'Query', lesson: { __typename?: 'Lesson', id: string, title: string, description?: string | null, content?: string | null, isPublished: boolean, videoUrl?: string | null, duration?: number | null, position: number, isFree: boolean } };
+
+export type GetMyEnrollmentsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetMyEnrollmentsQuery = { __typename?: 'Query', myEnrollments: Array<{ __typename?: 'Enrollment', id: string, createdAt: any, course: { __typename?: 'Course', id: string, title: string, slug: string, description: string, price: number } }> };
 
 export type GetLessonsByChapterQueryVariables = Exact<{
   chapterId: Scalars['String']['input'];
@@ -929,6 +941,44 @@ export function useDeleteCourseMutation(baseOptions?: Apollo.MutationHookOptions
 export type DeleteCourseMutationHookResult = ReturnType<typeof useDeleteCourseMutation>;
 export type DeleteCourseMutationResult = Apollo.MutationResult<DeleteCourseMutation>;
 export type DeleteCourseMutationOptions = Apollo.BaseMutationOptions<DeleteCourseMutation, DeleteCourseMutationVariables>;
+export const CreateCourseDocument = gql`
+    mutation CreateCourse($input: CreateCourseInput!) {
+  createCourse(input: $input) {
+    id
+    title
+    slug
+    description
+    price
+    createdAt
+  }
+}
+    `;
+export type CreateCourseMutationFn = Apollo.MutationFunction<CreateCourseMutation, CreateCourseMutationVariables>;
+
+/**
+ * __useCreateCourseMutation__
+ *
+ * To run a mutation, you first call `useCreateCourseMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateCourseMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createCourseMutation, { data, loading, error }] = useCreateCourseMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useCreateCourseMutation(baseOptions?: Apollo.MutationHookOptions<CreateCourseMutation, CreateCourseMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<CreateCourseMutation, CreateCourseMutationVariables>(CreateCourseDocument, options);
+      }
+export type CreateCourseMutationHookResult = ReturnType<typeof useCreateCourseMutation>;
+export type CreateCourseMutationResult = Apollo.MutationResult<CreateCourseMutation>;
+export type CreateCourseMutationOptions = Apollo.BaseMutationOptions<CreateCourseMutation, CreateCourseMutationVariables>;
 export const EnrollInCourseDocument = gql`
     mutation EnrollInCourse($input: EnrollInCourseInput!) {
   enrollInCourse(input: $input) {
@@ -1612,6 +1662,53 @@ export type GetLessonQueryHookResult = ReturnType<typeof useGetLessonQuery>;
 export type GetLessonLazyQueryHookResult = ReturnType<typeof useGetLessonLazyQuery>;
 export type GetLessonSuspenseQueryHookResult = ReturnType<typeof useGetLessonSuspenseQuery>;
 export type GetLessonQueryResult = Apollo.QueryResult<GetLessonQuery, GetLessonQueryVariables>;
+export const GetMyEnrollmentsDocument = gql`
+    query GetMyEnrollments {
+  myEnrollments {
+    id
+    createdAt
+    course {
+      id
+      title
+      slug
+      description
+      price
+    }
+  }
+}
+    `;
+
+/**
+ * __useGetMyEnrollmentsQuery__
+ *
+ * To run a query within a React component, call `useGetMyEnrollmentsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetMyEnrollmentsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetMyEnrollmentsQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useGetMyEnrollmentsQuery(baseOptions?: Apollo.QueryHookOptions<GetMyEnrollmentsQuery, GetMyEnrollmentsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetMyEnrollmentsQuery, GetMyEnrollmentsQueryVariables>(GetMyEnrollmentsDocument, options);
+      }
+export function useGetMyEnrollmentsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetMyEnrollmentsQuery, GetMyEnrollmentsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetMyEnrollmentsQuery, GetMyEnrollmentsQueryVariables>(GetMyEnrollmentsDocument, options);
+        }
+export function useGetMyEnrollmentsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetMyEnrollmentsQuery, GetMyEnrollmentsQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetMyEnrollmentsQuery, GetMyEnrollmentsQueryVariables>(GetMyEnrollmentsDocument, options);
+        }
+export type GetMyEnrollmentsQueryHookResult = ReturnType<typeof useGetMyEnrollmentsQuery>;
+export type GetMyEnrollmentsLazyQueryHookResult = ReturnType<typeof useGetMyEnrollmentsLazyQuery>;
+export type GetMyEnrollmentsSuspenseQueryHookResult = ReturnType<typeof useGetMyEnrollmentsSuspenseQuery>;
+export type GetMyEnrollmentsQueryResult = Apollo.QueryResult<GetMyEnrollmentsQuery, GetMyEnrollmentsQueryVariables>;
 export const GetLessonsByChapterDocument = gql`
     query GetLessonsByChapter($chapterId: String!) {
   lessonsByChapter(chapterId: $chapterId) {

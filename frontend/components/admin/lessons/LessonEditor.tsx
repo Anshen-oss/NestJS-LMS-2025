@@ -9,6 +9,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -19,6 +26,10 @@ import {
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
+import { Table } from '@tiptap/extension-table';
+import { TableCell } from '@tiptap/extension-table-cell';
+import { TableHeader } from '@tiptap/extension-table-header';
+import { TableRow } from '@tiptap/extension-table-row';
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { common, createLowlight } from "lowlight";
@@ -30,7 +41,9 @@ import {
   Link as LinkIcon,
   Loader2,
   Save,
+  TableIcon,
   Upload,
+  Video,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -54,6 +67,8 @@ export function LessonEditor({
     console.error("❌ LessonEditor: lessonId is missing!");
     return <div className="text-red-500">Error: Lesson ID is missing</div>;
   }
+  // 👇 AJOUTE CETTE SÉCURITÉ
+  const safeContent = initialContent || "";
 
   const [updateLessonContent, { loading }] = useUpdateLessonContentMutation();
   const [getUploadUrl] = useGetUploadUrlMutation();
@@ -71,13 +86,30 @@ export function LessonEditor({
   // States pour publication et preview
   const [isPublishedLocal, setIsPublishedLocal] = useState(isPublished);
   const [showPreview, setShowPreview] = useState(false);
+  // States pour les vidéos YouTube
+  const [showYoutubeDialog, setShowYoutubeDialog] = useState(false);
+  const [youtubeUrl, setYoutubeUrl] = useState("");
 
+  // Fonction pour nettoyer les vidéos YouTube invalides
+// function sanitizeYoutubeContent(html: string): string {
+//   if (!html) return "";
+
+//   // Supprimer les iframes YouTube SANS src
+//   return html.replace(
+//     /<div[^>]*data-youtube-video[^>]*>([\s\S]*?)<\/div>/gi,
+//     (match, inner) => {
+//       // Si l'iframe contient src="http...", on garde
+//       if (/src="https?:\/\/[^"]+"/i.test(inner)) {
+//         return match;
+//       }
+//       // Sinon on supprime
+//       console.log("🗑️ Suppression vidéo YouTube sans src");
+//       return '';
+//     }
+//   );
+// }
   // Fonction pour toggle la publication
   const handleTogglePublish = async () => {
-    console.log("🚀 START handleTogglePublish");
-    console.log("🔍 lessonId:", lessonId);
-    console.log("🔍 typeof lessonId:", typeof lessonId);
-    console.log("🔍 isPublishedLocal:", isPublishedLocal);
 
     if (!lessonId) {
       console.error("❌ No lessonId!");
@@ -87,12 +119,7 @@ export function LessonEditor({
     if (!editor) return;
 
     const newPublishedState = !isPublishedLocal;
-    console.log("🔄 New state:", newPublishedState);
 
-    console.log("🔄 Toggle publish:", {
-      lessonId,
-      newPublishedState,
-    });
 
     try {
       const result = await updateLessonContent({
@@ -104,7 +131,6 @@ export function LessonEditor({
         },
       });
 
-      console.log("✅ Mutation result:", result);
       setIsPublishedLocal(newPublishedState);
       toast.success(
         newPublishedState
@@ -128,7 +154,7 @@ export function LessonEditor({
     setIsPublishedLocal(isPublished);
   }, [isPublished]);
 
-  // Initialiser Tiptap avec Image extension
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -153,6 +179,36 @@ export function LessonEditor({
           class: "rounded-lg max-w-full h-auto my-4",
         },
       }),
+    //   Youtube.configure({
+    //   controls: true,
+    //   nocookie: true, // Utilise youtube-nocookie.com (RGPD friendly)
+    //   width: 640,
+    //   height: 360,
+    //   HTMLAttributes: {
+    //     class: "rounded-lg my-6",
+    //   },
+    // }),
+    Table.configure({
+      resizable: true,
+      HTMLAttributes: {
+        class: "border-collapse table-auto w-full my-4",
+      },
+    }),
+    TableRow.configure({
+      HTMLAttributes: {
+        class: "border border-gray-300",
+      },
+    }),
+    TableHeader.configure({
+      HTMLAttributes: {
+        class: "border border-gray-300 bg-gray-100 font-bold p-2 text-left",
+      },
+    }),
+    TableCell.configure({
+      HTMLAttributes: {
+        class: "border border-gray-300 p-2",
+      },
+    }),
     ],
     content: initialContent || "",
     immediatelyRender: false,
@@ -162,48 +218,67 @@ export function LessonEditor({
           "prose prose-sm sm:prose lg:prose-lg xl:prose-2xl focus:outline-none min-h-[300px] p-4 max-w-none",
       },
     },
+    // 👇 Ajoute ça pour gérer les erreurs silencieusement
+  onError: ({ error }) => {
+    console.warn("⚠️ Tiptap error (ignoré):", error.message);
+  },
   });
 
-  // Mettre à jour l'éditeur quand initialContent change
-  useEffect(() => {
-    if (!editor) return;
 
-    if (editor.isFocused) {
-      return;
-    }
+useEffect(() => {
+  if (!editor) return;
+  if (editor.isFocused) return;
 
-    const currentContent = editor.getHTML();
-    if (currentContent !== (initialContent || "")) {
-      editor.commands.setContent(initialContent || "");
-    }
-  }, [editor, initialContent]);
+  console.log("📥 useEffect déclenché");
+  console.log("📥 initialContent from DB:", initialContent);
+
+  const currentContent = editor.getHTML();
+  console.log("📝 Current editor content:", currentContent);
+
+  // 👇 AJOUTE sanitize ICI AUSSI
+   const newContent = initialContent || "";
+  console.log("🆕 New content to set:", newContent);
+
+  if (currentContent !== newContent) {
+    console.log("⚠️ Content différent - mise à jour de l'éditeur");
+    editor.commands.setContent(newContent);
+  } else {
+    console.log("✅ Content identique - pas de mise à jour");
+  }
+}, [editor, initialContent]);
+
 
   // Sauvegarder le contenu
-  const handleSave = async () => {
-    if (!editor) return;
+const handleSave = async () => {
+  if (!editor) return;
 
-    const content = editor.getHTML();
+  const content = editor.getHTML();
+  console.log("💾 Contenu sauvegardé:", content);
 
-    try {
-      await updateLessonContent({
-        variables: {
-          input: {
-            lessonId,
-            content,
-          },
+  // Cherche spécifiquement les vidéos YouTube
+  const youtubeMatch = content.match(/<div[^>]*data-youtube-video[^>]*>[\s\S]*?<\/div>/gi);
+  console.log("🎥 Vidéos YouTube trouvées:", youtubeMatch);
+
+  try {
+    await updateLessonContent({
+      variables: {
+        input: {
+          lessonId,
+          content,
         },
-      });
+      },
+    });
 
-      toast.success("Content saved successfully!");
+    toast.success("Content saved successfully!");
 
-      if (onSave) {
-        onSave();
-      }
-    } catch (error) {
-      console.error("❌ Erreur:", error);
-      toast.error("Failed to save content");
+    if (onSave) {
+      onSave();
     }
-  };
+  } catch (error) {
+    console.error("❌ Erreur:", error);
+    toast.error("Failed to save content");
+  }
+};
 
   // Ajouter un lien
   const handleAddLink = () => {
@@ -306,6 +381,26 @@ export function LessonEditor({
       setUploadingImage(false);
     }
   };
+
+  // Insérer une vidéo YouTube
+const handleAddYoutube = () => {
+  if (!editor) return;
+  setYoutubeUrl("");
+  setShowYoutubeDialog(true);
+};
+
+const handleSetYoutube = () => {
+  if (!editor || !youtubeUrl) return;
+
+  // L'extension extrait automatiquement l'ID de l'URL
+  editor.commands.setYoutubeVideo({
+    src: youtubeUrl,
+  });
+
+  toast.success("Video added successfully!");
+  setShowYoutubeDialog(false);
+  setYoutubeUrl("");
+};
 
   if (!editor) {
     return <div>Loading editor...</div>;
@@ -477,6 +572,90 @@ export function LessonEditor({
             >
               <ImageIcon className="w-4 h-4" />
             </Button>
+            <DropdownMenu>
+  <DropdownMenuTrigger asChild>
+    <Button
+      variant="ghost"
+      size="sm"
+      className={editor.isActive("table") ? "bg-muted" : ""}
+    >
+      <TableIcon className="w-4 h-4" />
+    </Button>
+  </DropdownMenuTrigger>
+  <DropdownMenuContent align="start">
+    {/* Créer un tableau */}
+    <DropdownMenuItem
+      onClick={() =>
+        editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
+      }
+    >
+      Insert Table (3x3)
+    </DropdownMenuItem>
+
+    <DropdownMenuSeparator />
+
+    {/* Actions sur les colonnes */}
+    <DropdownMenuItem
+      onClick={() => editor.chain().focus().addColumnBefore().run()}
+      disabled={!editor.can().addColumnBefore()}
+    >
+      Add Column Before
+    </DropdownMenuItem>
+    <DropdownMenuItem
+      onClick={() => editor.chain().focus().addColumnAfter().run()}
+      disabled={!editor.can().addColumnAfter()}
+    >
+      Add Column After
+    </DropdownMenuItem>
+    <DropdownMenuItem
+      onClick={() => editor.chain().focus().deleteColumn().run()}
+      disabled={!editor.can().deleteColumn()}
+    >
+      Delete Column
+    </DropdownMenuItem>
+
+    <DropdownMenuSeparator />
+
+    {/* Actions sur les lignes */}
+    <DropdownMenuItem
+      onClick={() => editor.chain().focus().addRowBefore().run()}
+      disabled={!editor.can().addRowBefore()}
+    >
+      Add Row Before
+    </DropdownMenuItem>
+    <DropdownMenuItem
+      onClick={() => editor.chain().focus().addRowAfter().run()}
+      disabled={!editor.can().addRowAfter()}
+    >
+      Add Row After
+    </DropdownMenuItem>
+    <DropdownMenuItem
+      onClick={() => editor.chain().focus().deleteRow().run()}
+      disabled={!editor.can().deleteRow()}
+    >
+      Delete Row
+    </DropdownMenuItem>
+
+    <DropdownMenuSeparator />
+
+    {/* Supprimer le tableau */}
+    <DropdownMenuItem
+      onClick={() => editor.chain().focus().deleteTable().run()}
+      disabled={!editor.can().deleteTable()}
+      className="text-destructive"
+    >
+      Delete Table
+    </DropdownMenuItem>
+  </DropdownMenuContent>
+</DropdownMenu>
+            {/* 👇 NOUVEAU : Vidéo YouTube */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleAddYoutube}
+            >
+              <Video className="w-4 h-4" />
+            </Button>
 
             <div className="flex-1" />
 
@@ -626,6 +805,50 @@ export function LessonEditor({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Dialog pour ajouter une vidéo YouTube */}
+<Dialog open={showYoutubeDialog} onOpenChange={setShowYoutubeDialog}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Add YouTube Video</DialogTitle>
+      <DialogDescription>
+        Paste a YouTube video URL to embed it in your lesson
+      </DialogDescription>
+    </DialogHeader>
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="youtube-url">YouTube URL</Label>
+        <Input
+          id="youtube-url"
+          placeholder="https://www.youtube.com/watch?v=..."
+          value={youtubeUrl}
+          onChange={(e) => setYoutubeUrl(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              handleSetYoutube();
+            }
+          }}
+        />
+        <p className="text-xs text-muted-foreground">
+          Supported formats: youtube.com/watch?v=, youtu.be/, youtube.com/embed/
+        </p>
+      </div>
+    </div>
+    <DialogFooter>
+      <Button
+        variant="outline"
+        onClick={() => {
+          setShowYoutubeDialog(false);
+          setYoutubeUrl("");
+        }}
+      >
+        Cancel
+      </Button>
+      <Button onClick={handleSetYoutube} disabled={!youtubeUrl}>
+        Add Video
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
     </div>
   );
 }

@@ -216,14 +216,16 @@ export function LessonItem({ lesson, onUpdate }: LessonItemProps) {
         Edit the lesson content using the rich text editor below.
       </DialogDescription>
     </DialogHeader>
-    <div className="flex-1 overflow-y-auto pr-2">
-      <LessonEditor
-        lessonId={lesson.id}
-        initialContent={lesson.content}
-        isPublished={lesson.isPublished ?? false}
-        onSave={onUpdate}
-      />
-    </div>
+<div className="flex-1 overflow-y-auto pr-2">
+  {lesson.id && (
+    <LessonEditor
+      lessonId={lesson.id}
+      initialContent={lesson.content || ""}
+      isPublished={lesson.isPublished ?? false}
+      onSave={onUpdate}
+    />
+  )}
+</div>
   </DialogContent>
 </Dialog>
     </>

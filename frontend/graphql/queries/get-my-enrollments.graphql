@@ -1,0 +1,13 @@
+query GetMyEnrollments {
+  myEnrollments {
+    id
+    createdAt
+    course {
+      id
+      title
+      slug
+      description
+      price
+    }
+  }
+}
