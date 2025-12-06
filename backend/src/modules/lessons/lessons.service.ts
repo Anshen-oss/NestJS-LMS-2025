@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Lesson, UserRole } from '@prisma/client';
+import { Lesson, LessonAttachment, UserRole } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateLessonInput } from './dto/create-lesson.input';
 import { UpdateLessonInput } from './dto/update-lesson.input';
@@ -516,5 +516,40 @@ export class LessonsService {
     throw new ForbiddenException(
       'You must be logged in and enrolled to access this lesson',
     );
+  }
+
+  // Créer un attachement
+  async createAttachment(
+    lessonId: string,
+    fileName: string,
+    fileUrl: string,
+    fileSize: number,
+    fileType: string,
+  ): Promise<LessonAttachment> {
+    return await this.prisma.lessonAttachment.create({
+      data: {
+        lessonId,
+        fileName,
+        fileUrl,
+        fileSize,
+        fileType,
+      },
+    });
+  }
+
+  // Lister les attachements d'une lesson
+  async getAttachments(lessonId: string): Promise<LessonAttachment[]> {
+    return this.prisma.lessonAttachment.findMany({
+      where: { lessonId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  // Supprimer un attachement
+  async deleteAttachment(id: string): Promise<boolean> {
+    await this.prisma.lessonAttachment.delete({
+      where: { id },
+    });
+    return true;
   }
 }

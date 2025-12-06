@@ -8,7 +8,6 @@ export class UpdateLessonContentInput {
   lessonId: string;
 
   @Field({ nullable: true })
-  @IsOptional()
   @IsString()
   content?: string;
 

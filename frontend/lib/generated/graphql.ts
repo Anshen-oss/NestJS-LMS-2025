@@ -118,6 +118,14 @@ export type CreateCourseInput = {
   title: Scalars['String']['input'];
 };
 
+export type CreateLessonAttachmentInput = {
+  fileName: Scalars['String']['input'];
+  fileSize: Scalars['Int']['input'];
+  fileType: Scalars['String']['input'];
+  fileUrl: Scalars['String']['input'];
+  lessonId: Scalars['String']['input'];
+};
+
 export type CreateLessonInput = {
   description?: InputMaybe<Scalars['String']['input']>;
   duration?: InputMaybe<Scalars['Int']['input']>;
@@ -174,6 +182,18 @@ export type Lesson = {
   videoUrl?: Maybe<Scalars['String']['output']>;
 };
 
+export type LessonAttachment = {
+  __typename?: 'LessonAttachment';
+  createdAt: Scalars['DateTime']['output'];
+  fileName: Scalars['String']['output'];
+  fileSize: Scalars['Int']['output'];
+  fileType: Scalars['String']['output'];
+  fileUrl: Scalars['String']['output'];
+  id: Scalars['String']['output'];
+  lessonId: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+};
+
 export type LessonPositionInput = {
   id: Scalars['String']['input'];
   position: Scalars['Int']['input'];
@@ -203,10 +223,12 @@ export type Mutation = {
   createChapter: Chapter;
   createCourse: Course;
   createLesson: Lesson;
+  createLessonAttachment: LessonAttachment;
   deleteChapter: Scalars['Boolean']['output'];
   deleteCourse: Scalars['Boolean']['output'];
   deleteFile: Scalars['Boolean']['output'];
   deleteLesson: Scalars['Boolean']['output'];
+  deleteLessonAttachment: Scalars['Boolean']['output'];
   enrollInCourse: EnrollmentResponse;
   getUploadUrl: UploadUrlResponse;
   login: AuthPayload;
@@ -244,6 +266,11 @@ export type MutationCreateLessonArgs = {
 };
 
 
+export type MutationCreateLessonAttachmentArgs = {
+  input: CreateLessonAttachmentInput;
+};
+
+
 export type MutationDeleteChapterArgs = {
   id: Scalars['String']['input'];
 };
@@ -260,6 +287,11 @@ export type MutationDeleteFileArgs = {
 
 
 export type MutationDeleteLessonArgs = {
+  id: Scalars['String']['input'];
+};
+
+
+export type MutationDeleteLessonAttachmentArgs = {
   id: Scalars['String']['input'];
 };
 
@@ -341,6 +373,7 @@ export type Query = {
   hello: Scalars['String']['output'];
   isEnrolled: Scalars['Boolean']['output'];
   lesson: Lesson;
+  lessonAttachments: Array<LessonAttachment>;
   lessonsByChapter: Array<Lesson>;
   me: User;
   myCourses: Array<Course>;
@@ -382,6 +415,11 @@ export type QueryIsEnrolledArgs = {
 
 export type QueryLessonArgs = {
   id: Scalars['String']['input'];
+};
+
+
+export type QueryLessonAttachmentsArgs = {
+  lessonId: Scalars['String']['input'];
 };
 
 
@@ -531,6 +569,20 @@ export type CreateCourseMutationVariables = Exact<{
 
 export type CreateCourseMutation = { __typename?: 'Mutation', createCourse: { __typename?: 'Course', id: string, title: string, slug: string, description: string, price: number, createdAt: any } };
 
+export type CreateLessonAttachmentMutationVariables = Exact<{
+  input: CreateLessonAttachmentInput;
+}>;
+
+
+export type CreateLessonAttachmentMutation = { __typename?: 'Mutation', createLessonAttachment: { __typename?: 'LessonAttachment', id: string, lessonId: string, fileName: string, fileUrl: string, fileSize: number, fileType: string, createdAt: any } };
+
+export type DeleteLessonAttachmentMutationVariables = Exact<{
+  id: Scalars['String']['input'];
+}>;
+
+
+export type DeleteLessonAttachmentMutation = { __typename?: 'Mutation', deleteLessonAttachment: boolean };
+
 export type EnrollInCourseMutationVariables = Exact<{
   input: EnrollInCourseInput;
 }>;
@@ -639,6 +691,13 @@ export type GetMyEnrollmentsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type GetMyEnrollmentsQuery = { __typename?: 'Query', myEnrollments: Array<{ __typename?: 'Enrollment', id: string, createdAt: any, course: { __typename?: 'Course', id: string, title: string, slug: string, description: string, price: number } }> };
+
+export type LessonAttachmentsQueryVariables = Exact<{
+  lessonId: Scalars['String']['input'];
+}>;
+
+
+export type LessonAttachmentsQuery = { __typename?: 'Query', lessonAttachments: Array<{ __typename?: 'LessonAttachment', id: string, lessonId: string, fileName: string, fileUrl: string, fileSize: number, fileType: string, createdAt: any }> };
 
 export type GetLessonsByChapterQueryVariables = Exact<{
   chapterId: Scalars['String']['input'];
@@ -979,6 +1038,76 @@ export function useCreateCourseMutation(baseOptions?: Apollo.MutationHookOptions
 export type CreateCourseMutationHookResult = ReturnType<typeof useCreateCourseMutation>;
 export type CreateCourseMutationResult = Apollo.MutationResult<CreateCourseMutation>;
 export type CreateCourseMutationOptions = Apollo.BaseMutationOptions<CreateCourseMutation, CreateCourseMutationVariables>;
+export const CreateLessonAttachmentDocument = gql`
+    mutation CreateLessonAttachment($input: CreateLessonAttachmentInput!) {
+  createLessonAttachment(input: $input) {
+    id
+    lessonId
+    fileName
+    fileUrl
+    fileSize
+    fileType
+    createdAt
+  }
+}
+    `;
+export type CreateLessonAttachmentMutationFn = Apollo.MutationFunction<CreateLessonAttachmentMutation, CreateLessonAttachmentMutationVariables>;
+
+/**
+ * __useCreateLessonAttachmentMutation__
+ *
+ * To run a mutation, you first call `useCreateLessonAttachmentMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateLessonAttachmentMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createLessonAttachmentMutation, { data, loading, error }] = useCreateLessonAttachmentMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useCreateLessonAttachmentMutation(baseOptions?: Apollo.MutationHookOptions<CreateLessonAttachmentMutation, CreateLessonAttachmentMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<CreateLessonAttachmentMutation, CreateLessonAttachmentMutationVariables>(CreateLessonAttachmentDocument, options);
+      }
+export type CreateLessonAttachmentMutationHookResult = ReturnType<typeof useCreateLessonAttachmentMutation>;
+export type CreateLessonAttachmentMutationResult = Apollo.MutationResult<CreateLessonAttachmentMutation>;
+export type CreateLessonAttachmentMutationOptions = Apollo.BaseMutationOptions<CreateLessonAttachmentMutation, CreateLessonAttachmentMutationVariables>;
+export const DeleteLessonAttachmentDocument = gql`
+    mutation DeleteLessonAttachment($id: String!) {
+  deleteLessonAttachment(id: $id)
+}
+    `;
+export type DeleteLessonAttachmentMutationFn = Apollo.MutationFunction<DeleteLessonAttachmentMutation, DeleteLessonAttachmentMutationVariables>;
+
+/**
+ * __useDeleteLessonAttachmentMutation__
+ *
+ * To run a mutation, you first call `useDeleteLessonAttachmentMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDeleteLessonAttachmentMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [deleteLessonAttachmentMutation, { data, loading, error }] = useDeleteLessonAttachmentMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useDeleteLessonAttachmentMutation(baseOptions?: Apollo.MutationHookOptions<DeleteLessonAttachmentMutation, DeleteLessonAttachmentMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<DeleteLessonAttachmentMutation, DeleteLessonAttachmentMutationVariables>(DeleteLessonAttachmentDocument, options);
+      }
+export type DeleteLessonAttachmentMutationHookResult = ReturnType<typeof useDeleteLessonAttachmentMutation>;
+export type DeleteLessonAttachmentMutationResult = Apollo.MutationResult<DeleteLessonAttachmentMutation>;
+export type DeleteLessonAttachmentMutationOptions = Apollo.BaseMutationOptions<DeleteLessonAttachmentMutation, DeleteLessonAttachmentMutationVariables>;
 export const EnrollInCourseDocument = gql`
     mutation EnrollInCourse($input: EnrollInCourseInput!) {
   enrollInCourse(input: $input) {
@@ -1709,6 +1838,52 @@ export type GetMyEnrollmentsQueryHookResult = ReturnType<typeof useGetMyEnrollme
 export type GetMyEnrollmentsLazyQueryHookResult = ReturnType<typeof useGetMyEnrollmentsLazyQuery>;
 export type GetMyEnrollmentsSuspenseQueryHookResult = ReturnType<typeof useGetMyEnrollmentsSuspenseQuery>;
 export type GetMyEnrollmentsQueryResult = Apollo.QueryResult<GetMyEnrollmentsQuery, GetMyEnrollmentsQueryVariables>;
+export const LessonAttachmentsDocument = gql`
+    query LessonAttachments($lessonId: String!) {
+  lessonAttachments(lessonId: $lessonId) {
+    id
+    lessonId
+    fileName
+    fileUrl
+    fileSize
+    fileType
+    createdAt
+  }
+}
+    `;
+
+/**
+ * __useLessonAttachmentsQuery__
+ *
+ * To run a query within a React component, call `useLessonAttachmentsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useLessonAttachmentsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useLessonAttachmentsQuery({
+ *   variables: {
+ *      lessonId: // value for 'lessonId'
+ *   },
+ * });
+ */
+export function useLessonAttachmentsQuery(baseOptions: Apollo.QueryHookOptions<LessonAttachmentsQuery, LessonAttachmentsQueryVariables> & ({ variables: LessonAttachmentsQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<LessonAttachmentsQuery, LessonAttachmentsQueryVariables>(LessonAttachmentsDocument, options);
+      }
+export function useLessonAttachmentsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<LessonAttachmentsQuery, LessonAttachmentsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<LessonAttachmentsQuery, LessonAttachmentsQueryVariables>(LessonAttachmentsDocument, options);
+        }
+export function useLessonAttachmentsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<LessonAttachmentsQuery, LessonAttachmentsQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<LessonAttachmentsQuery, LessonAttachmentsQueryVariables>(LessonAttachmentsDocument, options);
+        }
+export type LessonAttachmentsQueryHookResult = ReturnType<typeof useLessonAttachmentsQuery>;
+export type LessonAttachmentsLazyQueryHookResult = ReturnType<typeof useLessonAttachmentsLazyQuery>;
+export type LessonAttachmentsSuspenseQueryHookResult = ReturnType<typeof useLessonAttachmentsSuspenseQuery>;
+export type LessonAttachmentsQueryResult = Apollo.QueryResult<LessonAttachmentsQuery, LessonAttachmentsQueryVariables>;
 export const GetLessonsByChapterDocument = gql`
     query GetLessonsByChapter($chapterId: String!) {
   lessonsByChapter(chapterId: $chapterId) {

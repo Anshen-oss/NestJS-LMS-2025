@@ -19,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   useGetUploadUrlMutation,
   useUpdateLessonContentMutation,
@@ -37,16 +38,18 @@ import {
   Code,
   Edit,
   Eye,
+  FileText,
   ImageIcon,
   Link as LinkIcon,
   Loader2,
+  Paperclip,
   Save,
   TableIcon,
-  Upload,
-  Video,
+  Upload
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { AttachmentUploader } from "./AttachmentUploader";
 
 const lowlight = createLowlight(common);
 
@@ -406,449 +409,409 @@ const handleSetYoutube = () => {
     return <div>Loading editor...</div>;
   }
 
-  return (
-    <div className="space-y-4">
-      {/* Section Publication Status */}
-      <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <Switch
-              checked={isPublishedLocal}
-              onCheckedChange={handleTogglePublish}
-              disabled={loading}
-            />
-            <Label className="cursor-pointer font-medium">
-              {isPublishedLocal ? "Published" : "Draft"}
-            </Label>
-          </div>
-          {isPublishedLocal ? (
-            <span className="px-2 py-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full">
-              ✓ Visible to students
-            </span>
-          ) : (
-            <span className="px-2 py-1 text-xs font-semibold text-gray-700 bg-gray-100 rounded-full">
-              ⚠ Not visible to students
-            </span>
-          )}
+return (
+  <div className="space-y-4">
+    {/* Section Publication Status - EN HAUT */}
+    <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <Switch
+            checked={isPublishedLocal}
+            onCheckedChange={handleTogglePublish}
+            disabled={loading}
+          />
+          <Label className="cursor-pointer font-medium">
+            {isPublishedLocal ? "Published" : "Draft"}
+          </Label>
         </div>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowPreview(!showPreview)}
-        >
-          {showPreview ? (
-            <>
-              <Edit className="w-4 h-4 mr-2" />
-              Edit
-            </>
-          ) : (
-            <>
-              <Eye className="w-4 h-4 mr-2" />
-              Preview
-            </>
-          )}
-        </Button>
+        {isPublishedLocal ? (
+          <span className="px-2 py-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full">
+            ✓ Visible to students
+          </span>
+        ) : (
+          <span className="px-2 py-1 text-xs font-semibold text-gray-700 bg-gray-100 rounded-full">
+            ⚠ Not visible to students
+          </span>
+        )}
       </div>
 
-      {/* Toolbar enrichie et éditeur OU Preview */}
-      {!showPreview ? (
-        <>
-          {/* Toolbar */}
-          <div className="flex items-center gap-1 p-2 border rounded-lg bg-muted/50 flex-wrap">
-            {/* Formatage de base */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => editor.chain().focus().toggleBold().run()}
-              className={editor.isActive("bold") ? "bg-muted" : ""}
-            >
-              <strong>B</strong>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => editor.chain().focus().toggleItalic().run()}
-              className={editor.isActive("italic") ? "bg-muted" : ""}
-            >
-              <em>I</em>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => editor.chain().focus().toggleStrike().run()}
-              className={editor.isActive("strike") ? "bg-muted" : ""}
-            >
-              <s>S</s>
-            </Button>
-
-            <div className="w-px h-6 bg-border mx-1" />
-
-            {/* Headings */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() =>
-                editor.chain().focus().toggleHeading({ level: 1 }).run()
-              }
-              className={
-                editor.isActive("heading", { level: 1 }) ? "bg-muted" : ""
-              }
-            >
-              H1
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() =>
-                editor.chain().focus().toggleHeading({ level: 2 }).run()
-              }
-              className={
-                editor.isActive("heading", { level: 2 }) ? "bg-muted" : ""
-              }
-            >
-              H2
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() =>
-                editor.chain().focus().toggleHeading({ level: 3 }).run()
-              }
-              className={
-                editor.isActive("heading", { level: 3 }) ? "bg-muted" : ""
-              }
-            >
-              H3
-            </Button>
-
-            <div className="w-px h-6 bg-border mx-1" />
-
-            {/* Listes */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => editor.chain().focus().toggleBulletList().run()}
-              className={editor.isActive("bulletList") ? "bg-muted" : ""}
-            >
-              • List
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => editor.chain().focus().toggleOrderedList().run()}
-              className={editor.isActive("orderedList") ? "bg-muted" : ""}
-            >
-              1. List
-            </Button>
-
-            <div className="w-px h-6 bg-border mx-1" />
-
-            {/* Lien */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleAddLink}
-              className={editor.isActive("link") ? "bg-muted" : ""}
-            >
-              <LinkIcon className="w-4 h-4" />
-            </Button>
-
-            {/* Code block */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-              className={editor.isActive("codeBlock") ? "bg-muted" : ""}
-            >
-              <Code className="w-4 h-4" />
-            </Button>
-
-            {/* Image */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowImageDialog(true)}
-            >
-              <ImageIcon className="w-4 h-4" />
-            </Button>
-            <DropdownMenu>
-  <DropdownMenuTrigger asChild>
-    <Button
-      variant="ghost"
-      size="sm"
-      className={editor.isActive("table") ? "bg-muted" : ""}
-    >
-      <TableIcon className="w-4 h-4" />
-    </Button>
-  </DropdownMenuTrigger>
-  <DropdownMenuContent align="start">
-    {/* Créer un tableau */}
-    <DropdownMenuItem
-      onClick={() =>
-        editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
-      }
-    >
-      Insert Table (3x3)
-    </DropdownMenuItem>
-
-    <DropdownMenuSeparator />
-
-    {/* Actions sur les colonnes */}
-    <DropdownMenuItem
-      onClick={() => editor.chain().focus().addColumnBefore().run()}
-      disabled={!editor.can().addColumnBefore()}
-    >
-      Add Column Before
-    </DropdownMenuItem>
-    <DropdownMenuItem
-      onClick={() => editor.chain().focus().addColumnAfter().run()}
-      disabled={!editor.can().addColumnAfter()}
-    >
-      Add Column After
-    </DropdownMenuItem>
-    <DropdownMenuItem
-      onClick={() => editor.chain().focus().deleteColumn().run()}
-      disabled={!editor.can().deleteColumn()}
-    >
-      Delete Column
-    </DropdownMenuItem>
-
-    <DropdownMenuSeparator />
-
-    {/* Actions sur les lignes */}
-    <DropdownMenuItem
-      onClick={() => editor.chain().focus().addRowBefore().run()}
-      disabled={!editor.can().addRowBefore()}
-    >
-      Add Row Before
-    </DropdownMenuItem>
-    <DropdownMenuItem
-      onClick={() => editor.chain().focus().addRowAfter().run()}
-      disabled={!editor.can().addRowAfter()}
-    >
-      Add Row After
-    </DropdownMenuItem>
-    <DropdownMenuItem
-      onClick={() => editor.chain().focus().deleteRow().run()}
-      disabled={!editor.can().deleteRow()}
-    >
-      Delete Row
-    </DropdownMenuItem>
-
-    <DropdownMenuSeparator />
-
-    {/* Supprimer le tableau */}
-    <DropdownMenuItem
-      onClick={() => editor.chain().focus().deleteTable().run()}
-      disabled={!editor.can().deleteTable()}
-      className="text-destructive"
-    >
-      Delete Table
-    </DropdownMenuItem>
-  </DropdownMenuContent>
-</DropdownMenu>
-            {/* 👇 NOUVEAU : Vidéo YouTube */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleAddYoutube}
-            >
-              <Video className="w-4 h-4" />
-            </Button>
-
-            <div className="flex-1" />
-
-            {/* Bouton sauvegarder */}
-            <Button onClick={handleSave} disabled={loading} size="sm">
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save
-                </>
-              )}
-            </Button>
-          </div>
-
-          {/* Zone d'édition */}
-          <div className="border rounded-lg bg-white">
-            <EditorContent editor={editor} />
-          </div>
-        </>
-      ) : (
-        <>
-          {/* Mode Preview */}
-          <div className="border rounded-lg bg-white p-8">
-            <div
-              className="prose prose-lg max-w-none
-               prose-ul:list-disc prose-ul:pl-6
-               prose-ol:list-decimal prose-ol:pl-6
-               prose-li:ml-0"
-            >
-              <div
-                dangerouslySetInnerHTML={{ __html: editor?.getHTML() || "" }}
-              />
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Dialog pour ajouter un lien */}
-      <Dialog open={showLinkDialog} onOpenChange={setShowLinkDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Link</DialogTitle>
-            <DialogDescription>
-              Enter the URL you want to link to
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="url">URL</Label>
-              <Input
-                id="url"
-                placeholder="https://example.com"
-                value={linkUrl}
-                onChange={(e) => setLinkUrl(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleSetLink();
-                  }
-                }}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowLinkDialog(false);
-                setLinkUrl("");
-              }}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleSetLink}>Add Link</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog pour uploader une image */}
-      <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Upload Image</DialogTitle>
-            <DialogDescription>
-              Select an image to insert into your lesson content
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="image">Image File</Label>
-              <Input
-                id="image"
-                type="file"
-                accept="image/*"
-                onChange={handleFileSelect}
-                disabled={uploadingImage}
-              />
-              <p className="text-xs text-muted-foreground">
-                Max size: 5MB. Formats: JPG, PNG, GIF, WebP
-              </p>
-            </div>
-
-            {/* Prévisualisation */}
-            {imagePreview && (
-              <div className="border rounded-lg p-4">
-                <p className="text-sm font-medium mb-2">Preview:</p>
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="max-w-full h-auto rounded-lg"
-                />
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowImageDialog(false);
-                setSelectedFile(null);
-                setImagePreview(null);
-              }}
-              disabled={uploadingImage}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleUploadImage}
-              disabled={!selectedFile || uploadingImage}
-            >
-              {uploadingImage ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                <>
-                  <Upload className="mr-2 h-4 w-4" />
-                  Upload
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      {/* Dialog pour ajouter une vidéo YouTube */}
-<Dialog open={showYoutubeDialog} onOpenChange={setShowYoutubeDialog}>
-  <DialogContent>
-    <DialogHeader>
-      <DialogTitle>Add YouTube Video</DialogTitle>
-      <DialogDescription>
-        Paste a YouTube video URL to embed it in your lesson
-      </DialogDescription>
-    </DialogHeader>
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="youtube-url">YouTube URL</Label>
-        <Input
-          id="youtube-url"
-          placeholder="https://www.youtube.com/watch?v=..."
-          value={youtubeUrl}
-          onChange={(e) => setYoutubeUrl(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              handleSetYoutube();
-            }
-          }}
-        />
-        <p className="text-xs text-muted-foreground">
-          Supported formats: youtube.com/watch?v=, youtu.be/, youtube.com/embed/
-        </p>
-      </div>
-    </div>
-    <DialogFooter>
       <Button
         variant="outline"
-        onClick={() => {
-          setShowYoutubeDialog(false);
-          setYoutubeUrl("");
-        }}
+        size="sm"
+        onClick={() => setShowPreview(!showPreview)}
       >
-        Cancel
+        {showPreview ? (
+          <>
+            <Edit className="w-4 h-4 mr-2" />
+            Edit
+          </>
+        ) : (
+          <>
+            <Eye className="w-4 h-4 mr-2" />
+            Preview
+          </>
+        )}
       </Button>
-      <Button onClick={handleSetYoutube} disabled={!youtubeUrl}>
-        Add Video
-      </Button>
-    </DialogFooter>
-  </DialogContent>
-</Dialog>
     </div>
-  );
+
+    {/* Tabs Content et Attachments */}
+    <Tabs defaultValue="content" className="w-full">
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="content">
+          <FileText className="w-4 h-4 mr-2" />
+          Content
+        </TabsTrigger>
+        <TabsTrigger value="attachments">
+          <Paperclip className="w-4 h-4 mr-2" />
+          Attachments
+        </TabsTrigger>
+      </TabsList>
+
+      {/* TAB CONTENT */}
+      <TabsContent value="content" className="space-y-4 mt-4">
+        {!showPreview ? (
+          <>
+            {/* Toolbar */}
+            <div className="flex items-center gap-1 p-2 border rounded-lg bg-muted/50 flex-wrap">
+              {/* Formatage de base */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => editor.chain().focus().toggleBold().run()}
+                className={editor.isActive("bold") ? "bg-muted" : ""}
+              >
+                <strong>B</strong>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => editor.chain().focus().toggleItalic().run()}
+                className={editor.isActive("italic") ? "bg-muted" : ""}
+              >
+                <em>I</em>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => editor.chain().focus().toggleStrike().run()}
+                className={editor.isActive("strike") ? "bg-muted" : ""}
+              >
+                <s>S</s>
+              </Button>
+
+              <div className="w-px h-6 bg-border mx-1" />
+
+              {/* Headings */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() =>
+                  editor.chain().focus().toggleHeading({ level: 1 }).run()
+                }
+                className={
+                  editor.isActive("heading", { level: 1 }) ? "bg-muted" : ""
+                }
+              >
+                H1
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() =>
+                  editor.chain().focus().toggleHeading({ level: 2 }).run()
+                }
+                className={
+                  editor.isActive("heading", { level: 2 }) ? "bg-muted" : ""
+                }
+              >
+                H2
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() =>
+                  editor.chain().focus().toggleHeading({ level: 3 }).run()
+                }
+                className={
+                  editor.isActive("heading", { level: 3 }) ? "bg-muted" : ""
+                }
+              >
+                H3
+              </Button>
+
+              <div className="w-px h-6 bg-border mx-1" />
+
+              {/* Listes */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => editor.chain().focus().toggleBulletList().run()}
+                className={editor.isActive("bulletList") ? "bg-muted" : ""}
+              >
+                • List
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => editor.chain().focus().toggleOrderedList().run()}
+                className={editor.isActive("orderedList") ? "bg-muted" : ""}
+              >
+                1. List
+              </Button>
+
+              <div className="w-px h-6 bg-border mx-1" />
+
+              {/* Lien */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleAddLink}
+                className={editor.isActive("link") ? "bg-muted" : ""}
+              >
+                <LinkIcon className="w-4 h-4" />
+              </Button>
+
+              {/* Code block */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+                className={editor.isActive("codeBlock") ? "bg-muted" : ""}
+              >
+                <Code className="w-4 h-4" />
+              </Button>
+
+              {/* Image */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowImageDialog(true)}
+              >
+                <ImageIcon className="w-4 h-4" />
+              </Button>
+
+              {/* Table */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={editor.isActive("table") ? "bg-muted" : ""}
+                  >
+                    <TableIcon className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem
+                    onClick={() =>
+                      editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
+                    }
+                  >
+                    Insert Table (3x3)
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => editor.chain().focus().addColumnBefore().run()}
+                    disabled={!editor.can().addColumnBefore()}
+                  >
+                    Add Column Before
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => editor.chain().focus().addColumnAfter().run()}
+                    disabled={!editor.can().addColumnAfter()}
+                  >
+                    Add Column After
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => editor.chain().focus().deleteColumn().run()}
+                    disabled={!editor.can().deleteColumn()}
+                  >
+                    Delete Column
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => editor.chain().focus().addRowBefore().run()}
+                    disabled={!editor.can().addRowBefore()}
+                  >
+                    Add Row Before
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => editor.chain().focus().addRowAfter().run()}
+                    disabled={!editor.can().addRowAfter()}
+                  >
+                    Add Row After
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => editor.chain().focus().deleteRow().run()}
+                    disabled={!editor.can().deleteRow()}
+                  >
+                    Delete Row
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => editor.chain().focus().deleteTable().run()}
+                    disabled={!editor.can().deleteTable()}
+                    className="text-destructive"
+                  >
+                    Delete Table
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <div className="flex-1" />
+
+              {/* Bouton Save */}
+              <Button onClick={handleSave} disabled={loading} size="sm">
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Save
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Zone d'édition */}
+            <div className="border rounded-lg bg-white min-h-[400px]">
+              <EditorContent editor={editor} />
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Mode Preview */}
+            <div className="border rounded-lg bg-white p-8 min-h-[400px]">
+              <div
+                className="prose prose-lg max-w-none
+                 prose-ul:list-disc prose-ul:pl-6
+                 prose-ol:list-decimal prose-ol:pl-6
+                 prose-li:ml-0"
+              >
+                <div
+                  dangerouslySetInnerHTML={{ __html: editor?.getHTML() || "" }}
+                />
+              </div>
+            </div>
+          </>
+        )}
+      </TabsContent>
+
+      {/* TAB ATTACHMENTS */}
+      <TabsContent value="attachments" className="mt-4">
+        <AttachmentUploader lessonId={lessonId} />
+      </TabsContent>
+    </Tabs>
+
+    {/* Dialog pour ajouter un lien */}
+    <Dialog open={showLinkDialog} onOpenChange={setShowLinkDialog}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add Link</DialogTitle>
+          <DialogDescription>
+            Enter the URL you want to link to
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="url">URL</Label>
+            <Input
+              id="url"
+              placeholder="https://example.com"
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleSetLink();
+                }
+              }}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setShowLinkDialog(false);
+              setLinkUrl("");
+            }}
+          >
+            Cancel
+          </Button>
+          <Button onClick={handleSetLink}>Add Link</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    {/* Dialog pour uploader une image */}
+    <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Upload Image</DialogTitle>
+          <DialogDescription>
+            Select an image to insert into your lesson content
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="image">Image File</Label>
+            <Input
+              id="image"
+              type="file"
+              accept="image/*"
+              onChange={handleFileSelect}
+              disabled={uploadingImage}
+            />
+            <p className="text-xs text-muted-foreground">
+              Max size: 5MB. Formats: JPG, PNG, GIF, WebP
+            </p>
+          </div>
+
+          {imagePreview && (
+            <div className="border rounded-lg p-4">
+              <p className="text-sm font-medium mb-2">Preview:</p>
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="max-w-full h-auto rounded-lg"
+              />
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setShowImageDialog(false);
+              setSelectedFile(null);
+              setImagePreview(null);
+            }}
+            disabled={uploadingImage}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleUploadImage}
+            disabled={!selectedFile || uploadingImage}
+          >
+            {uploadingImage ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Uploading...
+              </>
+            ) : (
+              <>
+                <Upload className="mr-2 h-4 w-4" />
+                Upload
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  </div>
+);
 }

@@ -102,6 +102,14 @@ input CreateCourseInput {
   title: String!
 }
 
+input CreateLessonAttachmentInput {
+  fileName: String!
+  fileSize: Int!
+  fileType: String!
+  fileUrl: String!
+  lessonId: String!
+}
+
 input CreateLessonInput {
   description: String
   duration: Int
@@ -160,6 +168,17 @@ type Lesson {
   videoUrl: String
 }
 
+type LessonAttachment {
+  createdAt: DateTime!
+  fileName: String!
+  fileSize: Int!
+  fileType: String!
+  fileUrl: String!
+  id: String!
+  lessonId: String!
+  updatedAt: DateTime!
+}
+
 input LessonPositionInput {
   id: String!
   position: Int!
@@ -187,10 +206,12 @@ type Mutation {
   createChapter(input: CreateChapterInput!): Chapter!
   createCourse(input: CreateCourseInput!): Course!
   createLesson(chapterId: String!, input: CreateLessonInput!): Lesson!
+  createLessonAttachment(input: CreateLessonAttachmentInput!): LessonAttachment!
   deleteChapter(id: String!): Boolean!
   deleteCourse(id: String!): Boolean!
   deleteFile(url: String!): Boolean!
   deleteLesson(id: String!): Boolean!
+  deleteLessonAttachment(id: String!): Boolean!
   enrollInCourse(input: EnrollInCourseInput!): EnrollmentResponse!
   getUploadUrl(contentType: String!, fileName: String!): UploadUrlResponse!
   login(input: LoginInput!): AuthPayload!
@@ -215,6 +236,7 @@ type Query {
   hello: String!
   isEnrolled(courseId: String!): Boolean!
   lesson(id: String!): Lesson!
+  lessonAttachments(lessonId: String!): [LessonAttachment!]!
   lessonsByChapter(chapterId: String!): [Lesson!]!
   me: User!
   myCourses: [Course!]!

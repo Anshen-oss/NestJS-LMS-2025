@@ -191,6 +191,8 @@ model Lesson {
   chapterId String
   chapter   Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
+   attachments LessonAttachment[]  // 👈 NOUVEAU
+
   // ✅ AJOUTE CETTE LIGNE
   lessonProgress LessonProgress[]
 
@@ -243,4 +245,20 @@ model Enrollment {
   @@index([userId])
   @@index([courseId])
   @@index([status])
+}
+
+model LessonAttachment {
+  id        String   @id @default(cuid())
+  lessonId  String
+  lesson    Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  fileName  String
+  fileUrl   String
+  fileSize  Int      // Taille en bytes
+  fileType  String   // MIME type (application/pdf, etc.)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([lessonId])
 }

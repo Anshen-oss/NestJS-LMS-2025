@@ -1,0 +1,11 @@
+mutation CreateLessonAttachment($input: CreateLessonAttachmentInput!) {
+ createLessonAttachment(input: $input) {
+      id
+    lessonId
+    fileName
+    fileUrl
+    fileSize
+    fileType
+    createdAt
+ }
+}
