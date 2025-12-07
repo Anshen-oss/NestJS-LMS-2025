@@ -1,7 +1,15 @@
 "use client";
 
+import { LessonEditor } from "@/components/admin/lessons/LessonEditor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription, // 👈 NOUVEAU
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +24,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
   Clock,
+  FileEdit,
   GripVertical,
   Loader2,
   MoreVertical,
@@ -32,6 +41,8 @@ interface Lesson {
   id: string;
   title: string;
   description?: string | null;
+  content?: string | null; // 👈 NOUVEAU
+  isPublished?: boolean; // 👈 NOUVEAU
   videoUrl?: string | null;
   duration?: number | null;
   position: number;
@@ -45,6 +56,7 @@ interface LessonItemProps {
 
 export function LessonItem({ lesson, onUpdate }: LessonItemProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [isEditingContent, setIsEditingContent] = useState(false); // 👈 NOUVEAU
   const [deleteLesson, { loading: deleting }] = useDeleteLessonMutation();
 
   // Sortable hook
@@ -104,87 +116,118 @@ export function LessonItem({ lesson, onUpdate }: LessonItemProps) {
 
   // Mode affichage normal
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="group flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-    >
-      {/* Drag Handle */}
-      <button
-        {...attributes}
-        {...listeners}
-        className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+    <>
+      <div
+        ref={setNodeRef}
+        style={style}
+        className="group flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
       >
-        <GripVertical className="w-4 h-4" />
-      </button>
+        {/* Drag Handle */}
+        <button
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          <GripVertical className="w-4 h-4" />
+        </button>
 
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-sm font-medium">
-            {lesson.position}. {lesson.title}
-          </span>
-          {lesson.isFree && (
-            <Badge variant="secondary" className="text-xs">
-              <Unlock className="w-3 h-3 mr-1" />
-              Free
-            </Badge>
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-sm font-medium">
+              {lesson.position}. {lesson.title}
+            </span>
+            {lesson.isFree && (
+              <Badge variant="secondary" className="text-xs">
+                <Unlock className="w-3 h-3 mr-1" />
+                Free
+              </Badge>
+            )}
+          </div>
+
+          {lesson.description && (
+            <p className="text-sm text-muted-foreground line-clamp-1">
+              {lesson.description}
+            </p>
           )}
+
+          <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+            {lesson.videoUrl && (
+              <span className="flex items-center gap-1">
+                <PlayCircle className="w-3 h-3" />
+                Video
+              </span>
+            )}
+            {lesson.duration && (
+              <span className="flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                {formatDuration(lesson.duration)}
+              </span>
+            )}
+          </div>
         </div>
 
-        {lesson.description && (
-          <p className="text-sm text-muted-foreground line-clamp-1">
-            {lesson.description}
-          </p>
-        )}
-
-        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-          {lesson.videoUrl && (
-            <span className="flex items-center gap-1">
-              <PlayCircle className="w-3 h-3" />
-              Video
-            </span>
-          )}
-          {lesson.duration && (
-            <span className="flex items-center gap-1">
-              <Clock className="w-3 h-3" />
-              {formatDuration(lesson.duration)}
-            </span>
-          )}
-        </div>
+        {/* Actions */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="opacity-0 group-hover:opacity-100 transition-opacity"
+              disabled={deleting}
+            >
+              {deleting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <MoreVertical className="w-4 h-4" />
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setIsEditing(true)}>
+              <Pencil className="w-4 h-4 mr-2" />
+              Edit Info
+            </DropdownMenuItem>
+            {/* 👇 NOUVEAU : Option pour éditer le contenu */}
+            <DropdownMenuItem onClick={() => setIsEditingContent(true)}>
+              <FileEdit className="w-4 h-4 mr-2" />
+              Edit Content
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={handleDelete}
+              className="text-destructive"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
-      {/* Actions */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="opacity-0 group-hover:opacity-100 transition-opacity"
-            disabled={deleting}
-          >
-            {deleting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <MoreVertical className="w-4 h-4" />
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => setIsEditing(true)}>
-            <Pencil className="w-4 h-4 mr-2" />
-            Edit
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={handleDelete}
-            className="text-destructive"
-          >
-            <Trash2 className="w-4 h-4 mr-2" />
-            Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+      {/* 👇 NOUVEAU : Dialog pour éditer le contenu */}
+{/* Dialog pour éditer le contenu */}
+<Dialog open={isEditingContent} onOpenChange={setIsEditingContent}>
+  <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+    <DialogHeader>
+      <DialogTitle>Edit Content: {lesson.title}</DialogTitle>
+      {/* 👇 NOUVEAU : Ajoute une description */}
+      <DialogDescription>
+        Edit the lesson content using the rich text editor below.
+      </DialogDescription>
+    </DialogHeader>
+<div className="flex-1 overflow-y-auto pr-2">
+  {lesson.id && (
+    <LessonEditor
+      lessonId={lesson.id}
+      initialContent={lesson.content || ""}
+      isPublished={lesson.isPublished ?? false}
+      onSave={onUpdate}
+    />
+  )}
+</div>
+  </DialogContent>
+</Dialog>
+    </>
   );
 }

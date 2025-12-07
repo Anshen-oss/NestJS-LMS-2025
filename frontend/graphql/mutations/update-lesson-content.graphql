@@ -1,0 +1,9 @@
+mutation UpdateLessonContent($input: UpdateLessonContentInput!) {
+  updateLessonContent(input: $input) {
+    id
+    title
+    content
+    isPublished
+    updatedAt
+  }
+}

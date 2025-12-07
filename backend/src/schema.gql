@@ -102,6 +102,14 @@ input CreateCourseInput {
   title: String!
 }
 
+input CreateLessonAttachmentInput {
+  fileName: String!
+  fileSize: Int!
+  fileType: String!
+  fileUrl: String!
+  lessonId: String!
+}
+
 input CreateLessonInput {
   description: String
   duration: Int
@@ -150,6 +158,7 @@ type Lesson {
   id: ID!
   isCompleted: Boolean
   isFree: Boolean!
+  isPublished: Boolean!
   lessonProgress: [LessonProgress!]
   position: Int!
   thumbnailKey: String
@@ -157,6 +166,17 @@ type Lesson {
   updatedAt: DateTime!
   videoKey: String
   videoUrl: String
+}
+
+type LessonAttachment {
+  createdAt: DateTime!
+  fileName: String!
+  fileSize: Int!
+  fileType: String!
+  fileUrl: String!
+  id: String!
+  lessonId: String!
+  updatedAt: DateTime!
 }
 
 input LessonPositionInput {
@@ -186,10 +206,12 @@ type Mutation {
   createChapter(input: CreateChapterInput!): Chapter!
   createCourse(input: CreateCourseInput!): Course!
   createLesson(chapterId: String!, input: CreateLessonInput!): Lesson!
+  createLessonAttachment(input: CreateLessonAttachmentInput!): LessonAttachment!
   deleteChapter(id: String!): Boolean!
   deleteCourse(id: String!): Boolean!
   deleteFile(url: String!): Boolean!
   deleteLesson(id: String!): Boolean!
+  deleteLessonAttachment(id: String!): Boolean!
   enrollInCourse(input: EnrollInCourseInput!): EnrollmentResponse!
   getUploadUrl(contentType: String!, fileName: String!): UploadUrlResponse!
   login(input: LoginInput!): AuthPayload!
@@ -201,6 +223,7 @@ type Mutation {
   updateChapter(input: UpdateChapterInput!): Chapter!
   updateCourse(input: UpdateCourseInput!): Course!
   updateLesson(id: String!, input: UpdateLessonInput!): Lesson!
+  updateLessonContent(input: UpdateLessonContentInput!): Lesson!
   updateLessonProgress(input: UpdateProgressInput!, lessonId: String!): LessonProgress!
 }
 
@@ -213,6 +236,7 @@ type Query {
   hello: String!
   isEnrolled(courseId: String!): Boolean!
   lesson(id: String!): Lesson!
+  lessonAttachments(lessonId: String!): [LessonAttachment!]!
   lessonsByChapter(chapterId: String!): [Lesson!]!
   me: User!
   myCourses: [Course!]!
@@ -259,6 +283,12 @@ input UpdateCourseInput {
   status: CourseStatus
   stripePriceId: String
   title: String
+}
+
+input UpdateLessonContentInput {
+  content: String
+  isPublished: Boolean
+  lessonId: String!
 }
 
 input UpdateLessonInput {

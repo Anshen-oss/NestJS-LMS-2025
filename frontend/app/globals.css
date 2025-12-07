@@ -221,3 +221,93 @@
   margin-top: 1.5rem !important;
   margin-bottom: 1.5rem !important;
 }
+
+/* Styles pour les listes à puces */
+.prose ul {
+  @apply list-disc pl-6 space-y-2;
+}
+
+.prose ul li {
+  @apply ml-0;
+}
+
+/* Styles pour les listes numérotées */
+.prose ol {
+  @apply list-decimal pl-6 space-y-2;
+}
+
+.prose ol li {
+  @apply ml-0;
+}
+
+/* Styles pour les listes imbriquées */
+.prose ul ul,
+.prose ol ul {
+  @apply list-disc pl-6 mt-2;
+}
+
+.prose ul ol,
+.prose ol ol {
+  @apply list-decimal pl-6 mt-2;
+}
+
+/* Styles pour les blocs de code dans le preview */
+.prose pre {
+  @apply rounded-lg bg-gray-900 text-gray-100 p-4;
+}
+
+.prose pre code {
+  @apply bg-transparent text-gray-100 font-mono text-sm;
+}
+
+.prose code {
+  @apply bg-gray-100 text-gray-900 px-1.5 py-0.5 rounded text-sm font-mono;
+}
+
+/* Styles pour les images */
+.prose img {
+  @apply rounded-lg shadow-lg my-6;
+}
+
+/* Styles pour les liens */
+.prose a {
+  @apply text-blue-600 hover:text-blue-800 underline;
+}
+
+/* Styles pour les vidéos YouTube responsive */
+.prose iframe[src*="youtube.com"],
+.prose iframe[src*="youtube-nocookie.com"] {
+  @apply w-full aspect-video rounded-lg my-6;
+}
+
+/* Container responsive pour les iframes */
+.prose > div:has(iframe) {
+  @apply relative w-full;
+  padding-bottom: 56.25%; /* Ratio 16:9 */
+}
+
+.prose > div:has(iframe) iframe {
+  @apply absolute top-0 left-0 w-full h-full;
+}
+
+/* Styles pour les tableaux */
+.prose table {
+  @apply border-collapse table-auto w-full my-6;
+}
+
+.prose th {
+  @apply border border-gray-300 bg-gray-100 font-bold p-3 text-left;
+}
+
+.prose td {
+  @apply border border-gray-300 p-3;
+}
+
+.prose tr:hover {
+  @apply bg-gray-50;
+}
+
+/* Sélection de cellule active dans l'éditeur */
+.ProseMirror .selectedCell {
+  @apply bg-blue-50;
+}

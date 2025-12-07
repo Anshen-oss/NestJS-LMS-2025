@@ -1,13 +1,12 @@
 'use client';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { GET_MY_ENROLLMENTS } from '@/lib/__TODELETEgraphql/enrollment';
-import { useQuery } from '@apollo/client';
+import { useGetMyEnrollmentsQuery } from '@/lib/generated/graphql';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { EnrolledCourseCard } from './EnrolledCourseCard';
 
 export function DashboardEnrollments() {
-  const { data, loading, error } = useQuery(GET_MY_ENROLLMENTS);
+  const { data, loading, error } = useGetMyEnrollmentsQuery();
 
     // État de chargement
     if(loading) {

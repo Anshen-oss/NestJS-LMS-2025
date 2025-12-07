@@ -1,0 +1,13 @@
+query GetAllCourses {
+  courses {
+    id
+    title
+    slug
+    smallDescription
+    price
+    duration
+    level
+    category
+    imageUrl
+  }
+}

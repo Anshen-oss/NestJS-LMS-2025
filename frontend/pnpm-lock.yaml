@@ -83,6 +83,9 @@ importers:
       '@radix-ui/react-tabs':
         specifier: ^1.1.12
         version: 1.1.13(@types/react-dom@19.2.3(@types/react@19.2.3))(@types/react@19.2.3)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-toast':
+        specifier: ^1.2.15
+        version: 1.2.15(@types/react-dom@19.2.3(@types/react@19.2.3))(@types/react@19.2.3)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@radix-ui/react-toggle':
         specifier: ^1.1.9
         version: 1.1.10(@types/react-dom@19.2.3(@types/react@19.2.3))(@types/react@19.2.3)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -107,6 +110,9 @@ importers:
       '@tiptap/core':
         specifier: 3.3.0
         version: 3.3.0(@tiptap/pm@3.3.0)
+      '@tiptap/extension-code-block-lowlight':
+        specifier: ^3.13.0
+        version: 3.13.0(@tiptap/core@3.3.0(@tiptap/pm@3.3.0))(@tiptap/extension-code-block@2.27.1(@tiptap/core@3.3.0(@tiptap/pm@3.3.0))(@tiptap/pm@3.3.0))(@tiptap/pm@3.3.0)(highlight.js@11.11.1)(lowlight@3.3.0)
       '@tiptap/extension-image':
         specifier: 2.8.0
         version: 2.8.0(@tiptap/core@3.3.0(@tiptap/pm@3.3.0))
@@ -116,9 +122,24 @@ importers:
       '@tiptap/extension-list':
         specifier: 3.3.0
         version: 3.3.0(@tiptap/core@3.3.0(@tiptap/pm@3.3.0))(@tiptap/pm@3.3.0)
+      '@tiptap/extension-table':
+        specifier: ^3.13.0
+        version: 3.13.0(@tiptap/core@3.3.0(@tiptap/pm@3.3.0))(@tiptap/pm@3.3.0)
+      '@tiptap/extension-table-cell':
+        specifier: ^3.13.0
+        version: 3.13.0(@tiptap/extension-table@3.13.0(@tiptap/core@3.3.0(@tiptap/pm@3.3.0))(@tiptap/pm@3.3.0))
+      '@tiptap/extension-table-header':
+        specifier: ^3.13.0
+        version: 3.13.0(@tiptap/extension-table@3.13.0(@tiptap/core@3.3.0(@tiptap/pm@3.3.0))(@tiptap/pm@3.3.0))
+      '@tiptap/extension-table-row':
+        specifier: ^3.13.0
+        version: 3.13.0(@tiptap/extension-table@3.13.0(@tiptap/core@3.3.0(@tiptap/pm@3.3.0))(@tiptap/pm@3.3.0))
       '@tiptap/extension-text-align':
         specifier: 2.8.0
         version: 2.8.0(@tiptap/core@3.3.0(@tiptap/pm@3.3.0))
+      '@tiptap/extension-youtube':
+        specifier: 2.1.13
+        version: 2.1.13(@tiptap/core@3.3.0(@tiptap/pm@3.3.0))
       '@tiptap/extensions':
         specifier: 3.3.0
         version: 3.3.0(@tiptap/core@3.3.0(@tiptap/pm@3.3.0))(@tiptap/pm@3.3.0)
@@ -152,6 +173,9 @@ importers:
       input-otp:
         specifier: ^1.4.2
         version: 1.4.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      lowlight:
+        specifier: ^3.3.0
+        version: 3.3.0
       lucide-react:
         specifier: ^0.525.0
         version: 0.525.0(react@19.2.0)
@@ -2042,6 +2066,19 @@ packages:
       '@types/react-dom':
         optional: true
 
+  '@radix-ui/react-toast@1.2.15':
+    resolution: {integrity: sha512-3OSz3TacUWy4WtOXV38DggwxoqJK4+eDkNMl5Z/MJZaoUPaP4/9lf81xXMe1I2ReTAptverZUpbPY4wWwWyL5g==}
+    peerDependencies:
+      '@types/react': '*'
+      '@types/react-dom': '*'
+      react: ^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc
+      react-dom: ^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      '@types/react-dom':
+        optional: true
+
   '@radix-ui/react-toggle-group@1.1.11':
     resolution: {integrity: sha512-5umnS0T8JQzQT6HbPyO7Hh9dgd82NmS36DQr+X/YJ9ctFNCiiQd6IJAYYZ33LUwm8M+taCz5t2ui29fHZc4Y6Q==}
     peerDependencies:
@@ -2613,6 +2650,15 @@ packages:
     peerDependencies:
       '@tiptap/core': ^2.7.0
 
+  '@tiptap/extension-code-block-lowlight@3.13.0':
+    resolution: {integrity: sha512-CesjEVUkDelSfRxauTkcrrVzzQAxEp5HYuGIXZtoFDmt2F2lYimlgJyvSxIbRqEw8sFQxvTEKlBg0EtF/BvCJg==}
+    peerDependencies:
+      '@tiptap/core': ^3.13.0
+      '@tiptap/extension-code-block': ^3.13.0
+      '@tiptap/pm': ^3.13.0
+      highlight.js: ^11
+      lowlight: ^2 || ^3
+
   '@tiptap/extension-code-block@2.27.1':
     resolution: {integrity: sha512-wCI5VIOfSAdkenCWFvh4m8FFCJ51EOK+CUmOC/PWUjyo2Dgn8QC8HMi015q8XF7886T0KvYVVoqxmxJSUDAYNg==}
     peerDependencies:
@@ -2711,6 +2757,27 @@ packages:
     peerDependencies:
       '@tiptap/core': ^2.7.0
 
+  '@tiptap/extension-table-cell@3.13.0':
+    resolution: {integrity: sha512-dBOPeLe2NqymZI8reS2yZRIcgfIYHudCq4lDWZBJ5NiMvoy0b/fVe1qYSP4EcfBQMpfgAP0E05bMB3C7p1kmkw==}
+    peerDependencies:
+      '@tiptap/extension-table': ^3.13.0
+
+  '@tiptap/extension-table-header@3.13.0':
+    resolution: {integrity: sha512-ZA5lhcek0VlKupqj3WFgE6bj5vNRmxcpDqjYc6RWaxuva4dYfEQSqdlG+3a53Sr53le0grfBpolM8zJFCVYrcw==}
+    peerDependencies:
+      '@tiptap/extension-table': ^3.13.0
+
+  '@tiptap/extension-table-row@3.13.0':
+    resolution: {integrity: sha512-FdsMTIBNleZtWJEhXE/PBxkB8L9YJtnKs7YZNesLKqLn6/sWZl+X5e5SAAN/N3DLOEAwNCa/m0C3A1DWGNz/tw==}
+    peerDependencies:
+      '@tiptap/extension-table': ^3.13.0
+
+  '@tiptap/extension-table@3.13.0':
+    resolution: {integrity: sha512-LcH9KE4QBUJ6IPwt1Uo5iU7zatFjUUvXbctIu2fKQ9nqJ7nNSFxRhkNyporVFkTWYH7/rb0qMoF1VxSUGefG5w==}
+    peerDependencies:
+      '@tiptap/core': ^3.13.0
+      '@tiptap/pm': ^3.13.0
+
   '@tiptap/extension-text-align@2.8.0':
     resolution: {integrity: sha512-Y6s/DF+P4lxpAnvSrnmt4xGwQT/AJJJm0aA1wu5GuPKpAQ+K4C7K6rE6uGNAXtR39GlewC7KdmcvA+CYhL8xlw==}
     peerDependencies:
@@ -2720,6 +2787,11 @@ packages:
     resolution: {integrity: sha512-a4GCT+GZ9tUwl82F4CEum9/+WsuW0/De9Be/NqrMmi7eNfAwbUTbLCTFU0gEvv25WMHCoUzaeNk/qGmzeVPJ1Q==}
     peerDependencies:
       '@tiptap/core': ^2.7.0
+
+  '@tiptap/extension-youtube@2.1.13':
+    resolution: {integrity: sha512-9buJZ6vZjqmaPg94Udct7BdFCpf+ijLcChMAkJ0hMnWFqpA+bkP/hBKg0ShPjfApYHByuyWO3aSH/s4RkljE9Q==}
+    peerDependencies:
+      '@tiptap/core': ^2.0.0
 
   '@tiptap/extensions@3.3.0':
     resolution: {integrity: sha512-Oey5aBg02FQHjldfjn6ebnzpH3x1Q9mPSgSuXNCjDQ51hak7LCGsVFhH+X9PrZtUALlEpEQWNcREgPBwqGM5ow==}
@@ -2787,6 +2859,9 @@ packages:
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
 
+  '@types/hast@3.0.4':
+    resolution: {integrity: sha512-WPs+bbQw5aCj+x6laNGWLH3wviHtoCv/P3+otBhbOhJgG8qtpdAMlTCxLtsTWA7LH1Oh/bFCHsBn0TPS5m30EQ==}
+
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
 
@@ -2812,6 +2887,9 @@ packages:
 
   '@types/react@19.2.3':
     resolution: {integrity: sha512-k5dJVszUiNr1DSe8Cs+knKR6IrqhqdhpUwzqhkS8ecQTSf3THNtbfIp/umqHMpX2bv+9dkx3fwDv/86LcSfvSg==}
+
+  '@types/unist@3.0.3':
+    resolution: {integrity: sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q==}
 
   '@types/use-sync-external-store@0.0.6':
     resolution: {integrity: sha512-zFDAD+tlpf2r4asuHEj0XH6pY6i0g5NeAHPn+15wk3BV6JA69eERFXC1gyGThDkVa1zCyKr5jox1+2LbV/AMLg==}
@@ -3420,6 +3498,10 @@ packages:
     resolution: {integrity: sha512-cW3gggJ28HZ/LExwxP2B++aiKxhJXMSIt9K48FOXQkm+vuG5gyatXnLsONRJdzO/7VfjDIiaOOa/bs4l464Lwg==}
     engines: {node: '>=4'}
 
+  dequal@2.0.3:
+    resolution: {integrity: sha512-0je+qPKHEMohvfRTCEo3CrPG6cAzAYgmzKyxRiYSSDkS6eGJdyVJm7WaYA5ECaAD9wLB2T4EEeymA5aFVcYXCA==}
+    engines: {node: '>=6'}
+
   detect-indent@6.1.0:
     resolution: {integrity: sha512-reYkTUJAZb9gUuZ2RvVCNhVHdg62RHnJ7WJl8ftMi4diZ6NWlciOzQN88pUhSELEwflJht4oQDv0F0BMlwaYtA==}
     engines: {node: '>=8'}
@@ -3430,6 +3512,9 @@ packages:
 
   detect-node-es@1.1.0:
     resolution: {integrity: sha512-ypdmJU/TbBby2Dxibuv7ZLW3Bs1QEmM7nHjEANfohJLvE0XVujisn1qPJcZxg+qDucsr+bP6fLD1rPS3AhJ7EQ==}
+
+  devlop@1.1.0:
+    resolution: {integrity: sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA==}
 
   dir-glob@3.0.1:
     resolution: {integrity: sha512-WkrWp9GR4KXfKGYzOLmTuGVi1UWFfws377n9cc55/tb6DuqyF6pcQ5AbiHEshaDpY9v6oaSr2XCDidGmMwdzIA==}
@@ -3906,6 +3991,10 @@ packages:
   header-case@2.0.4:
     resolution: {integrity: sha512-H/vuk5TEEVZwrR0lp2zed9OCo1uAILMlx0JEMgC26rzyJJ3N1v6XkwHHXJQdR2doSjcGPM6OKPYoJgf0plJ11Q==}
 
+  highlight.js@11.11.1:
+    resolution: {integrity: sha512-Xwwo44whKBVCYoliBQwaPvtd/2tYFkRQtXDWj1nackaV2JPXx3L0+Jvd8/qCJ2p+ML0/XVkJ2q+Mr+UVdpJK5w==}
+    engines: {node: '>=12.0.0'}
+
   hoist-non-react-statics@3.3.2:
     resolution: {integrity: sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw==}
 
@@ -4325,6 +4414,9 @@ packages:
 
   lower-case@2.0.2:
     resolution: {integrity: sha512-7fm3l3NAF9WfN6W3JOmf5drwpVqX78JtoGJ3A6W0a6ZnldM41w2fV5D490psKFTpMds8TJse/eHLFFsNHHjHgg==}
+
+  lowlight@3.3.0:
+    resolution: {integrity: sha512-0JNhgFoPvP6U6lE/UdVsSq99tn6DhjjpAj5MxG49ewd2mOBVtwWYIT8ClyABhq198aXXODMU6Ox8DrGy/CpTZQ==}
 
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
@@ -7813,6 +7905,26 @@ snapshots:
       '@types/react': 19.2.3
       '@types/react-dom': 19.2.3(@types/react@19.2.3)
 
+  '@radix-ui/react-toast@1.2.15(@types/react-dom@19.2.3(@types/react@19.2.3))(@types/react@19.2.3)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+    dependencies:
+      '@radix-ui/primitive': 1.1.3
+      '@radix-ui/react-collection': 1.1.7(@types/react-dom@19.2.3(@types/react@19.2.3))(@types/react@19.2.3)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-compose-refs': 1.1.2(@types/react@19.2.3)(react@19.2.0)
+      '@radix-ui/react-context': 1.1.2(@types/react@19.2.3)(react@19.2.0)
+      '@radix-ui/react-dismissable-layer': 1.1.11(@types/react-dom@19.2.3(@types/react@19.2.3))(@types/react@19.2.3)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-portal': 1.1.9(@types/react-dom@19.2.3(@types/react@19.2.3))(@types/react@19.2.3)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-presence': 1.1.5(@types/react-dom@19.2.3(@types/react@19.2.3))(@types/react@19.2.3)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-primitive': 2.1.3(@types/react-dom@19.2.3(@types/react@19.2.3))(@types/react@19.2.3)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-use-callback-ref': 1.1.1(@types/react@19.2.3)(react@19.2.0)
+      '@radix-ui/react-use-controllable-state': 1.2.2(@types/react@19.2.3)(react@19.2.0)
+      '@radix-ui/react-use-layout-effect': 1.1.1(@types/react@19.2.3)(react@19.2.0)
+      '@radix-ui/react-visually-hidden': 1.2.3(@types/react-dom@19.2.3(@types/react@19.2.3))(@types/react@19.2.3)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      react: 19.2.0
+      react-dom: 19.2.0(react@19.2.0)
+    optionalDependencies:
+      '@types/react': 19.2.3
+      '@types/react-dom': 19.2.3(@types/react@19.2.3)
+
   '@radix-ui/react-toggle-group@1.1.11(@types/react-dom@19.2.3(@types/react@19.2.3))(@types/react@19.2.3)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
     dependencies:
       '@radix-ui/primitive': 1.1.3
@@ -8439,10 +8551,23 @@ snapshots:
     dependencies:
       '@tiptap/core': 2.27.1(@tiptap/pm@2.27.1)
 
+  '@tiptap/extension-code-block-lowlight@3.13.0(@tiptap/core@3.3.0(@tiptap/pm@3.3.0))(@tiptap/extension-code-block@2.27.1(@tiptap/core@3.3.0(@tiptap/pm@3.3.0))(@tiptap/pm@3.3.0))(@tiptap/pm@3.3.0)(highlight.js@11.11.1)(lowlight@3.3.0)':
+    dependencies:
+      '@tiptap/core': 3.3.0(@tiptap/pm@3.3.0)
+      '@tiptap/extension-code-block': 2.27.1(@tiptap/core@3.3.0(@tiptap/pm@3.3.0))(@tiptap/pm@3.3.0)
+      '@tiptap/pm': 3.3.0
+      highlight.js: 11.11.1
+      lowlight: 3.3.0
+
   '@tiptap/extension-code-block@2.27.1(@tiptap/core@2.27.1(@tiptap/pm@2.27.1))(@tiptap/pm@2.27.1)':
     dependencies:
       '@tiptap/core': 2.27.1(@tiptap/pm@2.27.1)
       '@tiptap/pm': 2.27.1
+
+  '@tiptap/extension-code-block@2.27.1(@tiptap/core@3.3.0(@tiptap/pm@3.3.0))(@tiptap/pm@3.3.0)':
+    dependencies:
+      '@tiptap/core': 3.3.0(@tiptap/pm@3.3.0)
+      '@tiptap/pm': 3.3.0
 
   '@tiptap/extension-code@2.27.1(@tiptap/core@2.27.1(@tiptap/pm@2.27.1))':
     dependencies:
@@ -8521,6 +8646,23 @@ snapshots:
     dependencies:
       '@tiptap/core': 2.27.1(@tiptap/pm@2.27.1)
 
+  '@tiptap/extension-table-cell@3.13.0(@tiptap/extension-table@3.13.0(@tiptap/core@3.3.0(@tiptap/pm@3.3.0))(@tiptap/pm@3.3.0))':
+    dependencies:
+      '@tiptap/extension-table': 3.13.0(@tiptap/core@3.3.0(@tiptap/pm@3.3.0))(@tiptap/pm@3.3.0)
+
+  '@tiptap/extension-table-header@3.13.0(@tiptap/extension-table@3.13.0(@tiptap/core@3.3.0(@tiptap/pm@3.3.0))(@tiptap/pm@3.3.0))':
+    dependencies:
+      '@tiptap/extension-table': 3.13.0(@tiptap/core@3.3.0(@tiptap/pm@3.3.0))(@tiptap/pm@3.3.0)
+
+  '@tiptap/extension-table-row@3.13.0(@tiptap/extension-table@3.13.0(@tiptap/core@3.3.0(@tiptap/pm@3.3.0))(@tiptap/pm@3.3.0))':
+    dependencies:
+      '@tiptap/extension-table': 3.13.0(@tiptap/core@3.3.0(@tiptap/pm@3.3.0))(@tiptap/pm@3.3.0)
+
+  '@tiptap/extension-table@3.13.0(@tiptap/core@3.3.0(@tiptap/pm@3.3.0))(@tiptap/pm@3.3.0)':
+    dependencies:
+      '@tiptap/core': 3.3.0(@tiptap/pm@3.3.0)
+      '@tiptap/pm': 3.3.0
+
   '@tiptap/extension-text-align@2.8.0(@tiptap/core@3.3.0(@tiptap/pm@3.3.0))':
     dependencies:
       '@tiptap/core': 3.3.0(@tiptap/pm@3.3.0)
@@ -8528,6 +8670,10 @@ snapshots:
   '@tiptap/extension-text@2.27.1(@tiptap/core@2.27.1(@tiptap/pm@2.27.1))':
     dependencies:
       '@tiptap/core': 2.27.1(@tiptap/pm@2.27.1)
+
+  '@tiptap/extension-youtube@2.1.13(@tiptap/core@3.3.0(@tiptap/pm@3.3.0))':
+    dependencies:
+      '@tiptap/core': 3.3.0(@tiptap/pm@3.3.0)
 
   '@tiptap/extensions@3.3.0(@tiptap/core@3.3.0(@tiptap/pm@3.3.0))(@tiptap/pm@3.3.0)':
     dependencies:
@@ -8650,6 +8796,10 @@ snapshots:
 
   '@types/estree@1.0.8': {}
 
+  '@types/hast@3.0.4':
+    dependencies:
+      '@types/unist': 3.0.3
+
   '@types/json-schema@7.0.15': {}
 
   '@types/json5@0.0.29': {}
@@ -8674,6 +8824,8 @@ snapshots:
   '@types/react@19.2.3':
     dependencies:
       csstype: 3.1.3
+
+  '@types/unist@3.0.3': {}
 
   '@types/use-sync-external-store@0.0.6': {}
 
@@ -9342,11 +9494,17 @@ snapshots:
 
   dependency-graph@1.0.0: {}
 
+  dequal@2.0.3: {}
+
   detect-indent@6.1.0: {}
 
   detect-libc@2.1.2: {}
 
   detect-node-es@1.1.0: {}
+
+  devlop@1.1.0:
+    dependencies:
+      dequal: 2.0.3
 
   dir-glob@3.0.1:
     dependencies:
@@ -9982,6 +10140,8 @@ snapshots:
       capital-case: 1.0.4
       tslib: 2.8.1
 
+  highlight.js@11.11.1: {}
+
   hoist-non-react-statics@3.3.2:
     dependencies:
       react-is: 16.13.1
@@ -10391,6 +10551,12 @@ snapshots:
   lower-case@2.0.2:
     dependencies:
       tslib: 2.8.1
+
+  lowlight@3.3.0:
+    dependencies:
+      '@types/hast': 3.0.4
+      devlop: 1.1.0
+      highlight.js: 11.11.1
 
   lru-cache@5.1.1:
     dependencies:

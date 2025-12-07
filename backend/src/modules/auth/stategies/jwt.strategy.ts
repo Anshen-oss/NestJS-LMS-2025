@@ -57,7 +57,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     // 2️⃣ Si l'utilisateur a été supprimé entre-temps
     if (!user) {
-      throw new UnauthorizedException('User no longr exists');
+      throw new UnauthorizedException('User no longer exists');
     }
     // 3️⃣ Retourner l'utilisateur (sera disponible dans req.user)
     return user;

@@ -1,9 +1,9 @@
 import {
   ForbiddenException,
   Injectable,
-  NotFoundException
+  NotFoundException,
 } from '@nestjs/common';
-import { UserRole } from '@prisma/client';
+import { Lesson, LessonAttachment, UserRole } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateLessonInput } from './dto/create-lesson.input';
 import { UpdateLessonInput } from './dto/update-lesson.input';
@@ -273,6 +273,33 @@ export class LessonsService {
     return true;
   }
 
+  async updateLessonContent(
+    lessonId: string,
+    content?: string,
+    isPublished?: boolean,
+  ): Promise<Lesson> {
+    // 1. Vérifier que la lesson existe
+    const lesson = await this.prisma.lesson.findUnique({
+      where: { id: lessonId },
+    });
+
+    if (!lesson) {
+      throw new NotFoundException(`lesson with ID ${lessonId} not found`);
+    }
+    // 2. Mettre à jour uniquement les champs fournis
+    return this.prisma.lesson.update({
+      where: { id: lessonId },
+      data: {
+        ...(content !== undefined && {
+          content,
+        }),
+        ...(isPublished !== undefined && {
+          isPublished,
+        }),
+        updatedAt: new Date(),
+      },
+    });
+  }
   // ═══════════════════════════════════════════════════════════
   //              PROGRESSION (LESSON PROGRESS)
   // ═══════════════════════════════════════════════════════════
@@ -489,5 +516,40 @@ export class LessonsService {
     throw new ForbiddenException(
       'You must be logged in and enrolled to access this lesson',
     );
+  }
+
+  // Créer un attachement
+  async createAttachment(
+    lessonId: string,
+    fileName: string,
+    fileUrl: string,
+    fileSize: number,
+    fileType: string,
+  ): Promise<LessonAttachment> {
+    return await this.prisma.lessonAttachment.create({
+      data: {
+        lessonId,
+        fileName,
+        fileUrl,
+        fileSize,
+        fileType,
+      },
+    });
+  }
+
+  // Lister les attachements d'une lesson
+  async getAttachments(lessonId: string): Promise<LessonAttachment[]> {
+    return this.prisma.lessonAttachment.findMany({
+      where: { lessonId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  // Supprimer un attachement
+  async deleteAttachment(id: string): Promise<boolean> {
+    await this.prisma.lessonAttachment.delete({
+      where: { id },
+    });
+    return true;
   }
 }

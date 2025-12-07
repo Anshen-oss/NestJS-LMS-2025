@@ -1,0 +1,11 @@
+query LessonAttachments($lessonId: String!) {
+  lessonAttachments(lessonId: $lessonId) {
+    id
+    lessonId
+    fileName
+    fileUrl
+    fileSize
+    fileType
+    createdAt
+  }
+}

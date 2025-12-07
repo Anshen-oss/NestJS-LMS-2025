@@ -84,4 +84,32 @@ export class S3Service {
       return null;
     }
   }
+
+  async getUploadUrlForFile(
+    fileName: string,
+    contentType: string,
+    folder: string = 'lesson-attachments',
+  ): Promise<{ uploadUrl: string; key: string; publicUrl: string }> {
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(7);
+    const key = `${folder}/${timestamp}-${randomString}-${fileName}`;
+
+    const command = new PutObjectCommand({
+      Bucket: this.bucketName,
+      Key: key,
+      ContentType: contentType,
+    });
+
+    const uploadUrl = await getSignedUrl(this.s3Client, command, {
+      expiresIn: 300,
+    });
+
+    const publicUrl = `${this.publicUrl}/${key}`;
+
+    return {
+      uploadUrl,
+      key,
+      publicUrl,
+    };
+  }
 }

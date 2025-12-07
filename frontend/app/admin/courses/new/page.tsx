@@ -23,8 +23,8 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { CREATE_COURSE } from "@/lib/__TODELETEgraphql/courses";
-import { useMutation } from "@apollo/client";
+import { useCreateCourseMutation } from "@/lib/generated/graphql";
+useCreateCourseMutation import { useMutation } from "@apollo/client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -58,7 +58,7 @@ const CATEGORIES = [
 
 export default function CreateCoursePage() {
   const router = useRouter();
-  const [createCourse, { loading }] = useMutation(CREATE_COURSE);
+  const [createCourse, { loading }] = useCreateCourseMutation();
 
   const form = useForm<CourseFormData>({
     resolver: zodResolver(courseSchema),
