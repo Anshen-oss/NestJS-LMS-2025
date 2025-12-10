@@ -38,8 +38,9 @@ query GetCourseForEdit($id: String!) {
         content          # 👈 NOUVEAU : Contenu Tiptap
         isPublished      # 👈 NOUVEAU : Statut de publication
         videoUrl
-        position
+        order
         isFree
+        completed
       }
     }
   }

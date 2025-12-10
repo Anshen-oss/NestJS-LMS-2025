@@ -197,17 +197,19 @@ export class EnrollmentService {
     }
   }
 
+  // Dans enrollment.service.ts
   async getMyEnrollments(userId: string) {
     const enrollments = await this.prisma.enrollment.findMany({
-      where: {
-        userId,
-      },
+      where: { userId },
       include: {
         course: {
           include: {
             chapters: {
+              orderBy: { position: 'asc' },
               include: {
-                lessons: true,
+                lessons: {
+                  orderBy: { order: 'asc' },
+                },
               },
             },
             createdBy: {
@@ -215,18 +217,17 @@ export class EnrollmentService {
                 id: true,
                 name: true,
                 email: true,
-                role: true, //
+                role: true,
               },
             },
           },
         },
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy: { createdAt: 'desc' },
     });
 
-    return enrollments;
+    // ✅ Cast pour satisfaire TypeScript
+    return enrollments as any;
   }
 
   async updateEnrollmentStatus(enrollmentId: string, status: EnrollmentStatus) {

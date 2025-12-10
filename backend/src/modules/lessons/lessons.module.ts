@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../prisma/prisma.module';
+import { ProgressModule } from '../progress/progress.module';
 import { LessonsResolver } from './lessons.resolver';
 import { LessonsService } from './lessons.service';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, ProgressModule],
   providers: [LessonsService, LessonsResolver],
   exports: [LessonsService],
 })

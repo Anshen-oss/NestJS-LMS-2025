@@ -1,0 +1,11 @@
+# Mutation pour marquer une leçon comme complétée
+mutation ToggleLessonCompletion($lessonId: String!) {
+  toggleLessonCompletion(lessonId: $lessonId) {
+    userId
+    lessonId
+    courseId
+    completed
+    completedAt
+  }
+}
+

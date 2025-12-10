@@ -1,6 +1,56 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* === Styles pour le contenu des leçons === */
+.lesson-content {
+  @apply text-gray-900 leading-relaxed;
+}
+
+.lesson-content h1 {
+  @apply text-3xl font-bold text-gray-900 mb-6 mt-8 first:mt-0;
+}
+
+.lesson-content h2 {
+  @apply text-2xl font-bold text-gray-900 mb-4 mt-6;
+}
+
+.lesson-content h3 {
+  @apply text-xl font-semibold text-gray-900 mb-3 mt-4;
+}
+
+.lesson-content p {
+  @apply text-base text-gray-800 mb-4 leading-relaxed;
+}
+
+.lesson-content strong {
+  @apply font-semibold text-gray-900;
+}
+
+.lesson-content code {
+  @apply bg-gray-100 text-pink-600 px-1.5 py-0.5 rounded text-sm font-mono;
+}
+
+.lesson-content ul,
+.lesson-content ol {
+  @apply my-4 ml-6 space-y-2 list-disc;
+}
+
+.lesson-content li {
+  @apply text-gray-800 leading-relaxed;
+}
+
+.lesson-content em {
+  @apply italic;
+}
+
+.lesson-content a {
+  @apply text-blue-600 hover:underline;
+}
+
+.lesson-content hr {
+  @apply my-6 border-gray-300;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 :root {
@@ -310,4 +360,85 @@
 /* Sélection de cellule active dans l'éditeur */
 .ProseMirror .selectedCell {
   @apply bg-blue-50;
+}
+
+/* ===================================================
+   Styles pour les filtres de la page admin courses UNIQUEMENT
+   =================================================== */
+
+/* Cibler uniquement la page admin/courses avec la classe admin-filters */
+.admin-courses-page .admin-filters input {
+  background-color: white !important;
+  border-color: rgb(209 213 219) !important;
+  color: rgb(17 24 39) !important;
+}
+
+.admin-courses-page .admin-filters input::placeholder {
+  color: rgb(156 163 175) !important;
+}
+
+.admin-courses-page .admin-filters button[role="combobox"] {
+  background-color: white !important;
+  border-color: rgb(209 213 219) !important;
+  color: rgb(17 24 39) !important;
+}
+
+.admin-courses-page .admin-filters button[role="combobox"] svg {
+  color: rgb(107 114 128) !important;
+}
+
+.admin-courses-page .admin-filters input:focus-visible,
+.admin-courses-page .admin-filters button[role="combobox"]:focus-visible {
+  outline: none !important;
+  ring: 2px solid rgb(168 85 247) !important;
+  border-color: rgb(168 85 247) !important;
+}
+
+.admin-courses-page .admin-filters button[role="combobox"]:hover {
+  background-color: rgb(249 250 251) !important;
+}
+
+/* ===================================================
+   Styles pour les onglets de leçon (student) UNIQUEMENT
+   =================================================== */
+
+/* Cibler uniquement les pages de leçons étudiants */
+.student-lesson-page [role="tablist"] {
+  background-color: white !important;
+  border-bottom: 1px solid rgb(229 231 235);
+  padding: 0;
+}
+
+.student-lesson-page [role="tab"] {
+  background-color: transparent !important;
+  color: rgb(75 85 99) !important;
+  border: none !important;
+  border-bottom: 3px solid transparent !important;
+  border-radius: 0 !important;
+  padding: 1rem 1.5rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.student-lesson-page [role="tab"]:hover {
+  color: rgb(17 24 39) !important;
+  background-color: rgb(249 250 251) !important;
+}
+
+.student-lesson-page [role="tab"][data-state="active"] {
+  color: rgb(17 24 39) !important;
+  background-color: white !important;
+  border-bottom-color: rgb(17 24 39) !important;
+  border-bottom-width: 3px !important;
+}
+
+.student-lesson-page [role="tabpanel"] {
+  background-color: white !important;
+  padding-top: 1.5rem;
+}
+
+/* Force le fond blanc pour la page 404 */
+body:has(.not-found-page) {
+  background: white !important;
+  overflow: hidden !important;
 }

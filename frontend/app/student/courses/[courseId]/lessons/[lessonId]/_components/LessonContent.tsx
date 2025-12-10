@@ -1,0 +1,254 @@
+'use client';
+
+import { RenderDescription } from '@/components/rich-text-editor/RenderDescription';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useLessonAttachmentsQuery, useToggleLessonCompletionMutation } from '@/lib/generated/graphql';
+import { CheckCircle2, Download, FileIcon, FileText, Loader2, PlayCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+
+interface LessonContentProps {
+  courseId: string;
+  lessonId: string;
+  course: any;
+  onProgressUpdate?: () => void;
+}
+
+export function LessonContent({ courseId, lessonId, course, onProgressUpdate }: LessonContentProps) {
+  const [toggleCompletion, { loading: toggleLoading }] = useToggleLessonCompletionMutation();
+  const [isCompleted, setIsCompleted] = useState(false);
+
+  // Query pour récupérer les pièces jointes
+  const { data: attachmentsData, loading: attachmentsLoading } = useLessonAttachmentsQuery({
+    variables: { lessonId },
+  });
+
+  const attachments = attachmentsData?.lessonAttachments || [];
+
+  const currentLesson = course.chapters
+    ?.flatMap((chapter: any) => chapter.lessons)
+    .find((lesson: any) => lesson.id === lessonId);
+
+  // Sync avec les props du cours (si la progression est déjà chargée)
+  useEffect(() => {
+    if (currentLesson?.completed !== undefined) {
+      setIsCompleted(currentLesson.completed);
+    }
+  }, [currentLesson]);
+
+  const handleToggleCompletion = async () => {
+    try {
+      const result = await toggleCompletion({
+        variables: { lessonId },
+      });
+
+      const newCompletedState = result.data?.toggleLessonCompletion?.completed ?? false;
+      setIsCompleted(newCompletedState);
+
+      toast.success(
+        newCompletedState
+          ? "Leçon marquée comme complétée ! 🎉"
+          : "Leçon marquée comme non complétée"
+      );
+
+      // Notifier le parent pour rafraîchir la sidebar
+      if (onProgressUpdate) {
+        onProgressUpdate();
+      }
+    } catch (error) {
+      console.error("Error toggling completion:", error);
+      toast.error("Erreur lors de la mise à jour");
+    }
+  };
+
+  if (!currentLesson) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <p className="text-xl font-medium text-gray-900">Leçon introuvable</p>
+          <p className="text-gray-600 mt-2">Cette leçon n'existe pas ou a été supprimée.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Déterminer le type de contenu (JSON Tiptap ou HTML)
+  let contentType: 'json' | 'html' | 'none' = 'none';
+  let parsedContent = null;
+
+  if (currentLesson.content) {
+    if (currentLesson.content.startsWith('{') || currentLesson.content.startsWith('[')) {
+      try {
+        parsedContent = JSON.parse(currentLesson.content);
+        contentType = 'json';
+      } catch (error) {
+        contentType = 'html';
+      }
+    } else {
+      contentType = 'html';
+    }
+  }
+
+  return (
+    <div className="bg-white">
+      {/* Container principal - Style Coursera */}
+      <div className="max-w-4xl mx-auto">
+
+        {/* Zone vidéo - Pleine largeur */}
+        <div className="w-full bg-gray-100">
+          <div className="aspect-video bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center relative group">
+            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-all"></div>
+
+            <div className="relative text-center z-10">
+              <div className="w-20 h-20 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                <PlayCircle className="w-12 h-12 text-white" />
+              </div>
+              <p className="text-xl font-semibold text-white">Vidéo à venir</p>
+              {currentLesson.videoUrl && (
+                <p className="text-sm text-gray-300 mt-2 max-w-md mx-auto truncate px-4">
+                  {currentLesson.videoUrl}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Contenu sous la vidéo */}
+        <div className="px-8 py-8 space-y-8">
+
+          {/* Titre de la leçon - Style Coursera */}
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-3">
+              {currentLesson.title}
+            </h1>
+            {currentLesson.description && (
+              <p className="text-lg text-gray-700">{currentLesson.description}</p>
+            )}
+          </div>
+
+          {/* Bouton de complétion */}
+          <div className="flex justify-end border-b border-gray-200 pb-6">
+            <Button
+              size="lg"
+              className={`gap-2 transition-all ${
+                isCompleted
+                  ? 'bg-green-600 hover:bg-green-700 text-white'
+                  : ''
+              }`}
+              onClick={handleToggleCompletion}
+              disabled={toggleLoading}
+            >
+              {toggleLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Mise à jour...
+                </>
+              ) : isCompleted ? (
+                <>
+                  <CheckCircle2 className="w-5 h-5" />
+                  Leçon complétée ✓
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-5 h-5" />
+                  Marquer comme complété
+                </>
+              )}
+            </Button>
+          </div>
+
+          {/* Contenu de la leçon - Format Coursera avec Onglets */}
+          <Tabs defaultValue="notes" className="w-full">
+            <TabsList className="w-full grid grid-cols-2 mb-6">
+              <TabsTrigger value="notes" className="gap-2">
+                <FileText className="w-4 h-4" />
+                Notes
+              </TabsTrigger>
+              <TabsTrigger value="downloads" className="gap-2">
+                <Download className="w-4 h-4" />
+                Téléchargements
+                {attachments.length > 0 && (
+                  <span className="ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">
+                    {attachments.length}
+                  </span>
+                )}
+              </TabsTrigger>
+            </TabsList>
+
+            {/* ONGLET NOTES */}
+            <TabsContent value="notes">
+              {contentType === 'json' && parsedContent && (
+                <div className="prose prose-lg max-w-none">
+                  <RenderDescription json={parsedContent} />
+                </div>
+              )}
+
+              {contentType === 'html' && (
+                <div
+                  className="lesson-content"
+                  dangerouslySetInnerHTML={{ __html: currentLesson.content }}
+                />
+              )}
+
+              {contentType === 'none' && (
+                <div className="py-12 text-center">
+                  <FileText className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                  <p className="text-gray-500">Aucune note disponible pour cette leçon.</p>
+                </div>
+              )}
+            </TabsContent>
+
+            {/* ONGLET TÉLÉCHARGEMENTS */}
+            <TabsContent value="downloads">
+              {attachmentsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                </div>
+              ) : attachments.length > 0 ? (
+                <div className="space-y-3">
+                  {attachments.map((attachment: any) => (
+                    <div
+                      key={attachment.id}
+                      className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-sm transition-all bg-white"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                            <FileIcon className="w-6 h-6 text-blue-600" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium text-gray-900 truncate">
+                              {attachment.fileName}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {(attachment.fileSize / 1024 / 1024).toFixed(2)} MB
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          className="gap-2 bg-blue-600 hover:bg-blue-700 text-white flex-shrink-0"
+                          size="sm"
+                          onClick={() => window.open(attachment.fileUrl, '_blank')}
+                        >
+                          <Download className="w-4 h-4" />
+                          Télécharger
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-12 text-center">
+                  <Download className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                  <p className="text-gray-500">Aucun fichier à télécharger pour cette leçon.</p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+
+        </div>
+      </div>
+    </div>
+  );
+}

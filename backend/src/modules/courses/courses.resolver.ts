@@ -15,6 +15,8 @@ import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Chapter } from '../chapters/entities/chapter.entity';
 import { Lesson } from '../lessons/entities/lesson.entity';
+import { CourseProgressOutput } from '../progress/dto/course-progress.output';
+import { ProgressService } from '../progress/progress.service';
 import { CoursesService } from './courses.service';
 import { CreateChapterInput } from './dto/create-chapter.input';
 import { CreateCourseInput } from './dto/create-course.input';
@@ -28,7 +30,10 @@ import { Course } from './entities/course.entity';
 
 @Resolver(() => Course)
 export class CoursesResolver {
-  constructor(private readonly coursesService: CoursesService) {}
+  constructor(
+    private readonly coursesService: CoursesService,
+    private progressService: ProgressService,
+  ) {}
 
   // ═══════════════════════════════════════════════════════════
   //                         QUERIES
@@ -171,6 +176,13 @@ export class CoursesResolver {
       );
     }
     return this.coursesService.deleteCourse(id, user.id, user.role);
+  }
+
+  @ResolveField(() => CourseProgressOutput, { nullable: true })
+  async progress(@Parent() course: Course, @CurrentUser() user?: User) {
+    if (!user) return null;
+
+    return this.progressService.getCourseProgress(user.id, course.id);
   }
 
   /**
