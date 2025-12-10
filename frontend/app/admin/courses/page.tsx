@@ -21,18 +21,18 @@ import { useGetMyCoursesQuery } from "@/lib/generated/graphql";
 import {
   BookOpen,
   Eye,
-  Loader2,
   MoreVertical,
   Pencil,
   Plus,
   Search,
   Trash2,
-  Users,
+  Users
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { DeleteCourseDialog } from "./[id]/edit/_components/DeleteCourseDialog";
+
 const CATEGORIES = [
   "All Categories",
   "Programming",
@@ -57,26 +57,20 @@ export default function AdminCoursesPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState<{ id: string; title: string } | null>(null);
 
-  // Fetch courses
   const { data, loading, error, refetch } = useGetMyCoursesQuery({
     fetchPolicy: "network-only",
   });
 
-  // Filtered courses
+
   const filteredCourses = useMemo(() => {
     if (!data?.myCourses) return [];
 
     return data.myCourses.filter((course) => {
-      // Search filter
       const matchesSearch = course.title
         .toLowerCase()
         .includes(searchQuery.toLowerCase());
-
-      // Status filter
       const matchesStatus =
         statusFilter === "all" || course.status === statusFilter;
-
-      // Category filter
       const matchesCategory =
         categoryFilter === "All Categories" ||
         course.category === categoryFilter;
@@ -87,10 +81,14 @@ export default function AdminCoursesPage() {
 
   if (loading) {
     return (
-      <div className="container max-w-7xl py-8 flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Loading courses...</p>
+      <div className="admin-courses-page min-h-screen bg-gray-50">
+        <div className="container max-w-7xl mx-auto px-6 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+              <p className="mt-4 text-gray-600">Chargement des cours...</p>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -98,128 +96,148 @@ export default function AdminCoursesPage() {
 
   if (error) {
     return (
-      <div className="container max-w-7xl py-8">
-        <Card className="border-destructive">
-          <CardContent className="pt-6">
-            <p className="text-destructive">Error loading courses: {error.message}</p>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gray-50">
+        <div className="container max-w-7xl mx-auto px-6 py-8">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-red-800">
+              Erreur lors du chargement : {error.message}
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container max-w-7xl py-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">Your Courses</h1>
-          <p className="text-muted-foreground mt-2">
-            Manage and organize your courses
-          </p>
-        </div>
-        <Button onClick={() => router.push("/admin/courses/new")}>
-          <Plus className="w-4 h-4 mr-2" />
-          Create Course
-        </Button>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* ✅ CORRECTION : Ajout de mx-auto px-6 pour les marges */}
+      <div className="container max-w-7xl mx-auto px-6 py-8">
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        {/* Search */}
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search courses..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-
-        {/* Status Filter */}
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {STATUS_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* Category Filter */}
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {CATEGORIES.map((category) => (
-              <SelectItem key={category} value={category}>
-                {category}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Stats */}
-      <div className="mb-6 text-sm text-muted-foreground">
-        Showing {filteredCourses.length} of {data?.myCourses?.length || 0} courses
-      </div>
-
-      {/* Courses Grid */}
-      {filteredCourses.length === 0 ? (
-        <Card>
-          <CardContent className="pt-6 text-center py-12">
-            <BookOpen className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">No courses found</h3>
-            <p className="text-muted-foreground mb-4">
-              {searchQuery || statusFilter !== "all" || categoryFilter !== "All Categories"
-                ? "Try adjusting your filters"
-                : "Get started by creating your first course"}
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">Vos Cours</h1>
+            <p className="text-lg text-gray-600">
+              Gérez et organisez vos cours
             </p>
-            {!searchQuery && statusFilter === "all" && categoryFilter === "All Categories" && (
-              <Button onClick={() => router.push("/admin/courses/new")}>
-                <Plus className="w-4 h-4 mr-2" />
-                Create Course
-              </Button>
-            )}
+          </div>
+          <Button
+            onClick={() => router.push("/admin/courses/new")}
+            size="lg"
+            className="gap-2"
+          >
+            <Plus className="w-5 h-5" />
+            Créer un cours
+          </Button>
+        </div>
+
+        {/* Filters - OPTION 1 : Blanc avec bordures */}
+        <Card className="mb-6 bg-white border-gray-200">
+          <CardContent className="pt-6">
+            <div className="flex flex-col sm:flex-row gap-4">
+
+              {/* Search - Fond blanc avec bordure */}
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  placeholder="Rechercher un cours..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10 !bg-white !border-gray-300 !text-gray-900 placeholder:!text-gray-400 focus-visible:!ring-purple-400"
+                />
+              </div>
+
+              {/* Status Filter - Fond blanc */}
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-[180px] !bg-white !border-gray-300 !text-gray-900 data-[placeholder]:!text-gray-400">
+                  <SelectValue />
+                </SelectTrigger>
+                 <SelectContent className="!bg-white">
+                  {STATUS_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Category Filter - Fond blanc */}
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-full sm:w-[180px] !bg-white !border-gray-300 !text-gray-900 data-[placeholder]:!text-gray-400">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="!bg-white">
+                  {CATEGORIES.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </CardContent>
         </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCourses.map((course) => (
-            <CourseCard
-              key={course.id}
-              course={course}
-              onEdit={() => router.push(`/admin/courses/${course.id}/edit`)}
-              onPreview={() => router.push(`/courses/${course.slug}`)}
-              onDelete={() => {
-                 setCourseToDelete({ id: course.id, title: course.title });
-                setDeleteDialogOpen(true);
-              }}
-            />
-          ))}
-        </div>
-      )}
 
-  {/* Delete Dialog */}
-      {courseToDelete && (
-        <DeleteCourseDialog
-          open={deleteDialogOpen}
-          onOpenChange={setDeleteDialogOpen}
-          courseId={courseToDelete.id}
-          courseTitle={courseToDelete.title}
-          onSuccess={() => {
-            setCourseToDelete(null);
-            refetch(); // Recharge la liste
-          }}
-        />
-      )}
+        {/* Stats */}
+        <div className="mb-6 flex items-center justify-between">
+          <p className="text-sm text-gray-600">
+            Affichage de <span className="font-semibold text-gray-900">{filteredCourses.length}</span> sur{" "}
+            <span className="font-semibold text-gray-900">{data?.myCourses?.length || 0}</span> cours
+          </p>
+        </div>
+
+        {/* Courses Grid */}
+        {filteredCourses.length === 0 ? (
+          <Card className="bg-white border-gray-200">
+            <CardContent className="pt-6 text-center py-16">
+              <div className="w-20 h-20 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <BookOpen className="w-10 h-10 text-purple-500" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Aucun cours trouvé</h3>
+              <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                {searchQuery || statusFilter !== "all" || categoryFilter !== "All Categories"
+                  ? "Essayez d'ajuster vos filtres"
+                  : "Commencez par créer votre premier cours"}
+              </p>
+              {!searchQuery && statusFilter === "all" && categoryFilter === "All Categories" && (
+                <Button onClick={() => router.push("/admin/courses/new")} size="lg" className="gap-2">
+                  <Plus className="w-5 h-5" />
+                  Créer un cours
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredCourses.map((course) => (
+              <CourseCard
+                key={course.id}
+                course={course}
+                onEdit={() => router.push(`/admin/courses/${course.id}/edit`)}
+                onPreview={() => router.push(`/courses/${course.slug}`)}
+                onDelete={() => {
+                  setCourseToDelete({ id: course.id, title: course.title });
+                  setDeleteDialogOpen(true);
+                }}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Delete Dialog */}
+        {courseToDelete && (
+          <DeleteCourseDialog
+            open={deleteDialogOpen}
+            onOpenChange={setDeleteDialogOpen}
+            courseId={courseToDelete.id}
+            courseTitle={courseToDelete.title}
+            onSuccess={() => {
+              setCourseToDelete(null);
+              refetch();
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 }
@@ -234,9 +252,9 @@ interface CourseCardProps {
 
 function CourseCard({ course, onEdit, onPreview, onDelete }: CourseCardProps) {
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow group">
+    <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 border-gray-200 group bg-white">
       {/* Image */}
-      <div className="relative aspect-video overflow-hidden bg-muted">
+      <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-purple-50 to-indigo-50">
         {course.imageUrl ? (
           <Image
             src={course.imageUrl}
@@ -246,48 +264,48 @@ function CourseCard({ course, onEdit, onPreview, onDelete }: CourseCardProps) {
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <BookOpen className="w-12 h-12 text-muted-foreground" />
+            <BookOpen className="w-16 h-16 text-purple-300" />
           </div>
         )}
 
         {/* Status Badge */}
-        <div className="absolute top-2 left-2">
+        <div className="absolute top-3 left-3">
           <span
-            className={`px-2 py-1 text-xs font-semibold rounded-full ${
+            className={`px-3 py-1 text-xs font-semibold rounded-full shadow-sm ${
               course.status === "Published"
-                ? "bg-green-500/90 text-white"
-                : "bg-yellow-500/90 text-white"
+                ? "bg-green-500 text-white"
+                : "bg-yellow-500 text-white"
             }`}
           >
-            {course.status}
+            {course.status === "Published" ? "Publié" : "Brouillon"}
           </span>
         </div>
 
         {/* Actions Menu */}
-        <div className="absolute top-2 right-2">
+        <div className="absolute top-3 right-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 size="icon"
                 variant="secondary"
-                className="h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-background"
+                className="h-9 w-9 bg-white/90 backdrop-blur-sm hover:bg-white shadow-sm"
               >
                 <MoreVertical className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="bg-white text-black">
               <DropdownMenuItem onClick={onEdit}>
                 <Pencil className="w-4 h-4 mr-2" />
-                Edit Course
+                Éditer
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onPreview}>
                 <Eye className="w-4 h-4 mr-2" />
-                Preview Course
+                Prévisualiser
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onDelete} className="text-destructive">
+              <DropdownMenuItem onClick={onDelete} className="text-red-600 focus:text-red-600">
                 <Trash2 className="w-4 h-4 mr-2" />
-                Delete Course
+                Supprimer
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -295,35 +313,46 @@ function CourseCard({ course, onEdit, onPreview, onDelete }: CourseCardProps) {
       </div>
 
       {/* Content */}
-      <CardContent className="p-4">
-        <div className="mb-2">
-          <h3 className="font-semibold line-clamp-2 mb-1">{course.title}</h3>
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {course.smallDescription}
-          </p>
+      <CardContent className="p-5 bg-white">
+        <div className="mb-3">
+          <h3 className="font-bold text-lg line-clamp-2 mb-2 text-gray-900">
+            {course.title}
+          </h3>
+          {course.smallDescription && (
+            <p className="text-sm text-gray-600 line-clamp-2">
+              {course.smallDescription}
+            </p>
+          )}
         </div>
 
         {/* Stats */}
-        <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
+        <div className="flex items-center gap-4 text-xs text-gray-600 mb-4 bg-gray-50 rounded-lg p-2">
           <div className="flex items-center gap-1">
-            <Users className="w-3 h-3" />
-            <span>{course.enrollmentsCount || 0} students</span>
+            <Users className="w-3.5 h-3.5" />
+            <span className="font-medium">{course.enrollmentsCount || 0} étudiants</span>
           </div>
           <div className="flex items-center gap-1">
-            <BookOpen className="w-3 h-3" />
-            <span>{course.chaptersCount || 0} chapters</span>
+            <BookOpen className="w-3.5 h-3.5" />
+            <span className="font-medium">{course.chaptersCount || 0} chapitres</span>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-3 border-t">
-          <div>
-            <span className="text-xs text-muted-foreground">{course.category}</span>
-            <span className="mx-2 text-muted-foreground">•</span>
-            <span className="text-xs text-muted-foreground">{course.level}</span>
+        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-500 mb-1">Catégorie</span>
+            <span className="text-sm font-medium text-gray-900">{course.category}</span>
           </div>
-          <div className="text-lg font-bold text-primary">
-            €{course.price.toFixed(2)}
+          <div className="text-right">
+            <span className="text-xs text-gray-500 block mb-1">Prix</span>
+            <span className="text-xl font-bold text-purple-600">
+              {new Intl.NumberFormat('fr-FR', {
+                style: 'currency',
+                currency: 'EUR',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+              }).format(course.price)}
+            </span>
           </div>
         </div>
       </CardContent>

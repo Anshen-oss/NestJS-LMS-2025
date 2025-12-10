@@ -1,0 +1,10 @@
+
+# Query pour récupérer la progression d'une leçon
+query GetLessonProgress($lessonId: String!) {
+  lessonProgress(lessonId: $lessonId) {
+    userId
+    lessonId
+    completed
+    completedAt
+  }
+}

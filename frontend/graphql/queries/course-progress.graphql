@@ -1,0 +1,8 @@
+# Query pour récupérer la progression globale d'un cours
+query GetCourseProgress($courseId: String!) {
+  courseProgress(courseId: $courseId) {
+    completedCount
+    totalCount
+    percentage
+  }
+}

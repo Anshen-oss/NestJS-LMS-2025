@@ -123,16 +123,26 @@ export function LessonEditor({
 
     const newPublishedState = !isPublishedLocal;
 
+      console.log('🚀 AVANT mutation');
+  console.log('📦 lessonId:', lessonId);
+  console.log('📦 newPublishedState:', newPublishedState);
+  console.log('📦 content:', editor.getHTML());
+
 
     try {
       const result = await updateLessonContent({
         variables: {
           input: {
             lessonId,
+            content: editor.getHTML(), // ✅ Ajoute le content
             isPublished: newPublishedState,
           },
         },
+          refetchQueries: ['GetCourseForEdit'], // ✅ Force le refetch
+
       });
+
+      console.log('✅ Résultat:', result);
 
       setIsPublishedLocal(newPublishedState);
       toast.success(
@@ -236,11 +246,11 @@ useEffect(() => {
   console.log("📥 initialContent from DB:", initialContent);
 
   const currentContent = editor.getHTML();
-  console.log("📝 Current editor content:", currentContent);
+  //console.log("📝 Current editor content:", currentContent);
 
   // 👇 AJOUTE sanitize ICI AUSSI
    const newContent = initialContent || "";
-  console.log("🆕 New content to set:", newContent);
+  //console.log("🆕 New content to set:", newContent);
 
   if (currentContent !== newContent) {
     console.log("⚠️ Content différent - mise à jour de l'éditeur");

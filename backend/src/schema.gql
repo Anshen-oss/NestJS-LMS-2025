@@ -39,6 +39,7 @@ type Course {
   level: CourseLevel!
   outcomes: String
   price: Float!
+  progress: CourseProgressOutput
   publishedAt: DateTime
   requirements: String
   slug: String!
@@ -66,6 +67,12 @@ enum CourseLevel {
 
   """Intermediate level course"""
   Intermediate
+}
+
+type CourseProgressOutput {
+  completedCount: Int!
+  percentage: Int!
+  totalCount: Int!
 }
 
 """The publication status of a course"""
@@ -111,10 +118,11 @@ input CreateLessonAttachmentInput {
 }
 
 input CreateLessonInput {
+  content: String
   description: String
   duration: Int
   isFree: Boolean = false
-  position: Int
+  order: Int
   thumbnailKey: String
   title: String!
   videoKey: String
@@ -151,6 +159,7 @@ type EnrollmentResponse {
 
 type Lesson {
   chapter: Chapter
+  completed: Boolean!
   content: String
   createdAt: DateTime!
   description: String
@@ -160,7 +169,7 @@ type Lesson {
   isFree: Boolean!
   isPublished: Boolean!
   lessonProgress: [LessonProgress!]
-  position: Int!
+  order: Int!
   thumbnailKey: String
   title: String!
   updatedAt: DateTime!
@@ -185,15 +194,14 @@ input LessonPositionInput {
 }
 
 type LessonProgress {
+  completed: Boolean!
   completedAt: DateTime
+  courseId: String!
   createdAt: DateTime!
   id: ID!
-  isCompleted: Boolean!
-  lastWatchedAt: DateTime
-  lesson: Lesson!
+  lessonId: String!
   updatedAt: DateTime!
-  user: User!
-  watchedDuration: Int
+  userId: String!
 }
 
 input LoginInput {
@@ -220,6 +228,7 @@ type Mutation {
   register(input: RegisterInput!): AuthPayload!
   reorderChapters(input: ReorderChaptersInput!): [Chapter!]!
   reorderLessons(input: ReorderLessonsInput!): [Lesson!]!
+  toggleLessonCompletion(lessonId: String!): LessonProgress!
   updateChapter(input: UpdateChapterInput!): Chapter!
   updateCourse(input: UpdateCourseInput!): Course!
   updateLesson(id: String!, input: UpdateLessonInput!): Lesson!
@@ -231,15 +240,18 @@ type Query {
   chaptersByCourse(courseId: String!): [Chapter!]!
   course(id: String!): Course!
   courseBySlug(slug: String!): Course!
+  courseProgress(courseId: String!): CourseProgressOutput!
   courses(status: CourseStatus): [Course!]!
   getCourseForEdit(id: String!): Course!
   hello: String!
   isEnrolled(courseId: String!): Boolean!
   lesson(id: String!): Lesson!
   lessonAttachments(lessonId: String!): [LessonAttachment!]!
+  lessonProgress(lessonId: String!): LessonProgress
   lessonsByChapter(chapterId: String!): [Lesson!]!
   me: User!
   myCourses: [Course!]!
+  myEnrolledCourses: [Course!]!
   myEnrollments: [Enrollment!]!
 
   """API version"""
@@ -292,10 +304,11 @@ input UpdateLessonContentInput {
 }
 
 input UpdateLessonInput {
+  content: String
   description: String
   duration: Int
   isFree: Boolean = false
-  position: Int
+  order: Int
   thumbnailKey: String
   title: String
   videoKey: String

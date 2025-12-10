@@ -2,12 +2,13 @@
 
 import { RenderDescription } from '@/components/rich-text-editor/RenderDescription';
 import { Badge } from '@/components/ui/badge';
-import { buttonVariants } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useGetCourseBySlugQuery, useIsEnrolledQuery } from '@/lib/generated/graphql';
+import { formatDuration } from '@/lib/utils/format-duration';
 import { CollapsibleTrigger } from '@radix-ui/react-collapsible';
 import {
   IconBook,
@@ -22,6 +23,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { use } from 'react';
 import { EnrollmentButton } from './_components/EnrollmentButton';
+
 
 type Params = Promise<{ slug: string }>;
 
@@ -113,7 +115,7 @@ export default function CourseSlugPage({ params }: { params: Params }) {
 
             <Badge className="flex items-center gap-1 px-3 py-1">
               <IconClock className="size-4" />
-              <span>{course.duration} hours</span>
+              <span>{formatDuration(course.duration)}</span>
             </Badge>
           </div>
 
@@ -259,7 +261,7 @@ export default function CourseSlugPage({ params }: { params: Params }) {
                             Course duration
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            {course.duration} hours
+                            {Math.floor((course.duration || 0) / 60)}h
                           </p>
                         </div>
                       </div>
@@ -337,12 +339,11 @@ export default function CourseSlugPage({ params }: { params: Params }) {
 
               {/* Bouton - Change selon enrollment */}
               {isEnrolled ? (
-                <Link
-                  className={buttonVariants({ className: 'w-full' })}
-                   href={`/dashboard/${course.slug}`}
-                >
-                  Watch Course
-                </Link>
+                <Button asChild>
+                  <Link href={`/student/courses/${course.id}`}>
+                    Commencer le cours
+                  </Link>
+                </Button>
               ) : (
                 <>
                   <EnrollmentButton courseId={course.id} />

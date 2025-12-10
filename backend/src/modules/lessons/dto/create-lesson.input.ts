@@ -12,18 +12,22 @@ export class CreateLessonInput {
   @IsOptional()
   description?: string;
 
+  @Field({ nullable: true })
+  @IsOptional()
+  content?: string;
+
   @Field(() => Int, { nullable: true })
   @IsOptional()
-  @Min(1)
-  position?: number;
+  @Min(0)
+  order?: number; // ✅ order, pas position
 
   @Field({ nullable: true })
   @IsOptional()
-  thumbnailKey?: string;
+  thumbnailKey?: string; // ✅ Ce champ doit exister
 
   @Field({ nullable: true })
   @IsOptional()
-  videoKey?: string;
+  videoKey?: string; // ✅ Ce champ doit exister
 
   @Field({ nullable: true })
   @IsOptional()

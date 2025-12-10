@@ -8,7 +8,7 @@ query GetLessonsByChapter($chapterId: String!) {
     thumbnailKey
     videoKey
     duration
-    position
+    order
     isFree
     createdAt
     updatedAt

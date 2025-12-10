@@ -22,7 +22,7 @@ export class LessonsService {
   async findAllByChapter(chapterId: string, userId?: string) {
     const lessons = await this.prisma.lesson.findMany({
       where: { chapterId },
-      orderBy: { position: 'asc' },
+      orderBy: { order: 'asc' },
       include: {
         chapter: {
           include: {
@@ -49,8 +49,8 @@ export class LessonsService {
 
           return {
             ...lesson,
-            isCompleted: progress?.isCompleted ?? false,
-            watchedDuration: progress?.watchedDuration ?? 0,
+            completed: progress?.completed ?? false,
+            completedAt: progress?.completedAt ?? null,
           };
         }),
       );
@@ -103,9 +103,8 @@ export class LessonsService {
 
       return {
         ...lesson,
-        isCompleted: progress?.isCompleted ?? false,
-        watchedDuration: progress?.watchedDuration ?? 0,
-        completedAt: progress?.completedAt,
+        completed: progress?.completed ?? false,
+        completedAt: progress?.completedAt ?? null,
       };
     }
 
@@ -145,15 +144,15 @@ export class LessonsService {
       );
     }
 
-    // 3️⃣ Déterminer la position
-    const position = input.position ?? (await this.getNextPosition(chapterId));
+    // 3️⃣ Déterminer la position (utilise order maintenant)
+    const order = input.order ?? (await this.getNextOrder(chapterId));
 
     // 4️⃣ Créer la leçon
     return this.prisma.lesson.create({
       data: {
         title: input.title,
         description: input.description,
-        position,
+        order, // ⬅️ order au lieu de position
         thumbnailKey: input.thumbnailKey,
         videoKey: input.videoKey,
         videoUrl: input.videoUrl,
@@ -273,51 +272,100 @@ export class LessonsService {
     return true;
   }
 
+  // async updateLessonContent(
+  //   lessonId: string,
+  //   content?: string,
+  //   isPublished?: boolean,
+  // ): Promise<Lesson> {
+  //   // 1. Vérifier que la lesson existe
+  //   const lesson = await this.prisma.lesson.findUnique({
+  //     where: { id: lessonId },
+  //   });
+
+  //   if (!lesson) {
+  //     throw new NotFoundException(`lesson with ID ${lessonId} not found`);
+  //   }
+  //   // 2. Mettre à jour uniquement les champs fournis
+  //   return this.prisma.lesson.update({
+  //     where: { id: lessonId },
+  //     data: {
+  //       ...(content !== undefined && {
+  //         content,
+  //       }),
+  //       ...(isPublished !== undefined && {
+  //         isPublished,
+  //       }),
+  //       updatedAt: new Date(),
+  //     },
+  //   });
+  // }
+
+  // ═══════════════════════════════════════════════════════════
+  //              PROGRESSION (LESSON PROGRESS)
+  // ═══════════════════════════════════════════════════════════
+
   async updateLessonContent(
     lessonId: string,
     content?: string,
     isPublished?: boolean,
   ): Promise<Lesson> {
+    console.log('🔵 updateLessonContent appelé');
+    console.log('📦 lessonId:', lessonId);
+    console.log('📦 content:', content);
+    console.log('📦 isPublished:', isPublished);
+
     // 1. Vérifier que la lesson existe
     const lesson = await this.prisma.lesson.findUnique({
       where: { id: lessonId },
     });
 
     if (!lesson) {
+      console.log('❌ Lesson not found');
       throw new NotFoundException(`lesson with ID ${lessonId} not found`);
     }
-    // 2. Mettre à jour uniquement les champs fournis
-    return this.prisma.lesson.update({
+
+    //console.log('✅ Lesson trouvée:', lesson.title);
+
+    // 2. Construire l'objet de mise à jour
+    const updateData = {
+      ...(content !== undefined && { content }),
+      ...(isPublished !== undefined && { isPublished }),
+      updatedAt: new Date(),
+    };
+
+    console.log('📝 Update data:', updateData);
+
+    // 3. Mettre à jour
+    const updated = await this.prisma.lesson.update({
       where: { id: lessonId },
-      data: {
-        ...(content !== undefined && {
-          content,
-        }),
-        ...(isPublished !== undefined && {
-          isPublished,
-        }),
-        updatedAt: new Date(),
-      },
+      data: updateData,
     });
+
+    console.log('✅ Lesson mise à jour avec succès');
+    return updated;
   }
-  // ═══════════════════════════════════════════════════════════
-  //              PROGRESSION (LESSON PROGRESS)
-  // ═══════════════════════════════════════════════════════════
 
   /**
    * Marque une leçon comme complétée
+   * ⚠️ NOTE : Cette méthode est maintenant gérée par ProgressService
+   * Elle est gardée pour compatibilité, mais redirige vers le nouveau système
    */
   async markAsCompleted(lessonId: string, userId: string) {
-    // Vérifier que la leçon existe
+    // Vérifier que la leçon existe et récupérer le courseId
     const lesson = await this.prisma.lesson.findUnique({
       where: { id: lessonId },
+      include: {
+        chapter: {
+          select: { courseId: true },
+        },
+      },
     });
 
     if (!lesson) {
       throw new NotFoundException(`Lesson #${lessonId} not found`);
     }
 
-    // Créer ou mettre à jour la progression
+    // Créer ou mettre à jour la progression avec le nouveau modèle
     return this.prisma.lessonProgress.upsert({
       where: {
         userId_lessonId: {
@@ -326,62 +374,76 @@ export class LessonsService {
         },
       },
       update: {
-        isCompleted: true,
+        completed: true,
         completedAt: new Date(),
       },
       create: {
         userId,
         lessonId,
-        isCompleted: true,
+        courseId: lesson.chapter.courseId, // ⬅️ Ajout du courseId
+        completed: true,
         completedAt: new Date(),
       },
     });
   }
 
   /**
-   * Met à jour la progression de visionnage (durée regardée)
+   * ⚠️ DEPRECATED : Cette méthode est obsolète avec le nouveau modèle
+   * Le nouveau système ne track plus la durée de visionnage
+   * Utilise plutôt toggleLessonCompletion du ProgressService
    */
   async updateProgress(
     lessonId: string,
     userId: string,
     watchedDuration: number,
   ) {
+    console.warn(
+      '⚠️ updateProgress is deprecated. Use ProgressService.toggleLessonCompletion instead',
+    );
+
     // Vérifier que la leçon existe
     const lesson = await this.prisma.lesson.findUnique({
       where: { id: lessonId },
+      include: {
+        chapter: {
+          select: { courseId: true },
+        },
+      },
     });
 
     if (!lesson) {
       throw new NotFoundException(`Lesson #${lessonId} not found`);
     }
 
-    // Auto-compléter si l'utilisateur a regardé >= 90% de la vidéo
+    // Simplification : on marque juste comme complété si >= 90%
     const isCompleted = lesson.duration
       ? watchedDuration >= lesson.duration * 0.9
       : false;
 
-    return this.prisma.lessonProgress.upsert({
-      where: {
-        userId_lessonId: {
+    if (isCompleted) {
+      return this.prisma.lessonProgress.upsert({
+        where: {
+          userId_lessonId: {
+            userId,
+            lessonId,
+          },
+        },
+        update: {
+          completed: true,
+          completedAt: new Date(),
+        },
+        create: {
           userId,
           lessonId,
+          courseId: lesson.chapter.courseId,
+          completed: true,
+          completedAt: new Date(),
         },
-      },
-      update: {
-        watchedDuration,
-        lastWatchedAt: new Date(),
-        isCompleted: isCompleted || undefined, // Ne changer que si true
-        completedAt: isCompleted ? new Date() : undefined,
-      },
-      create: {
-        userId,
-        lessonId,
-        watchedDuration,
-        lastWatchedAt: new Date(),
-        isCompleted,
-        completedAt: isCompleted ? new Date() : null,
-      },
-    });
+      });
+    }
+
+    // Si pas complété, ne rien faire (on ne track plus watchedDuration)
+    return null;
   }
 
   /**
@@ -393,10 +455,10 @@ export class LessonsService {
       where: { courseId },
       include: {
         lessons: {
-          orderBy: { position: 'asc' },
+          orderBy: { order: 'asc' }, // ⬅️ Lesson utilise 'order'
         },
       },
-      orderBy: { position: 'asc' },
+      orderBy: { position: 'asc' }, // ⬅️ Chapter utilise 'position'
     });
 
     const allLessons = chapters.flatMap((chapter) => chapter.lessons);
@@ -415,7 +477,7 @@ export class LessonsService {
       where: {
         userId,
         lessonId: { in: allLessons.map((l) => l.id) },
-        isCompleted: true,
+        completed: true,
       },
     });
 
@@ -433,13 +495,13 @@ export class LessonsService {
   /**
    * Obtient la prochaine position disponible dans un chapitre
    */
-  private async getNextPosition(chapterId: string): Promise<number> {
+  private async getNextOrder(chapterId: string): Promise<number> {
     const lastLesson = await this.prisma.lesson.findFirst({
       where: { chapterId },
-      orderBy: { position: 'desc' },
+      orderBy: { order: 'desc' }, // ⬅️ order au lieu de position
     });
 
-    return lastLesson ? lastLesson.position + 1 : 1;
+    return lastLesson ? lastLesson.order + 1 : 0; // ⬅️ Commence à 0
   }
 
   /**
@@ -448,15 +510,15 @@ export class LessonsService {
   private async reorderLessons(chapterId: string): Promise<void> {
     const lessons = await this.prisma.lesson.findMany({
       where: { chapterId },
-      orderBy: { position: 'asc' },
+      orderBy: { order: 'asc' }, // ⬅️ order au lieu de position
     });
 
-    // Réattribuer les positions de manière séquentielle
+    // Réattribuer les positions de manière séquentielle (0, 1, 2...)
     await Promise.all(
       lessons.map((lesson, index) =>
         this.prisma.lesson.update({
           where: { id: lesson.id },
-          data: { position: index + 1 },
+          data: { order: index }, // ⬅️ order commence à 0
         }),
       ),
     );
@@ -517,6 +579,10 @@ export class LessonsService {
       'You must be logged in and enrolled to access this lesson',
     );
   }
+
+  // ═══════════════════════════════════════════════════════════
+  //                    ATTACHMENTS
+  // ═══════════════════════════════════════════════════════════
 
   // Créer un attachement
   async createAttachment(

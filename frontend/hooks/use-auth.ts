@@ -3,7 +3,7 @@
 import {
   useLoginMutation,
   useMeQuery,
-  useRegisterMutation
+  useRegisterUserMutation
 } from '@/lib/generated/graphql';
 import { useApolloClient } from '@apollo/client';
 import { useRouter } from 'next/navigation';
@@ -33,7 +33,7 @@ export function useAuth() {
 
   // 2. Mutations : Login et Register
   const [loginMutation, { loading: loginLoading }] = useLoginMutation();
-  const [registerMutation, { loading: registerLoading }] = useRegisterMutation();
+  const [registerMutation, { loading: registerLoading }] = useRegisterUserMutation();
 
   // 3. Login
   const login = useCallback(

@@ -7,7 +7,7 @@ mutation CreateLesson($chapterId: String!, $input: CreateLessonInput!) {
     content
     videoUrl
     duration
-    position
+    order
     isFree
     createdAt
     updatedAt
@@ -26,7 +26,7 @@ mutation UpdateLesson($id: String!, $input: UpdateLessonInput!) {
     content
     videoUrl
     duration
-    position
+    order
     isFree
     updatedAt
     chapter {
@@ -44,6 +44,6 @@ mutation ReorderLessons($input: ReorderLessonsInput!) {
   reorderLessons(input: $input) {
     id
     title
-    position
+    order
   }
 }

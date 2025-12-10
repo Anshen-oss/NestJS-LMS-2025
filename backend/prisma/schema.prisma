@@ -42,10 +42,11 @@ model User {
   sessions Session[]
   accounts Account[]
 
+  lessonProgress LessonProgress[]
+
   // Relations LMS
   coursesCreated Course[]         @relation("CourseCreator")
   enrollments    Enrollment[]
-  lessonProgress LessonProgress[]
 
   @@map("user")
 }
@@ -147,6 +148,8 @@ model Course {
   userId    String
   createdBy User   @relation("CourseCreator", fields: [userId], references: [id], onDelete: Cascade)
 
+  lessonProgress LessonProgress[]
+
   chapters    Chapter[]
   enrollments Enrollment[]
 
@@ -180,10 +183,10 @@ model Lesson {
   content      String?  @db.Text // ← Ton nouveau champ
   isPublished  Boolean  @default(false) // ← Ton nouveau champ
   videoUrl     String?
+  order        Int
   videoKey     String?
   thumbnailKey String?
   duration     Int?
-  position     Int      @default(0)
   isFree       Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -191,7 +194,7 @@ model Lesson {
   chapterId String
   chapter   Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
-   attachments LessonAttachment[]  // 👈 NOUVEAU
+  attachments LessonAttachment[]  // 👈 NOUVEAU
 
   // ✅ AJOUTE CETTE LIGNE
   lessonProgress LessonProgress[]
@@ -200,22 +203,21 @@ model Lesson {
 }
 
 model LessonProgress {
-  id              String    @id @default(cuid())
-  userId          String
-  lessonId        String
-  isCompleted     Boolean   @default(false)
-  completedAt     DateTime?
-  watchedDuration Int?
-  lastWatchedAt   DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id           String   @id @default(cuid())
+  userId       String
+  lessonId     String
+  courseId     String
+  completed    Boolean  @default(false)
+  completedAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([userId, lessonId])
-  @@index([userId])
-  @@index([lessonId])
+  @@index([userId, courseId])
 }
 
 // ========================================
@@ -262,3 +264,4 @@ model LessonAttachment {
 
   @@index([lessonId])
 }
+

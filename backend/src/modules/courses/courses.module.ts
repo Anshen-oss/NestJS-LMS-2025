@@ -4,10 +4,11 @@ import { CoursesResolver } from './courses.resolver';
 import { CoursesService } from './courses.service';
 
 // ✅ IMPORTANT : Importer les enums pour les enregistrer dans GraphQL
+import { ProgressModule } from '../progress/progress.module';
 import './enums';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, ProgressModule],
   providers: [CoursesResolver, CoursesService],
   exports: [CoursesService],
 })

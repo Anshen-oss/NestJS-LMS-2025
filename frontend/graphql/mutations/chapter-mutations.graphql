@@ -16,7 +16,7 @@ mutation CreateChapter($input: CreateChapterInput!) {
     lessons {
       id
       title
-      position
+      order
     }
   }
 }

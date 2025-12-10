@@ -1,4 +1,4 @@
-mutation Register($input: RegisterInput!) {
+mutation RegisterUser($input: RegisterInput!) {
   register(input: $input) {
     accessToken
     user {

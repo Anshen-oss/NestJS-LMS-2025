@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { PrismaClient, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
@@ -181,7 +180,7 @@ async function main() {
         title: 'Bienvenue dans le cours',
         description:
           'Introduction au cours NestJS - ce que vous allez apprendre',
-        position: 1,
+        order: 1,
         isFree: true,
         duration: 300,
         chapterId: chapter1.id,
@@ -189,7 +188,7 @@ async function main() {
       {
         title: 'Installation de NestJS',
         description: 'Comment installer et configurer NestJS sur votre machine',
-        position: 2,
+        order: 2,
         isFree: true,
         duration: 420,
         chapterId: chapter1.id,
@@ -197,7 +196,7 @@ async function main() {
       {
         title: 'Créer votre premier module',
         description: 'Apprendre à créer des modules dans NestJS',
-        position: 1,
+        order: 1,
         isFree: false,
         duration: 600,
         chapterId: chapter2.id,
@@ -205,7 +204,7 @@ async function main() {
       {
         title: 'Les Controllers en détail',
         description: 'Comment créer et utiliser les controllers',
-        position: 2,
+        order: 2,
         isFree: false,
         duration: 720,
         chapterId: chapter2.id,

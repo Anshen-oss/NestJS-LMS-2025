@@ -1,6 +1,6 @@
 import { Field, ID, Int, ObjectType } from '@nestjs/graphql';
 import { Chapter } from '../../chapters/entities/chapter.entity';
-import { LessonProgress } from './lesson-progress.entity';
+import { LessonProgress } from 'src/modules/progress/entities/lesson-progress.entity';
 
 @ObjectType()
 export class Lesson {
@@ -17,7 +17,7 @@ export class Lesson {
   content?: string | null;
 
   @Field(() => Int)
-  position: number;
+  order: number;
 
   // Media
   @Field(() => String, { nullable: true }) // ← Type explicite

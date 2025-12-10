@@ -8,7 +8,6 @@ import { CourseLevel, CourseStatus, UserRole } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateChapterInput } from './dto/create-chapter.input';
 import { CreateCourseInput } from './dto/create-course.input';
-import { CreateLessonInput } from './dto/create-lesson.input';
 import { ReorderChaptersInput } from './dto/reorder-chapters.input';
 import { ReorderLessonsInput } from './dto/reorder-lessons.input';
 import { UpdateChapterInput } from './dto/update-chapter.input';
@@ -80,7 +79,7 @@ export class CoursesService {
           orderBy: { position: 'asc' },
           include: {
             lessons: {
-              orderBy: { position: 'asc' },
+              orderBy: { order: 'asc' },
             },
           },
         },
@@ -118,7 +117,7 @@ export class CoursesService {
           orderBy: { position: 'asc' },
           include: {
             lessons: {
-              orderBy: { position: 'asc' },
+              orderBy: { order: 'asc' },
             },
           },
         },
@@ -152,7 +151,7 @@ export class CoursesService {
           orderBy: { position: 'asc' },
           include: {
             lessons: {
-              orderBy: { position: 'asc' },
+              orderBy: { order: 'asc' },
             },
           },
         },
@@ -175,7 +174,7 @@ export class CoursesService {
       orderBy: { position: 'asc' },
       include: {
         lessons: {
-          orderBy: { position: 'asc' },
+          orderBy: { order: 'asc' },
         },
         _count: {
           select: {
@@ -244,39 +243,35 @@ export class CoursesService {
   async createLesson(
     userId: string,
     userRole: UserRole,
-    input: CreateLessonInput,
+    input: {
+      chapterId: string;
+      title: string;
+      description?: string;
+      content?: string;
+      order?: number;
+      thumbnailKey?: string;
+      videoKey?: string;
+      videoUrl?: string;
+      duration?: number;
+      isFree?: boolean;
+    },
   ) {
-    const { chapterId, position, ...lessonData } = input;
+    // Le reste du code identique
+    const finalOrder =
+      input.order ?? (await this.getNextLessonOrder(input.chapterId));
 
-    // 1️⃣ Récupérer le chapitre avec son cours
-    const chapter = await this.prisma.chapter.findUnique({
-      where: { id: chapterId },
-      include: { course: true },
-    });
-
-    if (!chapter) {
-      throw new NotFoundException(`Chapter #${chapterId} not found`);
-    }
-
-    // 2️⃣ Vérifier les permissions sur le cours parent
-    this.checkPermissions(chapter.course, userId, userRole, 'update');
-
-    // 3️⃣ Si position non fournie, mettre à la fin
-    let finalPosition = position;
-    if (finalPosition === undefined) {
-      const lastLesson = await this.prisma.lesson.findFirst({
-        where: { chapterId },
-        orderBy: { position: 'desc' },
-      });
-      finalPosition = lastLesson ? lastLesson.position + 1 : 0;
-    }
-
-    // 4️⃣ Créer la leçon
     return this.prisma.lesson.create({
       data: {
-        ...lessonData,
-        chapterId,
-        position: finalPosition,
+        title: input.title,
+        description: input.description,
+        content: input.content,
+        chapterId: input.chapterId,
+        order: finalOrder,
+        thumbnailKey: input.thumbnailKey,
+        videoKey: input.videoKey,
+        videoUrl: input.videoUrl,
+        duration: input.duration,
+        isFree: input.isFree ?? false,
       },
     });
   }
@@ -493,20 +488,25 @@ export class CoursesService {
     // 2️⃣ Vérifier les permissions sur le cours parent
     this.checkPermissions(chapter.course, userId, userRole, 'update');
 
-    // 3️⃣ Mettre à jour les positions en transaction
+    // 3️⃣ Mettre à jour les orders en transaction
     await this.prisma.$transaction(
-      lessons.map((lesson) =>
-        this.prisma.lesson.update({
-          where: { id: lesson.id },
-          data: { position: lesson.position },
-        }),
-      ),
+      lessons.map((lesson) => {
+        // ✅ Cast via unknown pour forcer TypeScript
+        const { id, order } = lesson as unknown as {
+          id: string;
+          order: number;
+        };
+        return this.prisma.lesson.update({
+          where: { id },
+          data: { order },
+        });
+      }),
     );
 
     // 4️⃣ Retourner les leçons réorganisées
     return this.prisma.lesson.findMany({
       where: { chapterId },
-      orderBy: { position: 'asc' },
+      orderBy: { order: 'asc' },
     });
   }
 
@@ -533,7 +533,7 @@ export class CoursesService {
     // 2️⃣ Vérifier les permissions
     this.checkPermissions(course, userId, userRole, 'update');
 
-    // 3️⃣ Si position non fournie, mettre à la fin
+    // 3️⃣ Si order non fournie, mettre à la fin
     let finalPosition = position;
     if (finalPosition === undefined) {
       const lastChapter = await this.prisma.chapter.findFirst({
@@ -616,7 +616,7 @@ export class CoursesService {
     // 2️⃣ Vérifier les permissions
     this.checkPermissions(course, userId, userRole, 'update');
 
-    // 3️⃣ Mettre à jour les positions en transaction
+    // 3️⃣ Mettre à jour les orders en transaction
     await this.prisma.$transaction(
       chapters.map((chapter) =>
         this.prisma.chapter.update({
@@ -737,5 +737,13 @@ export class CoursesService {
 
     // ✅ Le cours appartient à l'utilisateur
     return;
+  }
+
+  private async getNextLessonOrder(chapterId: string): Promise<number> {
+    const lastLesson = await this.prisma.lesson.findFirst({
+      where: { chapterId },
+      orderBy: { order: 'desc' },
+    });
+    return lastLesson ? lastLesson.order + 1 : 0;
   }
 }

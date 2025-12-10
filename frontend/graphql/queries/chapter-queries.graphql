@@ -16,7 +16,7 @@ query GetChaptersByCourse($courseId: String!) {
       description
       videoUrl
       duration
-      position
+      order
       isFree
       createdAt
       updatedAt

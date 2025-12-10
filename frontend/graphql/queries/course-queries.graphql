@@ -17,7 +17,7 @@ query GetCourseBySlug($slug: String!) {
       lessons {
         id
         title
-        position
+        order
       }
     }
   }

@@ -3,6 +3,7 @@ import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../auth/entities/user.entity';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
+import { Course } from '../courses/entities/course.entity';
 import { EnrollInCourseInput } from './dto/enroll-in-course.input';
 import { EnrollmentService } from './enrollment.service';
 import { Enrollment } from './entities/enrollment.entity';
@@ -35,5 +36,12 @@ export class EnrollmentResolver {
     @CurrentUser() user: User,
   ): Promise<boolean> {
     return this.enrollmentService.isEnrolled(user.id, courseId);
+  }
+
+  @Query(() => [Course])
+  @UseGuards(GqlAuthGuard)
+  async myEnrolledCourses(@CurrentUser() user: User) {
+    const enrollments = await this.enrollmentService.getMyEnrollments(user.id);
+    return enrollments.map((e) => e.course);
   }
 }

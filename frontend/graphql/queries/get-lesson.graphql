@@ -7,7 +7,7 @@ query GetLesson($id: String!) {
     isPublished
     videoUrl
     duration
-    position
     isFree
+    order
   }
 }
