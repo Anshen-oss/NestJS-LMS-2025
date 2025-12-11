@@ -3,107 +3,6 @@
 import { Navbar } from '@/app/(publicRoutes)/_components/Navbar';
 import { useMeQuery } from '@/lib/generated/graphql';
 
-// Composant 404 inline
-function Unauthorized404() {
-  return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: 'linear-gradient(135deg, #faf5ff 0%, #ffffff 50%, #eff6ff 100%)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '24px',
-    }}>
-      <div style={{
-        maxWidth: '600px',
-        width: '100%',
-        textAlign: 'center',
-        background: 'white',
-        padding: '48px 24px',
-        borderRadius: '24px',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.1)'
-      }}>
-        <h1 style={{
-          fontSize: '120px',
-          fontWeight: 'bold',
-          background: 'linear-gradient(to right, #9333ea, #3b82f6)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          marginBottom: '32px',
-          lineHeight: '1'
-        }}>
-          404
-        </h1>
-
-        <h2 style={{
-          fontSize: '36px',
-          fontWeight: 'bold',
-          color: '#111827',
-          marginBottom: '16px',
-        }}>
-          Accès non autorisé
-        </h2>
-
-        <p style={{
-          fontSize: '18px',
-          color: '#6b7280',
-          marginBottom: '48px',
-        }}>
-          Vous devez être administrateur pour accéder à cette page.
-        </p>
-
-        <div style={{
-          display: 'flex',
-          gap: '16px',
-          justifyContent: 'center',
-          flexWrap: 'wrap',
-        }}>
-          <a
-            href="/"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '14px 28px',
-              backgroundColor: '#9333ea',
-              color: 'white',
-              borderRadius: '8px',
-              textDecoration: 'none',
-              fontWeight: '600',
-              fontSize: '16px',
-            }}
-          >
-            🏠 Retour à l'accueil
-          </a>
-
-          <a
-            href="/courses"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '14px 28px',
-              backgroundColor: 'white',
-              color: '#374151',
-              border: '2px solid #d1d5db',
-              borderRadius: '8px',
-              textDecoration: 'none',
-              fontWeight: '600',
-              fontSize: '16px',
-            }}
-          >
-            📚 Parcourir les cours
-          </a>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function AdminCoursesLayout({
   children,
 }: {
@@ -113,17 +12,62 @@ export default function AdminCoursesLayout({
     errorPolicy: 'all',
   });
 
-  // Pendant le chargement, ne rien afficher
+  // Pendant le chargement
   if (loading) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-purple-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 font-medium">Vérification des accès...</p>
+        </div>
+      </div>
+    );
   }
 
-  // Si erreur ou pas admin, afficher la 404
-  if (error || !data?.me || (data.me.role !== 'ADMIN' && data.me.role !== 'INSTRUCTOR')) {
-    return <Unauthorized404 />;
+  // Vérifier l'autorisation
+  const isAuthorized = !error && data?.me && (
+    data.me.role === 'ADMIN' ||
+    data.me.role === 'INSTRUCTOR'
+  );
+
+  // Si pas autorisé, afficher une belle page 404 inline
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+        <div className="text-center px-4">
+          <div className="mb-8">
+            <h1 className="text-9xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
+              404
+            </h1>
+          </div>
+          <h2 className="text-3xl font-bold text-gray-800 mb-4">
+            Page introuvable
+          </h2>
+          <p className="text-gray-600 mb-8 max-w-md mx-auto">
+            {error
+              ? "Vous devez être connecté pour accéder à cette page."
+              : "Vous n'avez pas les permissions nécessaires pour accéder à cette page."}
+          </p>
+          <div className="flex gap-4 justify-center">
+            <a
+              href="/"
+              className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"
+            >
+              Retour à l'accueil
+            </a>
+            <a
+              href="/login"
+              className="px-6 py-3 border border-purple-600 text-purple-600 rounded-lg font-medium hover:bg-purple-50 transition-colors"
+            >
+              Se connecter
+            </a>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  // Sinon, afficher le contenu avec Navbar
+  // Si autorisé, afficher le contenu normal
   return (
     <>
       <Navbar />

@@ -36,6 +36,9 @@ mutation UpdateCourse($input: UpdateCourseInput!) {
   }
 }
 
-mutation DeleteCourse($id: String!) {
-  deleteCourse(id: $id)
+mutation DeleteCourse($courseId: String!) {
+  deleteCourse(courseId: $courseId) {
+    success
+    message
+  }
 }

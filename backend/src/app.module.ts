@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
 import { join } from 'path';
+import { AdminModule } from './admin/admin.module';
 import { AppController } from './app.controller';
 import { AppResolver } from './app.resolver';
 import { AppService } from './app.service';
@@ -30,6 +31,7 @@ import { PrismaModule } from './prisma/prisma.module';
     EnrollmentModule,
     S3Module,
     ProgressModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppResolver],

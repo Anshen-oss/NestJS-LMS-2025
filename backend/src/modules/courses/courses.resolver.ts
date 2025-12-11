@@ -62,6 +62,14 @@ export class CoursesResolver {
     return this.coursesService.findOneForEdit(id, user.id, user.role);
   }
 
+  @Query(() => [Course], {
+    name: 'publicCourses',
+    description: 'Liste publique des cours publiés',
+  })
+  async getPublicCourses() {
+    return this.coursesService.findAll(UserRole.USER, CourseStatus.Published);
+  }
+
   // ═══════════════════════════════════════════════════════════
   //                        MUTATIONS
   // ═══════════════════════════════════════════════════════════

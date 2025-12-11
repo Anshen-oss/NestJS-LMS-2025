@@ -27,7 +27,7 @@ model User {
   emailVerified Boolean
   image         String?
   role          UserRole @default(USER)
-  //isActive  Boolean  @default(true) // ✅ Nouveau champ
+  isActive  Boolean  @default(true) // ✅ Nouveau champ
   createdAt     DateTime
   updatedAt     DateTime
 

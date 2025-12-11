@@ -4,6 +4,7 @@ import { Toaster as SonnerToaster } from 'sonner'; // 👈 NOUVEAU
 import './globals.css';
 import { Providers } from './providers';
 
+
 export const metadata = {
   title: 'LMS Platform',
   description: 'Learning Management System',
