@@ -18,6 +18,28 @@ export type Scalars = {
   DateTime: { input: any; output: any; }
 };
 
+export type AdminActionResponse = {
+  __typename?: 'AdminActionResponse';
+  /** Message de confirmation ou d'erreur */
+  message: Scalars['String']['output'];
+  /** Indique si l'action a réussi */
+  success: Scalars['Boolean']['output'];
+};
+
+export type AdminStats = {
+  __typename?: 'AdminStats';
+  /** Nombre d'étudiants actifs */
+  activeStudents: Scalars['Int']['output'];
+  /** Nombre d'inscriptions récentes */
+  recentEnrollments: Scalars['Int']['output'];
+  /** Nombre total de cours */
+  totalCourses: Scalars['Int']['output'];
+  /** Revenus totaux générés */
+  totalRevenue: Scalars['Float']['output'];
+  /** Nombre total d'utilisateurs */
+  totalUsers: Scalars['Int']['output'];
+};
+
 export type AuthPayload = {
   __typename?: 'AuthPayload';
   accessToken: Scalars['String']['output'];
@@ -233,8 +255,11 @@ export type Mutation = {
   createCourse: Course;
   createLesson: Lesson;
   createLessonAttachment: LessonAttachment;
+  /** Désactiver un compte utilisateur (ADMIN uniquement) */
+  deactivateUser: AdminActionResponse;
   deleteChapter: Scalars['Boolean']['output'];
-  deleteCourse: Scalars['Boolean']['output'];
+  /** Supprimer un cours définitivement (ADMIN uniquement) */
+  deleteCourse: AdminActionResponse;
   deleteFile: Scalars['Boolean']['output'];
   deleteLesson: Scalars['Boolean']['output'];
   deleteLessonAttachment: Scalars['Boolean']['output'];
@@ -242,6 +267,8 @@ export type Mutation = {
   getUploadUrl: UploadUrlResponse;
   login: AuthPayload;
   markLessonAsCompleted: LessonProgress;
+  /** Promouvoir un utilisateur en instructeur (ADMIN uniquement) */
+  promoteToInstructor: AdminActionResponse;
   publishCourse: Course;
   register: AuthPayload;
   reorderChapters: Array<Chapter>;
@@ -252,6 +279,8 @@ export type Mutation = {
   updateLesson: Lesson;
   updateLessonContent: Lesson;
   updateLessonProgress: LessonProgress;
+  /** Modifier le rôle d'un utilisateur (ADMIN uniquement) */
+  updateUserRole: AdminActionResponse;
 };
 
 
@@ -281,13 +310,18 @@ export type MutationCreateLessonAttachmentArgs = {
 };
 
 
+export type MutationDeactivateUserArgs = {
+  userId: Scalars['String']['input'];
+};
+
+
 export type MutationDeleteChapterArgs = {
   id: Scalars['String']['input'];
 };
 
 
 export type MutationDeleteCourseArgs = {
-  id: Scalars['String']['input'];
+  courseId: Scalars['String']['input'];
 };
 
 
@@ -324,6 +358,11 @@ export type MutationLoginArgs = {
 
 export type MutationMarkLessonAsCompletedArgs = {
   lessonId: Scalars['String']['input'];
+};
+
+
+export type MutationPromoteToInstructorArgs = {
+  userId: Scalars['String']['input'];
 };
 
 
@@ -378,12 +417,20 @@ export type MutationUpdateLessonProgressArgs = {
   lessonId: Scalars['String']['input'];
 };
 
+
+export type MutationUpdateUserRoleArgs = {
+  input: UpdateUserRoleInput;
+};
+
 export type Query = {
   __typename?: 'Query';
+  /** Statistiques globales de la plateforme (ADMIN uniquement) */
+  adminStats: AdminStats;
   chaptersByCourse: Array<Chapter>;
   course: Course;
   courseBySlug: Course;
   courseProgress: CourseProgressOutput;
+  /** Liste de tous les cours, publiés ou non (ADMIN uniquement) */
   courses: Array<Course>;
   getCourseForEdit: Course;
   hello: Scalars['String']['output'];
@@ -396,6 +443,10 @@ export type Query = {
   myCourses: Array<Course>;
   myEnrolledCourses: Array<Course>;
   myEnrollments: Array<Enrollment>;
+  /** Liste publique des cours publiés */
+  publicCourses: Array<Course>;
+  /** Liste de tous les utilisateurs (ADMIN uniquement) */
+  users: Array<User>;
   /** API version */
   version: Scalars['String']['output'];
 };
@@ -418,11 +469,6 @@ export type QueryCourseBySlugArgs = {
 
 export type QueryCourseProgressArgs = {
   courseId: Scalars['String']['input'];
-};
-
-
-export type QueryCoursesArgs = {
-  status?: InputMaybe<CourseStatus>;
 };
 
 
@@ -516,6 +562,13 @@ export type UpdateProgressInput = {
   watchedDuration: Scalars['Int']['input'];
 };
 
+export type UpdateUserRoleInput = {
+  /** Nouveau rôle à attribuer */
+  newRole: UserRole;
+  /** ID de l'utilisateur */
+  userId: Scalars['String']['input'];
+};
+
 export type UploadUrlResponse = {
   __typename?: 'UploadUrlResponse';
   key: Scalars['String']['output'];
@@ -585,11 +638,11 @@ export type UpdateCourseMutationVariables = Exact<{
 export type UpdateCourseMutation = { __typename?: 'Mutation', updateCourse: { __typename?: 'Course', id: string, title: string, slug: string, description: string, smallDescription: string, requirements?: string | null, outcomes?: string | null, imageUrl?: string | null, fileKey?: string | null, price: number, category: string, stripePriceId?: string | null, status: CourseStatus, level: CourseLevel, duration?: number | null, createdAt: any, updatedAt: any, publishedAt?: any | null, createdBy: { __typename?: 'CourseCreator', id: string, name: string, email: string, role: UserRole }, chapters?: Array<{ __typename?: 'Chapter', id: string, title: string, position: number }> | null } };
 
 export type DeleteCourseMutationVariables = Exact<{
-  id: Scalars['String']['input'];
+  courseId: Scalars['String']['input'];
 }>;
 
 
-export type DeleteCourseMutation = { __typename?: 'Mutation', deleteCourse: boolean };
+export type DeleteCourseMutation = { __typename?: 'Mutation', deleteCourse: { __typename?: 'AdminActionResponse', success: boolean, message: string } };
 
 export type CreateCourseMutationVariables = Exact<{
   input: CreateCourseInput;
@@ -760,6 +813,11 @@ export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type MeQuery = { __typename?: 'Query', me: { __typename?: 'User', id: string, email: string, name?: string | null, role?: UserRole | null } };
+
+export type GetPublicCoursesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetPublicCoursesQuery = { __typename?: 'Query', publicCourses: Array<{ __typename?: 'Course', id: string, title: string, slug: string, smallDescription: string, price: number, duration?: number | null, level: CourseLevel, category: string, imageUrl?: string | null }> };
 
 export type GetMyEnrolledCoursesQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1032,8 +1090,11 @@ export type UpdateCourseMutationHookResult = ReturnType<typeof useUpdateCourseMu
 export type UpdateCourseMutationResult = Apollo.MutationResult<UpdateCourseMutation>;
 export type UpdateCourseMutationOptions = Apollo.BaseMutationOptions<UpdateCourseMutation, UpdateCourseMutationVariables>;
 export const DeleteCourseDocument = gql`
-    mutation DeleteCourse($id: String!) {
-  deleteCourse(id: $id)
+    mutation DeleteCourse($courseId: String!) {
+  deleteCourse(courseId: $courseId) {
+    success
+    message
+  }
 }
     `;
 export type DeleteCourseMutationFn = Apollo.MutationFunction<DeleteCourseMutation, DeleteCourseMutationVariables>;
@@ -1051,7 +1112,7 @@ export type DeleteCourseMutationFn = Apollo.MutationFunction<DeleteCourseMutatio
  * @example
  * const [deleteCourseMutation, { data, loading, error }] = useDeleteCourseMutation({
  *   variables: {
- *      id: // value for 'id'
+ *      courseId: // value for 'courseId'
  *   },
  * });
  */
@@ -2162,6 +2223,53 @@ export type MeQueryHookResult = ReturnType<typeof useMeQuery>;
 export type MeLazyQueryHookResult = ReturnType<typeof useMeLazyQuery>;
 export type MeSuspenseQueryHookResult = ReturnType<typeof useMeSuspenseQuery>;
 export type MeQueryResult = Apollo.QueryResult<MeQuery, MeQueryVariables>;
+export const GetPublicCoursesDocument = gql`
+    query GetPublicCourses {
+  publicCourses {
+    id
+    title
+    slug
+    smallDescription
+    price
+    duration
+    level
+    category
+    imageUrl
+  }
+}
+    `;
+
+/**
+ * __useGetPublicCoursesQuery__
+ *
+ * To run a query within a React component, call `useGetPublicCoursesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetPublicCoursesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetPublicCoursesQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useGetPublicCoursesQuery(baseOptions?: Apollo.QueryHookOptions<GetPublicCoursesQuery, GetPublicCoursesQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetPublicCoursesQuery, GetPublicCoursesQueryVariables>(GetPublicCoursesDocument, options);
+      }
+export function useGetPublicCoursesLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetPublicCoursesQuery, GetPublicCoursesQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetPublicCoursesQuery, GetPublicCoursesQueryVariables>(GetPublicCoursesDocument, options);
+        }
+export function useGetPublicCoursesSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetPublicCoursesQuery, GetPublicCoursesQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetPublicCoursesQuery, GetPublicCoursesQueryVariables>(GetPublicCoursesDocument, options);
+        }
+export type GetPublicCoursesQueryHookResult = ReturnType<typeof useGetPublicCoursesQuery>;
+export type GetPublicCoursesLazyQueryHookResult = ReturnType<typeof useGetPublicCoursesLazyQuery>;
+export type GetPublicCoursesSuspenseQueryHookResult = ReturnType<typeof useGetPublicCoursesSuspenseQuery>;
+export type GetPublicCoursesQueryResult = Apollo.QueryResult<GetPublicCoursesQuery, GetPublicCoursesQueryVariables>;
 export const GetMyEnrolledCoursesDocument = gql`
     query GetMyEnrolledCourses {
   myEnrolledCourses {

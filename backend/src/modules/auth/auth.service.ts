@@ -49,8 +49,8 @@ export class AuthService {
       },
     });
 
-    console.log('👤 User found:', user ? 'YES' : 'NO');
-    console.log('🔑 Accounts:', user?.accounts.length);
+    // console.log('👤 User found:', user ? 'YES' : 'NO');
+    // console.log('🔑 Accounts:', user?.accounts.length);
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');

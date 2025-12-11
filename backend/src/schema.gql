@@ -2,6 +2,31 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type AdminActionResponse {
+  """Message de confirmation ou d'erreur"""
+  message: String!
+
+  """Indique si l'action a réussi"""
+  success: Boolean!
+}
+
+type AdminStats {
+  """Nombre d'étudiants actifs"""
+  activeStudents: Int!
+
+  """Nombre d'inscriptions récentes"""
+  recentEnrollments: Int!
+
+  """Nombre total de cours"""
+  totalCourses: Int!
+
+  """Revenus totaux générés"""
+  totalRevenue: Float!
+
+  """Nombre total d'utilisateurs"""
+  totalUsers: Int!
+}
+
 type AuthPayload {
   accessToken: String!
   user: User!
@@ -215,8 +240,13 @@ type Mutation {
   createCourse(input: CreateCourseInput!): Course!
   createLesson(chapterId: String!, input: CreateLessonInput!): Lesson!
   createLessonAttachment(input: CreateLessonAttachmentInput!): LessonAttachment!
+
+  """Désactiver un compte utilisateur (ADMIN uniquement)"""
+  deactivateUser(userId: String!): AdminActionResponse!
   deleteChapter(id: String!): Boolean!
-  deleteCourse(id: String!): Boolean!
+
+  """Supprimer un cours définitivement (ADMIN uniquement)"""
+  deleteCourse(courseId: String!): AdminActionResponse!
   deleteFile(url: String!): Boolean!
   deleteLesson(id: String!): Boolean!
   deleteLessonAttachment(id: String!): Boolean!
@@ -224,6 +254,9 @@ type Mutation {
   getUploadUrl(contentType: String!, fileName: String!): UploadUrlResponse!
   login(input: LoginInput!): AuthPayload!
   markLessonAsCompleted(lessonId: String!): LessonProgress!
+
+  """Promouvoir un utilisateur en instructeur (ADMIN uniquement)"""
+  promoteToInstructor(userId: String!): AdminActionResponse!
   publishCourse(id: String!): Course!
   register(input: RegisterInput!): AuthPayload!
   reorderChapters(input: ReorderChaptersInput!): [Chapter!]!
@@ -234,14 +267,21 @@ type Mutation {
   updateLesson(id: String!, input: UpdateLessonInput!): Lesson!
   updateLessonContent(input: UpdateLessonContentInput!): Lesson!
   updateLessonProgress(input: UpdateProgressInput!, lessonId: String!): LessonProgress!
+
+  """Modifier le rôle d'un utilisateur (ADMIN uniquement)"""
+  updateUserRole(input: UpdateUserRoleInput!): AdminActionResponse!
 }
 
 type Query {
+  """Statistiques globales de la plateforme (ADMIN uniquement)"""
+  adminStats: AdminStats!
   chaptersByCourse(courseId: String!): [Chapter!]!
   course(id: String!): Course!
   courseBySlug(slug: String!): Course!
   courseProgress(courseId: String!): CourseProgressOutput!
-  courses(status: CourseStatus): [Course!]!
+
+  """Liste de tous les cours, publiés ou non (ADMIN uniquement)"""
+  courses: [Course!]!
   getCourseForEdit(id: String!): Course!
   hello: String!
   isEnrolled(courseId: String!): Boolean!
@@ -253,6 +293,12 @@ type Query {
   myCourses: [Course!]!
   myEnrolledCourses: [Course!]!
   myEnrollments: [Enrollment!]!
+
+  """Liste publique des cours publiés"""
+  publicCourses: [Course!]!
+
+  """Liste de tous les utilisateurs (ADMIN uniquement)"""
+  users: [User!]!
 
   """API version"""
   version: String!
@@ -317,6 +363,14 @@ input UpdateLessonInput {
 
 input UpdateProgressInput {
   watchedDuration: Int!
+}
+
+input UpdateUserRoleInput {
+  """Nouveau rôle à attribuer"""
+  newRole: UserRole!
+
+  """ID de l'utilisateur"""
+  userId: String!
 }
 
 type UploadUrlResponse {

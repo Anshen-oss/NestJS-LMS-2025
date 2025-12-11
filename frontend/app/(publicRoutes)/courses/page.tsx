@@ -1,6 +1,6 @@
 'use client';
 
-import { useGetAllCoursesQuery } from '@/lib/generated/graphql';
+import { useGetPublicCoursesQuery } from '@/lib/generated/graphql';
 import { PublicCourseCard, PublicCourseCardSkeleton } from '../_components/PublicCourseCard';
 
 interface Course {
@@ -16,7 +16,8 @@ interface Course {
 }
 
 export default function CoursesPage() {
-  const { data, loading, error } = useGetAllCoursesQuery();
+  const { data, loading, error } = useGetPublicCoursesQuery();
+
 
   if (error) {
     return (
@@ -45,12 +46,12 @@ export default function CoursesPage() {
           ? Array.from({ length: 6 }).map((_, i) => (
               <PublicCourseCardSkeleton key={i} />
             ))
-          : data?.courses.map((course: Course) => (
+          : data?.publicCourses.map((course: Course) => (
               <PublicCourseCard key={course.id} data={course} />
             ))}
       </div>
 
-      {!loading && data?.courses.length === 0 && (
+      {!loading && data?.publicCourses.length === 0 && (
         <div className="text-center text-muted-foreground py-12">
           <p className="text-xl">No courses available yet.</p>
         </div>
