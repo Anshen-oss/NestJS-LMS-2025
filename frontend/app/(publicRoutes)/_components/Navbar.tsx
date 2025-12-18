@@ -1,73 +1,103 @@
-"use client";
-import { buttonVariants } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/ui/themeToggle";
-import { useAuth } from "@/hooks/use-auth";
-import Logo from "@/public/logo.png";
-import Image from "next/image";
-import Link from "next/link";
-import { UserDropdown } from "./UserDropdown";
+// "use client";
+// import { buttonVariants } from "@/components/ui/button";
+// import { ThemeToggle } from "@/components/ui/themeToggle";
+// import { useAuth } from "@/hooks/use-auth";
+// import Logo from "@/public/logo.png";
+// import Image from "next/image";
+// import Link from "next/link";
+// import { UserDropdown } from "./UserDropdown";
 
-const navLinks = [
-  { name: "Home", href: "/" },
-  { name: "Courses", href: "/courses" },
-  { name: "Dashboard", href: "/admin" },
-];
+// const navLinks = [
+//   { name: "Home", href: "/" },
+//   { name: "Courses", href: "/courses" },
+//   { name: "Dashboard", href: "/admin" },
+// ];
+
+// export function Navbar() {
+//   const { user, isAuthenticated, isLoading } = useAuth();
+
+//   return (
+//     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-[backdrop-filter]:bg-background/60">
+//       <div className="container flex min-h-16  items-center mx-auto px-4 md:px-6 lg:px-8">
+//         <Link href="/" className="flex items-center space-x-2 mr-4">
+//           <Image
+//             src={Logo}
+//             alt="Logo"
+//             className="size-9"
+//             width={32}
+//             height={32}
+//           />
+//           <span className="font-bold">Anshen LMS</span>
+//         </Link>
+
+//         {/** Desktop navigation */}
+//         <nav className="hidden md:flex md:flex-1 md:items-center md:justify-between">
+//           <div className="flex items-center space-x-2">
+//             {navLinks.map((link) => (
+//               <Link
+//                 key={link.name}
+//                 href={link.href}
+//                 className="text-sm font-medium transition-colors hover:text-primary"
+//               >
+//                 {link.name}
+//               </Link>
+//             ))}
+//           </div>
+
+//           <div className="flex items-center space-x-4">
+//             <ThemeToggle />
+//             {isLoading ? null : isAuthenticated && user ? (
+//               <UserDropdown
+//                 email={user.email}
+//                 name={user.name}
+//                 image=""
+//               />
+//             ) : (
+//               <>
+//                 <Link
+//                   href="/login"
+//                   className={buttonVariants({
+//                     variant: "secondary",
+//                   })}
+//                 >
+//                   Login
+//                 </Link>
+//                 <Link href="/login" className={buttonVariants()}>
+//                   Get Started
+//                 </Link>
+//               </>
+//             )}
+//           </div>
+//         </nav>
+//       </div>
+//     </header>
+//   );
+// }
+
+
+'use client';
+
+import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
+import Link from 'next/link';
 
 export function Navbar() {
-  const { user, isAuthenticated, isLoading } = useAuth();
-
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-[backdrop-filter]:bg-background/60">
-      <div className="container flex min-h-16  items-center mx-auto px-4 md:px-6 lg:px-8">
-        <Link href="/" className="flex items-center space-x-2 mr-4">
-          <Image
-            src={Logo}
-            alt="Logo"
-            className="size-9"
-            width={32}
-            height={32}
-          />
-          <span className="font-bold">Anshen LMS</span>
+    <header className="w-full border-b">
+      <div className="container mx-auto px-4 md:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <Link href="/" className="font-bold">
+          Anshen LMS
         </Link>
 
-        {/** Desktop navigation */}
-        <nav className="hidden md:flex md:flex-1 md:items-center md:justify-between">
-          <div className="flex items-center space-x-2">
-            {navLinks.map((link) => (
-              <Link
-                key={link.name}
-                href={link.href}
-                className="text-sm font-medium transition-colors hover:text-primary"
-              >
-                {link.name}
-              </Link>
-            ))}
-          </div>
+        <nav className="flex items-center gap-4">
+          <SignedOut>
+            <Link href="/sign-in">Se connecter</Link>
+            <Link href="/sign-up">Créer un compte</Link>
+          </SignedOut>
 
-          <div className="flex items-center space-x-4">
-            <ThemeToggle />
-            {isLoading ? null : isAuthenticated && user ? (
-              <UserDropdown
-                email={user.email}
-                name={user.name}
-                image=""
-              />
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  className={buttonVariants({
-                    variant: "secondary",
-                  })}
-                >
-                  Login
-                </Link>
-                <Link href="/login" className={buttonVariants()}>
-                  Get Started
-                </Link>
-              </>
-            )}
-          </div>
+          <SignedIn>
+            {/* ✅ affiche avatar + menu (manage account, sign out…) */}
+            <UserButton afterSignOutUrl="/" />
+          </SignedIn>
         </nav>
       </div>
     </header>

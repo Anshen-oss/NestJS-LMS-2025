@@ -11,8 +11,8 @@ export class CourseCreator {
   @Field()
   name: string;
 
-  @Field()
-  email: string;
+  @Field(() => String, { nullable: true })
+  email?: string | null;
 
   @Field(() => UserRole) // ← Ajout du champ role
   role: UserRole;

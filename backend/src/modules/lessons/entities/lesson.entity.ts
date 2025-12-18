@@ -1,6 +1,6 @@
 import { Field, ID, Int, ObjectType } from '@nestjs/graphql';
-import { Chapter } from '../../chapters/entities/chapter.entity';
 import { LessonProgress } from 'src/modules/progress/entities/lesson-progress.entity';
+import { Chapter } from '../../chapters/entities/chapter.entity';
 
 @ObjectType()
 export class Lesson {
@@ -58,4 +58,8 @@ export class Lesson {
   // Champ calculé pour l'utilisateur courant (optionnel)
   @Field(() => Boolean, { nullable: true }) // ← Type explicite
   isCompleted?: boolean;
+
+  // ✅ AJOUTE CELUI-CI
+  @Field(() => Boolean, { nullable: true })
+  completed?: boolean;
 }

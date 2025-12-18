@@ -1,7 +1,11 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { useEnrollInCourseMutation } from '@/lib/generated/graphql';
+import {
+  GetMyEnrolledCoursesDocument,
+  IsEnrolledDocument,
+  useEnrollInCourseMutation,
+} from '@/lib/generated/graphql';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -10,6 +14,15 @@ export function EnrollmentButton({ courseId }: { courseId: string }) {
   const router = useRouter();
 
   const [enrollInCourse, { loading }] = useEnrollInCourseMutation({
+    // ✅ Refetch après enrollment
+    refetchQueries: [
+      { query: GetMyEnrolledCoursesDocument },
+      {
+        query: IsEnrolledDocument,
+        variables: { courseId }
+      },
+    ],
+    awaitRefetchQueries: true, // ✅ Attendre que les queries soient refetchées
     onCompleted: (data) => {
       const { success, message, checkoutUrl } = data.enrollInCourse;
 
@@ -35,7 +48,7 @@ export function EnrollmentButton({ courseId }: { courseId: string }) {
   const handleEnroll = () => {
     enrollInCourse({
       variables: {
-        input: { courseId }  // ⬅️ CHANGEMENT ICI : input au lieu de courseId direct
+        input: { courseId },
       },
     });
   };

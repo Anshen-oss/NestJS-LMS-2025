@@ -1,5 +1,6 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import * as bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 
@@ -27,6 +28,20 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  // Webhook endpoint accessible publiquement
+  app.use('/webhooks/clerk', (req, res, next) => {
+    // Pas de middleware d'auth pour les webhooks
+    next();
+  });
+
+  // ✅ RAW uniquement sur le webhook Clerk (Svix)
+  app.use('/webhooks/clerk', bodyParser.raw({ type: 'application/json' }));
+
+  // ✅ JSON normal pour le reste
+  app.use(bodyParser.json());
+
+  app.use('/webhooks/clerk', bodyParser.raw({ type: 'application/json' }));
 
   const port = process.env.PORT || 4000;
   await app.listen(port);

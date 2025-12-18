@@ -1,27 +1,33 @@
 'use client';
 
-import { useMeQuery } from '@/lib/generated/graphql';
+import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 export function useAdminAuth() {
   const router = useRouter();
-  const { data, loading } = useMeQuery();
+  const { user, isLoaded } = useUser();
+
+  // Récupérer le rôle depuis Clerk metadata
+  const userRole = user?.publicMetadata?.role as string | undefined;
 
   useEffect(() => {
-    if (!loading && data) {
-      const user = data.me;
-
+    if (isLoaded && user) {
       // Rediriger si pas admin ou instructor
-      if (user.role !== 'ADMIN' && user.role !== 'INSTRUCTOR') {
+      if (userRole !== 'ADMIN' && userRole !== 'INSTRUCTOR') {
         router.push('/');
       }
     }
-  }, [data, loading, router]);
+  }, [isLoaded, user, userRole, router]);
 
   return {
-    user: data?.me,
-    loading,
-    isAuthorized: data?.me && (data.me.role === 'ADMIN' || data.me.role === 'INSTRUCTOR'),
+    user: user ? {
+      id: user.id,
+      name: user.fullName || user.firstName || '',
+      email: user.primaryEmailAddress?.emailAddress || '',
+      role: userRole || 'STUDENT',
+    } : null,
+    loading: !isLoaded,
+    isAuthorized: user && (userRole === 'ADMIN' || userRole === 'INSTRUCTOR'),
   };
 }

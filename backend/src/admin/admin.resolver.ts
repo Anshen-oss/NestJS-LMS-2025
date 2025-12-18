@@ -72,9 +72,7 @@ export class AdminResolver {
    * @param {UpdateUserRoleInput} input - ID utilisateur et nouveau rôle
    * @returns {AdminActionResponse} Confirmation de l'action
    */
-  @Mutation(() => AdminActionResponse, {
-    description: "Modifier le rôle d'un utilisateur (ADMIN uniquement)",
-  })
+  @Mutation(() => AdminActionResponse, { name: 'adminUpdateUserRole' })
   async updateUserRole(
     @Args('input') input: UpdateUserRoleInput,
   ): Promise<AdminActionResponse> {

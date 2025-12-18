@@ -21,7 +21,7 @@ import {
 import { CheckIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { use } from 'react';
+import { use, useEffect } from 'react';
 import { EnrollmentButton } from './_components/EnrollmentButton';
 
 
@@ -36,10 +36,18 @@ export default function CourseSlugPage({ params }: { params: Params }) {
   });
 
   // Vérifier si l'utilisateur est enrollé
-  const { data: enrollmentData } = useIsEnrolledQuery({
+  const { data: enrollmentData, refetch: refetchEnrollment } = useIsEnrolledQuery({
     variables: { courseId: data?.courseBySlug?.id || '' },
     skip: !data?.courseBySlug?.id,
   });
+
+    // ✅ Refetch après retour de Stripe
+  useEffect(() => {
+    if (data?.courseBySlug?.id) {
+      refetchEnrollment();
+    }
+  }, [data?.courseBySlug?.id, refetchEnrollment]);
+
   const isEnrolled = enrollmentData?.isEnrolled || false;
 
   if (loading) {

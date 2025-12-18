@@ -1,19 +1,16 @@
 'use client';
 
-import { Navbar } from '@/app/(publicRoutes)/_components/Navbar';
-import { useMeQuery } from '@/lib/generated/graphql';
+import { useUser } from '@clerk/nextjs';
 
 export default function AdminCoursesLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { data, loading, error } = useMeQuery({
-    errorPolicy: 'all',
-  });
+  const { user, isLoaded } = useUser();
 
   // Pendant le chargement
-  if (loading) {
+  if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50">
         <div className="text-center">
@@ -24,13 +21,13 @@ export default function AdminCoursesLayout({
     );
   }
 
-  // Vérifier l'autorisation
-  const isAuthorized = !error && data?.me && (
-    data.me.role === 'ADMIN' ||
-    data.me.role === 'INSTRUCTOR'
-  );
+  // Récupérer le rôle depuis Clerk metadata
+  const userRole = user?.publicMetadata?.role as string;
 
-  // Si pas autorisé, afficher une belle page 404 inline
+  // Vérifier l'autorisation
+  const isAuthorized = user && (userRole === 'ADMIN' || userRole === 'INSTRUCTOR');
+
+  // Si pas autorisé, afficher 404
   if (!isAuthorized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
@@ -44,19 +41,19 @@ export default function AdminCoursesLayout({
             Page introuvable
           </h2>
           <p className="text-gray-600 mb-8 max-w-md mx-auto">
-            {error
+            {!user
               ? "Vous devez être connecté pour accéder à cette page."
               : "Vous n'avez pas les permissions nécessaires pour accéder à cette page."}
           </p>
           <div className="flex gap-4 justify-center">
-            <a
-              href="/"
+
+              <a href="/"
               className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"
             >
               Retour à l'accueil
             </a>
-            <a
-              href="/login"
+
+              <a href="/sign-in"
               className="px-6 py-3 border border-purple-600 text-purple-600 rounded-lg font-medium hover:bg-purple-50 transition-colors"
             >
               Se connecter
@@ -67,10 +64,10 @@ export default function AdminCoursesLayout({
     );
   }
 
-  // Si autorisé, afficher le contenu normal
+  // Si autorisé, afficher le contenu
   return (
     <>
-      <Navbar />
+
       <main>{children}</main>
     </>
   );

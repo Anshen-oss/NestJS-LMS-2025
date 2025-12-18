@@ -9,10 +9,9 @@ import {
 } from '@nestjs/graphql';
 import { UserRole } from '@prisma/client';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { Roles } from '../auth/decorators/roles.decorator';
 import { User } from '../auth/entities/user.entity';
-import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
+import { ClerkGqlGuard } from '../auth/guards/clerk-gql.guard';
+//import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 import { LessonProgress } from '../progress/entities/lesson-progress.entity';
 import { ProgressService } from '../progress/progress.service';
 import { CreateLessonAttachmentInput } from './dto/create-lesson-attachment.input';
@@ -46,7 +45,7 @@ export class LessonsResolver {
   @Query(() => Lesson, { name: 'lesson' })
   async findOne(@Args('id') id: string, @CurrentUser() user?: User) {
     // ✅ Pour les queries publiques, utiliser USER comme rôle par défaut si undefined
-    const userRole = user?.role ?? UserRole.USER;
+    const userRole = user?.role ?? UserRole.STUDENT;
     return this.lessonsService.findOne(id, user?.id, userRole);
   }
 
@@ -59,8 +58,7 @@ export class LessonsResolver {
    * AUTORISÉ : ADMIN, INSTRUCTOR (ses cours)
    */
   @Mutation(() => Lesson)
-  @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
+  @UseGuards(ClerkGqlGuard)
   async createLesson(
     @Args('chapterId') chapterId: string,
     @Args('input') input: CreateLessonInput,
@@ -81,8 +79,7 @@ export class LessonsResolver {
    * AUTORISÉ : ADMIN, INSTRUCTOR (ses cours)
    */
   @Mutation(() => Lesson)
-  @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
+  @UseGuards(ClerkGqlGuard)
   async updateLesson(
     @Args('id') id: string,
     @Args('input') input: UpdateLessonInput,
@@ -103,8 +100,7 @@ export class LessonsResolver {
    * AUTORISÉ : ADMIN, INSTRUCTOR (ses cours)
    */
   @Mutation(() => Boolean)
-  @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
+  @UseGuards(ClerkGqlGuard)
   async deleteLesson(@Args('id') id: string, @CurrentUser() user: User) {
     // ✅ Vérification explicite
     if (!user.role) {
@@ -125,7 +121,7 @@ export class LessonsResolver {
    * AUTORISÉ : Utilisateurs connectés
    */
   @Mutation(() => LessonProgress)
-  @UseGuards(GqlAuthGuard)
+  @UseGuards(ClerkGqlGuard)
   async markLessonAsCompleted(
     @Args('lessonId') lessonId: string,
     @CurrentUser() user: User,
@@ -138,8 +134,7 @@ export class LessonsResolver {
    * AUTORISÉ : Utilisateurs connectés
    */
   @Mutation(() => LessonProgress)
-  @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
+  @UseGuards(ClerkGqlGuard)
   async updateLessonProgress(
     @Args('lessonId') lessonId: string,
     @Args('input') input: UpdateProgressInput,
@@ -153,8 +148,7 @@ export class LessonsResolver {
   }
 
   @Mutation(() => Lesson)
-  @UseGuards(GqlAuthGuard) // ⬅️ Enlève RolesGuard temporairement
-  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
+  @UseGuards(ClerkGqlGuard)
   async updateLessonContent(
     @Args('input') input: UpdateLessonContentInput,
   ): Promise<Lesson> {
@@ -188,8 +182,7 @@ export class LessonsResolver {
    * Créer un attachement
    */
   @Mutation(() => LessonAttachment)
-  @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
+  @UseGuards(ClerkGqlGuard)
   async createLessonAttachment(
     @Args('input') input: CreateLessonAttachmentInput,
   ): Promise<LessonAttachment> {
@@ -216,8 +209,7 @@ export class LessonsResolver {
    * Supprimer un attachement
    */
   @Mutation(() => Boolean)
-  @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
+  @UseGuards(ClerkGqlGuard)
   async deleteLessonAttachment(@Args('id') id: string): Promise<boolean> {
     return this.lessonsService.deleteAttachment(id);
   }

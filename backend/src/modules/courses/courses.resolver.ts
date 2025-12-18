@@ -11,8 +11,7 @@ import { CourseStatus, UserRole } from '@prisma/client';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { User } from '../auth/entities/user.entity';
-import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
+import { ClerkGqlGuard } from '../auth/guards/clerk-gql.guard';
 import { Chapter } from '../chapters/entities/chapter.entity';
 import { Lesson } from '../lessons/entities/lesson.entity';
 import { CourseProgressOutput } from '../progress/dto/course-progress.output';
@@ -44,16 +43,22 @@ export class CoursesResolver {
     @Args('status', { type: () => CourseStatus, nullable: true })
     status?: CourseStatus,
   ) {
-    return this.coursesService.findAll(user?.role || UserRole.USER, status);
+    return this.coursesService.findAll(user?.role || UserRole.STUDENT, status);
   }
 
   @Query(() => Course, { name: 'course' })
+  @UseGuards(ClerkGqlGuard) // ← AJOUTE CECI
   async findOne(@Args('id') id: string, @CurrentUser() user: User) {
-    return this.coursesService.findOne(id, user?.role || UserRole.USER);
+    console.log('🔍 Resolver course - user:', user); // ← AJOUTE CE LOG
+    return this.coursesService.findOne(
+      id,
+      user?.role || UserRole.STUDENT,
+      user?.id, // ← VÉRIFIE QUE C'EST BIEN LÀ
+    );
   }
 
   @Query(() => Course, { name: 'getCourseForEdit' })
-  @UseGuards(GqlAuthGuard)
+  @UseGuards(ClerkGqlGuard)
   async getCourseForEdit(@Args('id') id: string, @CurrentUser() user: User) {
     if (!user || !user.role) {
       throw new UnauthorizedException('You must be logged in');
@@ -67,7 +72,34 @@ export class CoursesResolver {
     description: 'Liste publique des cours publiés',
   })
   async getPublicCourses() {
-    return this.coursesService.findAll(UserRole.USER, CourseStatus.Published);
+    return this.coursesService.findAll(
+      UserRole.STUDENT,
+      CourseStatus.Published,
+    );
+  }
+
+  /**
+   * Récupérer un cours
+   */
+  @Query(() => Course)
+  async courseBySlug(@Args('slug') slug: string) {
+    return this.coursesService.findBySlug(slug);
+  }
+
+  /**
+   * Récupérer mes cours (Instructor/Admin)
+   * AUTORISÉ : ADMIN, INSTRUCTOR
+   */
+  @Query(() => [Course], { name: 'myCourses' })
+  @UseGuards(ClerkGqlGuard)
+  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
+  async getMyCourses(@CurrentUser() user: User) {
+    return this.coursesService.getMyCourses(user.id);
+  }
+
+  @Query(() => [Chapter], { name: 'chaptersByCourse' })
+  async getChaptersByCourse(@Args('courseId') courseId: string) {
+    return this.coursesService.getChaptersByCourse(courseId);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -78,28 +110,24 @@ export class CoursesResolver {
    * Créer un cours
    * AUTORISÉ : ADMIN, INSTRUCTOR
    */
-
   @Mutation(() => Course)
-  @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
+  @UseGuards(ClerkGqlGuard)
   async createCourse(
     @Args('input') input: CreateCourseInput,
-    @CurrentUser() user: User,
+    @CurrentUser() user: any,
   ) {
-    return this.coursesService.create(user.id, input);
+    return this.coursesService.create(user.id, input); // ← Inversé
   }
 
   /**
    * Mettre à jour un cours
    * AUTORISÉ : ADMIN, INSTRUCTOR (ses cours)
    */
-
   @Mutation(() => Course)
-  @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
+  @UseGuards(ClerkGqlGuard)
   async updateCourse(
     @Args('input') input: UpdateCourseInput,
-    @CurrentUser() user: User,
+    @CurrentUser() user: any,
   ): Promise<Course> {
     // Vérifier que l'utilisateur est admin
     if (!user.role) {
@@ -111,12 +139,56 @@ export class CoursesResolver {
   }
 
   /**
+   * Supprimer un cours
+   * AUTORISÉ : ADMIN, INSTRUCTOR (ses cours)
+   */
+  @Mutation(() => Boolean)
+  @UseGuards(ClerkGqlGuard)
+  async deleteCourse(@Args('id') id: string, @CurrentUser() user: any) {
+    await this.coursesService.deleteCourse(id, user.id, user.role);
+    return true;
+  }
+
+  /**
+   * Publier un cours
+   * AUTORISÉ : ADMIN, INSTRUCTOR (ses cours)
+   */
+  @Mutation(() => Course)
+  @UseGuards(ClerkGqlGuard)
+  async publishCourse(@Args('id') id: string, @CurrentUser() user: User) {
+    if (!user.role) {
+      throw new UnauthorizedException(
+        'User role is required to perform this action',
+      );
+    }
+    return this.coursesService.publish(id, user.id, user.role);
+  }
+
+  /**
+   * Archiver un cours
+   * AUTORISÉ : ADMIN, INSTRUCTOR (ses cours)
+   */
+  @Mutation(() => Course)
+  @UseGuards(ClerkGqlGuard)
+  async archiveCourse(@Args('id') id: string, @CurrentUser() user: User) {
+    if (!user.role) {
+      throw new UnauthorizedException(
+        'User role is required to perform this action',
+      );
+    }
+    return this.coursesService.archive(id, user.id, user.role);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  //                    CHAPTERS MUTATIONS
+  // ═══════════════════════════════════════════════════════════
+
+  /**
    * Créer un chapter
    * AUTORISÉ : ADMIN, INSTRUCTOR (ses cours)
    */
   @Mutation(() => Chapter)
-  @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
+  @UseGuards(ClerkGqlGuard)
   async createChapter(
     @Args('input') input: CreateChapterInput,
     @CurrentUser() user: User,
@@ -135,8 +207,7 @@ export class CoursesResolver {
    * AUTORISÉ : ADMIN, INSTRUCTOR (ses cours)
    */
   @Mutation(() => Chapter)
-  @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
+  @UseGuards(ClerkGqlGuard)
   async updateChapter(
     @Args('input') input: UpdateChapterInput,
     @CurrentUser() user: User,
@@ -151,8 +222,7 @@ export class CoursesResolver {
   }
 
   @Mutation(() => Boolean)
-  @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
+  @UseGuards(ClerkGqlGuard)
   async deleteChapter(
     @Args('id') id: string,
     @CurrentUser() user: User,
@@ -165,44 +235,15 @@ export class CoursesResolver {
     return this.coursesService.deleteChapter(user.id, user.role, id);
   }
 
-  @Query(() => [Chapter], { name: 'chaptersByCourse' })
-  async getChaptersByCourse(@Args('courseId') courseId: string) {
-    return this.coursesService.getChaptersByCourse(courseId);
-  }
-
-  /**
-   * Supprimer un cours
-   * AUTORISÉ : ADMIN, INSTRUCTOR (ses cours)
-   */
-  @Mutation(() => Boolean)
-  @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
-  async deleteCourse(@Args('id') id: string, @CurrentUser() user: User) {
-    if (!user.role) {
-      throw new UnauthorizedException(
-        'User role is required to perform this action',
-      );
-    }
-    return this.coursesService.deleteCourse(id, user.id, user.role);
-  }
-
-  @ResolveField(() => CourseProgressOutput, { nullable: true })
-  async progress(@Parent() course: Course, @CurrentUser() user?: User) {
-    if (!user) return null;
-
-    return this.progressService.getCourseProgress(user.id, course.id);
-  }
-
   /**
    * Réordonner les chapters un cours
    * AUTORISÉ : ADMIN, INSTRUCTOR (ses cours)
    */
   @Mutation(() => [Chapter])
-  @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
+  @UseGuards(ClerkGqlGuard)
   async reorderChapters(
     @Args('input') input: ReorderChaptersInput,
-    @CurrentUser() user: User,
+    @CurrentUser() user: any,
   ): Promise<any> {
     if (!user.role) {
       throw new UnauthorizedException(
@@ -213,79 +254,12 @@ export class CoursesResolver {
     return this.coursesService.reorderChapters(user.id, user.role, input);
   }
 
-  /**
-   * Récupérer un cours
-   */
-  @Query(() => Course)
-  async courseBySlug(@Args('slug') slug: string) {
-    return this.coursesService.findBySlug(slug);
-  }
-
-  /**
-   * Récupérer mes cours (Instructor/Admin)
-   * AUTORISÉ : ADMIN, INSTRUCTOR
-   */
-  @Query(() => [Course], { name: 'myCourses' })
-  @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
-  async getMyCourses(@CurrentUser() user: User) {
-    return this.coursesService.getMyCourses(user.id);
-  }
-
-  /**
-   * Publier un cours
-   * AUTORISÉ : ADMIN, INSTRUCTOR (ses cours)
-   */
-  @Mutation(() => Course)
-  @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
-  async publishCourse(@Args('id') id: string, @CurrentUser() user: User) {
-    if (!user.role) {
-      throw new UnauthorizedException(
-        'User role is required to perform this action',
-      );
-    }
-    return this.coursesService.publish(id, user.id, user.role);
-  }
-
-  /**
-   * Archiver un cours
-   * AUTORISÉ : ADMIN, INSTRUCTOR (ses cours)
-   */
-  @Mutation(() => Course)
-  @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
-  async archiveCourse(@Args('id') id: string, @CurrentUser() user: User) {
-    if (!user.role) {
-      throw new UnauthorizedException(
-        'User role is required to perform this action',
-      );
-    }
-    return this.coursesService.archive(id, user.id, user.role);
-  }
   // ═══════════════════════════════════════════════════════════
-  //                    RESOLVE FIELDS
+  //                    LESSONS MUTATIONS
   // ═══════════════════════════════════════════════════════════
-  @ResolveField(() => [Chapter], { nullable: true })
-  async chapters(@Parent() course: Course) {
-    // Si déjà chargé par le service, retourner
-    if (course.chapters) {
-      return course.chapters;
-    }
 
-    // Sinon charger depuis la DB
-    return this.coursesService['prisma'].chapter.findMany({
-      where: { courseId: course.id },
-      orderBy: { position: 'asc' },
-    });
-  }
-
-  /**
-   * CRUD Lessons
-   */
   @Mutation(() => Lesson)
-  @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
+  @UseGuards(ClerkGqlGuard)
   async createLesson(
     @Args('input') input: CreateLessonInput,
     @CurrentUser() user: User,
@@ -300,8 +274,7 @@ export class CoursesResolver {
   }
 
   @Mutation(() => Lesson)
-  @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
+  @UseGuards(ClerkGqlGuard)
   async updateLesson(
     @Args('id') id: string,
     @Args('input') input: UpdateLessonInput,
@@ -317,8 +290,7 @@ export class CoursesResolver {
   }
 
   @Mutation(() => Lesson)
-  @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
+  @UseGuards(ClerkGqlGuard)
   async deleteLesson(
     @Args('id') id: string,
     @CurrentUser() user: User,
@@ -333,8 +305,7 @@ export class CoursesResolver {
   }
 
   @Mutation(() => [Lesson])
-  @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
+  @UseGuards(ClerkGqlGuard)
   async reorderLessons(
     @Args('input') input: ReorderLessonsInput,
     @CurrentUser() user: User,
@@ -345,5 +316,30 @@ export class CoursesResolver {
       );
     }
     return this.coursesService.reorderLessons(user.id, user.role, input);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  //                    RESOLVE FIELDS
+  // ═══════════════════════════════════════════════════════════
+
+  @ResolveField(() => CourseProgressOutput, { nullable: true })
+  async progress(@Parent() course: Course, @CurrentUser() user?: User) {
+    if (!user) return null;
+
+    return this.progressService.getCourseProgress(user.id, course.id);
+  }
+
+  @ResolveField(() => [Chapter], { nullable: true })
+  async chapters(@Parent() course: Course) {
+    // Si déjà chargé par le service, retourner
+    if (course.chapters) {
+      return course.chapters;
+    }
+
+    // Sinon charger depuis la DB
+    return this.coursesService['prisma'].chapter.findMany({
+      where: { courseId: course.id },
+      orderBy: { position: 'asc' },
+    });
   }
 }

@@ -83,8 +83,9 @@ export class EnrollmentService {
         } catch (error) {
           // Customer n'existe plus dans Stripe, on va en créer un nouveau
           console.log("⚠️ Customer Stripe invalide, création d'un nouveau");
+
           const customer = await this.stripe.customers.create({
-            email: user.email,
+            email: user.email ?? undefined, // ✅ ici
             name: user.name || undefined,
             metadata: { userId: user.id },
           });
@@ -100,7 +101,7 @@ export class EnrollmentService {
         // Pas de customer, on en crée un
         console.log("✅ Création d'un nouveau customer Stripe");
         const customer = await this.stripe.customers.create({
-          email: user.email,
+          email: user.email ?? undefined, // ✅ ici
           name: user.name || undefined,
           metadata: { userId: user.id },
         });
@@ -238,13 +239,32 @@ export class EnrollmentService {
   }
 
   async isEnrolled(userId: string, courseId: string): Promise<boolean> {
+    console.log('🔍 isEnrolled called with:', { userId, courseId });
+
+    // ✅ Récupérer le user
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true, clerkId: true },
+    });
+
+    console.log('👤 User found:', user);
+
+    // ✅ Si ADMIN, accès à tous les cours
+    if (user?.role === 'ADMIN') {
+      console.log('✅ User is ADMIN, returning true');
+      return true;
+    }
+
+    // ✅ Vérifier l'enrollment
     const enrollment = await this.prisma.enrollment.findFirst({
       where: {
         userId,
         courseId,
-        status: EnrollmentStatus.Active,
+        status: 'Active',
       },
     });
+
+    console.log('📚 Enrollment found:', enrollment);
 
     return !!enrollment;
   }

@@ -76,7 +76,7 @@ type Course {
 }
 
 type CourseCreator {
-  email: String!
+  email: String
   id: String!
   name: String!
   role: UserRole!
@@ -184,7 +184,7 @@ type EnrollmentResponse {
 
 type Lesson {
   chapter: Chapter
-  completed: Boolean!
+  completed: Boolean
   content: String
   createdAt: DateTime!
   description: String
@@ -235,6 +235,7 @@ input LoginInput {
 }
 
 type Mutation {
+  adminUpdateUserRole(input: UpdateUserRoleInput!): AdminActionResponse!
   archiveCourse(id: String!): Course!
   createChapter(input: CreateChapterInput!): Chapter!
   createCourse(input: CreateCourseInput!): Course!
@@ -261,15 +262,14 @@ type Mutation {
   register(input: RegisterInput!): AuthPayload!
   reorderChapters(input: ReorderChaptersInput!): [Chapter!]!
   reorderLessons(input: ReorderLessonsInput!): [Lesson!]!
+  setupUserRole(clerkUserId: String!, role: String!): User!
   toggleLessonCompletion(lessonId: String!): LessonProgress!
   updateChapter(input: UpdateChapterInput!): Chapter!
   updateCourse(input: UpdateCourseInput!): Course!
   updateLesson(id: String!, input: UpdateLessonInput!): Lesson!
   updateLessonContent(input: UpdateLessonContentInput!): Lesson!
   updateLessonProgress(input: UpdateProgressInput!, lessonId: String!): LessonProgress!
-
-  """Modifier le rôle d'un utilisateur (ADMIN uniquement)"""
-  updateUserRole(input: UpdateUserRoleInput!): AdminActionResponse!
+  updateUserRole(role: String!): User!
 }
 
 type Query {
@@ -305,7 +305,7 @@ type Query {
 }
 
 input RegisterInput {
-  email: String!
+  email: String
   name: String
   password: String!
 }
@@ -380,8 +380,9 @@ type UploadUrlResponse {
 }
 
 type User {
+  clerkId: String
   createdAt: DateTime!
-  email: String!
+  email: String
   id: ID!
   name: String
   role: UserRole
@@ -396,5 +397,5 @@ enum UserRole {
   INSTRUCTOR
 
   """Regular user with basic permissions"""
-  USER
+  STUDENT
 }
