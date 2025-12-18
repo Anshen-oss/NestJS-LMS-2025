@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   UnauthorizedException,
@@ -18,16 +19,33 @@ export class AuthService {
   ) {}
 
   // ✅ Méthode privée pour générer le token
+  // private async generateToken(user: {
+  //   id: string;
+  //   email: string;
+  //   role: string;
+  // }): Promise<string> {
+  //   const payload = {
+  //     sub: user.id,
+  //     email: user.email,
+  //     role: user.role,
+  //   };
+  //   return this.jwtService.sign(payload);
+  // }
   private async generateToken(user: {
     id: string;
-    email: string;
+    email?: string | null;
     role: string;
   }): Promise<string> {
-    const payload = {
+    const payload: Record<string, any> = {
       sub: user.id,
-      email: user.email,
       role: user.role,
     };
+
+    // ✅ N'ajoute l'email que s'il existe
+    if (user.email) {
+      payload.email = user.email;
+    }
+
     return this.jwtService.sign(payload);
   }
 
@@ -99,7 +117,14 @@ export class AuthService {
   }
 
   async register(registerInput: RegisterInput): Promise<AuthPayload> {
-    const { email, password, name } = registerInput;
+    // const { email, password, name } = registerInput;
+    const email = registerInput.email?.trim().toLowerCase();
+
+    if (!email) {
+      throw new BadRequestException('Email is required');
+    }
+
+    const { password, name } = registerInput;
 
     // 1️⃣ Vérifier si l'email existe déjà
     const existingUser = await this.prisma.user.findUnique({
@@ -122,7 +147,7 @@ export class AuthService {
         email,
         name: name || email, // ✅ Valeur par défaut
         emailVerified: false,
-        role: 'USER',
+        role: 'STUDENT',
         createdAt: now,
         updatedAt: now,
         accounts: {

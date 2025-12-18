@@ -1,8 +1,7 @@
 'use client';
 
-//import { GET_COURSE_WITH_CURRICULUM } from '@/graphql/queries/student.queries';
-import { useGetCourseForEditQuery } from '@/lib/generated/graphql';
-
+import { useGetCourseWithLessonsQuery } from '@/lib/generated/graphql';
+import { Loader2 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 
 export default function StudentCoursePage() {
@@ -10,25 +9,56 @@ export default function StudentCoursePage() {
   const router = useRouter();
   const courseId = params.courseId as string;
 
-  // const { data, loading } = useQuery(GET_COURSE_WITH_CURRICULUM, {
-  //   variables: { id: courseId },
-  // });
+  const { data, loading, error } = useGetCourseWithLessonsQuery({
+    variables: { id: courseId },
+  });
 
-  const { data, loading } = useGetCourseForEditQuery({
-  variables: { id: courseId },
-});
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
-  if (loading) return <div>Chargement...</div>;
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Erreur : {error.message}</p>
+          <button onClick={() => router.push('/student')}>
+            Retour à mes cours
+          </button>
+        </div>
+      </div>
+    );
+  }
 
-  const course = data?.getCourseForEdit;
-  const firstLesson = course?.chapters?.[0]?.lessons?.[0];
+  const course = data?.course;
+
+  // Trouver la première leçon
+  const firstChapter = course?.chapters?.find(ch => ch.lessons.length > 0);
+  const firstLesson = firstChapter?.lessons?.[0];
 
   if (!firstLesson) {
-    return <div>Aucune leçon disponible</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">Ce cours n'a pas encore de leçons</p>
+          <button onClick={() => router.push('/student')}>
+            Retour à mes cours
+          </button>
+        </div>
+      </div>
+    );
   }
 
   // Rediriger automatiquement vers la première leçon
   router.push(`/student/courses/${courseId}/lessons/${firstLesson.id}`);
 
-  return <div>Redirection...</div>;
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
+    </div>
+  );
 }

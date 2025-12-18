@@ -28,6 +28,9 @@
     "@as-integrations/express5": "^1.1.2",
     "@aws-sdk/client-s3": "^3.940.0",
     "@aws-sdk/s3-request-presigner": "^3.940.0",
+    "@clerk/backend": "^2.27.0",
+    "@clerk/clerk-sdk-node": "^5.1.6",
+    "@clerk/nextjs": "^6.36.3",
     "@nestjs/apollo": "^13.2.1",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
@@ -38,6 +41,7 @@
     "@nestjs/platform-express": "^11.0.1",
     "@prisma/client": "6.19.0",
     "bcrypt": "^6.0.0",
+    "body-parser": "^2.2.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "cookie-parser": "^1.4.7",
@@ -46,7 +50,8 @@
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "stripe": "^20.0.0"
+    "stripe": "^20.0.0",
+    "svix": "^1.82.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

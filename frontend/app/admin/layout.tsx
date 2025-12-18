@@ -2,13 +2,6 @@
 
 import { Button } from '@/components/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -22,16 +15,15 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
-import { useMeQuery } from '@/lib/generated/graphql';
+import { UserButton, useUser } from '@clerk/nextjs';
 import {
   BarChart3,
   BookOpen,
   Home,
   LayoutDashboard,
-  LogOut,
   Settings,
   Shield,
-  Users,
+  Users
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -42,12 +34,17 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { data, loading, error } = useMeQuery({
-    errorPolicy: 'all',
-  });
+  const { user, isLoaded } = useUser();
+
+  // Récupérer le rôle depuis metadata
+  const userRole = user?.publicMetadata?.role as string | undefined;
+
+  const isAuthorized = isLoaded && user && (
+    userRole === 'ADMIN' || userRole === 'INSTRUCTOR'
+  );
 
   // Pendant le chargement
-  if (loading) {
+  if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50">
         <div className="text-center">
@@ -57,12 +54,6 @@ export default function AdminLayout({
       </div>
     );
   }
-
-  // Vérifier l'autorisation
-  const isAuthorized = !error && data?.me && (
-    data.me.role === 'ADMIN' ||
-    data.me.role === 'INSTRUCTOR'
-  );
 
   // Si pas autorisé, afficher 404 inline
   if (!isAuthorized) {
@@ -78,19 +69,19 @@ export default function AdminLayout({
             Page introuvable
           </h2>
           <p className="text-gray-600 mb-8 max-w-md mx-auto">
-            {error
+            {!user
               ? "Vous devez être connecté pour accéder à cette page."
               : "Vous n'avez pas les permissions nécessaires pour accéder à cette page."}
           </p>
           <div className="flex gap-4 justify-center">
-            <a
-              href="/"
+
+              <a href="/"
               className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"
             >
               Retour à l'accueil
             </a>
-            <a
-              href="/login"
+
+              <a href="/sign-in"
               className="px-6 py-3 border border-purple-600 text-purple-600 rounded-lg font-medium hover:bg-purple-50 transition-colors"
             >
               Se connecter
@@ -128,6 +119,11 @@ export default function AdminLayout({
       description: 'Statistiques',
     },
   ];
+
+  // Helpers pour affichage utilisateur
+  const userName = user?.fullName || user?.firstName || 'Admin';
+  const userEmail = user?.primaryEmailAddress?.emailAddress || '';
+  const userInitial = (user?.fullName?.charAt(0) || user?.firstName?.charAt(0) || 'A').toUpperCase();
 
   return (
     <SidebarProvider>
@@ -189,22 +185,14 @@ export default function AdminLayout({
                 <div className="flex items-center gap-3 px-2 py-2">
                   <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
                     <span className="text-sm font-semibold text-purple-600">
-                      {data?.me?.name?.charAt(0).toUpperCase()}
+                      {userInitial}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{data?.me?.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{data?.me?.email}</p>
+                    <p className="text-sm font-medium truncate">{userName}</p>
+                    <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
                   </div>
                 </div>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="/logout">
-                    <LogOut className="h-4 w-4" />
-                    <span>Déconnexion</span>
-                  </Link>
-                </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarFooter>
@@ -227,54 +215,14 @@ export default function AdminLayout({
                   </Link>
                 </Button>
 
-                {/* User Menu Dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="gap-2">
-                      <div className="h-7 w-7 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                        <span className="text-xs font-semibold text-white">
-                          {data?.me?.name?.charAt(0).toUpperCase() || 'A'}
-                        </span>
-                      </div>
-                      <span className="hidden md:inline-block">
-                        {data?.me?.name || 'Admin'}
-                      </span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <div className="flex items-center gap-2 p-2">
-                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                        <span className="text-sm font-semibold text-white">
-                          {data?.me?.name?.charAt(0).toUpperCase() || 'A'}
-                        </span>
-                      </div>
-                      <div className="flex flex-col">
-                        <p className="text-sm font-medium">{data?.me?.name}</p>
-                        <p className="text-xs text-muted-foreground">{data?.me?.email}</p>
-                      </div>
-                    </div>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href="/admin/settings">
-                        <Settings className="mr-2 h-4 w-4" />
-                        Paramètres
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/">
-                        <Home className="mr-2 h-4 w-4" />
-                        Retour à l'accueil
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href="/logout">
-                        <LogOut className="mr-2 h-4 w-4" />
-                        Déconnexion
-                      </Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {/* Clerk UserButton */}
+                <UserButton
+                  appearance={{
+                    elements: {
+                      avatarBox: 'h-8 w-8',
+                    }
+                  }}
+                />
               </div>
             </div>
           </div>

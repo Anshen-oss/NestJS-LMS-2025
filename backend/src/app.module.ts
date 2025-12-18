@@ -14,6 +14,7 @@ import { LessonsModule } from './modules/lessons/lessons.module';
 import { ProgressModule } from './modules/progress/progress.module';
 import { S3Module } from './modules/s3/s3.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { PrismaModule } from './prisma/prisma.module';
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
       playground: true,
       sortSchema: true,
+      context: ({ req }) => ({ req }), // ✅ CRUCIAL
     }),
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
@@ -32,6 +34,7 @@ import { PrismaModule } from './prisma/prisma.module';
     S3Module,
     ProgressModule,
     AdminModule,
+    WebhooksModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppResolver],

@@ -37,7 +37,7 @@ export class CoursesService {
    */
   async findAll(userRole: UserRole, statusFilter?: CourseStatus) {
     // 🔒 USER : Seulement les cours publiés
-    if (userRole === UserRole.USER) {
+    if (userRole === UserRole.STUDENT) {
       return this.prisma.course.findMany({
         where: { status: CourseStatus.Published },
         orderBy: { createdAt: 'desc' },
@@ -68,34 +68,62 @@ export class CoursesService {
   /**
    * Récupère un cours par ID avec vérification des permissions
    */
-  async findOne(id: string, userRole: UserRole) {
+  async findOne(id: string, userRole: UserRole, userId?: string) {
+    console.log('🔍 findOne called with:', { id, userRole, userId }); // ← LOG 1
+
     const course = await this.prisma.course.findUnique({
       where: { id },
       include: {
-        createdBy: {
-          select: { id: true, name: true, email: true, role: true },
-        },
         chapters: {
           orderBy: { position: 'asc' },
           include: {
             lessons: {
               orderBy: { order: 'asc' },
+              include: userId
+                ? {
+                    lessonProgress: {
+                      where: { userId },
+                      select: { completed: true },
+                    },
+                  }
+                : undefined,
             },
+          },
+        },
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
           },
         },
       },
     });
 
-    if (!course) {
-      throw new NotFoundException(`Course #${id} not found`);
-    }
+    console.log('📚 Course loaded:', course?.title); // ← LOG 2
+    console.log('📚 Has chapters:', !!course?.chapters); // ← LOG 3
+    console.log('📚 userId for transformation:', userId); // ← LOG 4
 
-    // 🔒 USER ne peut voir que les cours publiés
-    if (
-      userRole === UserRole.USER &&
-      course.status !== CourseStatus.Published
-    ) {
-      throw new ForbiddenException('You cannot access unpublished courses');
+    if (!course) return null;
+
+    // @ts-ignore - Ajout dynamique du champ completed
+    if (userId && course.chapters) {
+      console.log('✅ Starting transformation'); // ← LOG 5
+      course.chapters.forEach((chapter) => {
+        console.log(`📖 Chapter: ${chapter.title}`);
+        chapter.lessons?.forEach((lesson: any) => {
+          console.log(`  📝 Lesson: ${lesson.title}`);
+          console.log(`    lessonProgress:`, lesson.lessonProgress);
+          lesson.completed = lesson.lessonProgress?.[0]?.completed || false;
+          console.log(`    ✅ completed set to: ${lesson.completed}`);
+        });
+      });
+    } else {
+      console.log('❌ Transformation skipped:', {
+        userId: !!userId,
+        hasChapters: !!course.chapters,
+      });
     }
 
     return course;
@@ -129,7 +157,7 @@ export class CoursesService {
     }
 
     // 🔒 Vérification des permissions pour l'édition
-    if (userRole === UserRole.USER) {
+    if (userRole === UserRole.STUDENT) {
       throw new ForbiddenException('Students cannot edit courses');
     }
 
@@ -686,27 +714,38 @@ export class CoursesService {
    * Récupère les cours créés par un utilisateur (Instructor)
    */
   async getMyCourses(userId: string) {
-    const courses = await this.prisma.course.findMany({
-      where: { userId },
+    // Récupérer l'utilisateur pour vérifier son rôle
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
+
+    // Si ADMIN, retourner TOUS les cours
+    if (user?.role === 'ADMIN') {
+      return this.prisma.course.findMany({
+        orderBy: { createdAt: 'desc' },
+        include: {
+          chapters: {
+            orderBy: { position: 'asc' },
+          },
+          enrollments: true,
+        },
+      });
+    }
+
+    // Si INSTRUCTOR, retourner seulement ses cours
+    return this.prisma.course.findMany({
+      where: {
+        userId: userId,
+      },
       orderBy: { createdAt: 'desc' },
       include: {
         chapters: {
           orderBy: { position: 'asc' },
         },
-        _count: {
-          select: {
-            enrollments: true,
-            chapters: true,
-          },
-        },
+        enrollments: true,
       },
     });
-    // ✅ Mapper les counts pour GraphQL
-    return courses.map((course) => ({
-      ...course,
-      chaptersCount: course._count.chapters,
-      enrollmentsCount: course._count.enrollments,
-    }));
   }
 
   // ═══════════════════════════════════════════════════════════

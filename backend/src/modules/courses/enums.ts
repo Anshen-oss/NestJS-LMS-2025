@@ -45,7 +45,7 @@ registerEnumType(UserRole, {
   name: 'UserRole',
   description: 'The role of a user in the system',
   valuesMap: {
-    USER: {
+    STUDENT: {
       description: 'Regular user with basic permissions',
     },
     ADMIN: {

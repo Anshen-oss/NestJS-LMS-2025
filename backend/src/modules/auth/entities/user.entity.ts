@@ -1,16 +1,16 @@
 import { Field, ID, ObjectType } from '@nestjs/graphql';
 import { UserRole } from '@prisma/client'; // ✅ Import depuis Prisma
 
-// ❌ SUPPRIMÉ : export enum UserRole (maintenant dans @prisma/client)
-// ❌ SUPPRIMÉ : registerEnumType (sera fait dans enums.ts si nécessaire)
-
 @ObjectType()
 export class User {
   @Field(() => ID)
   id: string;
 
-  @Field()
-  email: string;
+  @Field(() => String, { nullable: true }) // ✅ Type explicite
+  clerkId?: string | null; // ✅ Accepter null ET undefined
+
+  @Field(() => String, { nullable: true })
+  email?: string | null;
 
   @Field({ nullable: true })
   name?: string;
@@ -21,17 +21,4 @@ export class User {
 
   @Field()
   createdAt: Date;
-
-  // ═══════════════════════════════════════════
-  //              RELATIONS (optionnelles)
-  // ═══════════════════════════════════════════
-
-  // @Field(() => [Course], { nullable: true })
-  // coursesCreated?: Course[];
-
-  // @Field(() => [Enrollment], { nullable: true })
-  // enrollments?: Enrollment[];
-
-  // @Field(() => [LessonProgress], { nullable: true })
-  // lessonProgress?: LessonProgress[];
 }

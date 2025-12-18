@@ -2,7 +2,7 @@ import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../auth/entities/user.entity';
-import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
+import { ClerkGqlGuard } from '../auth/guards/clerk-gql.guard';
 import { Course } from '../courses/entities/course.entity';
 import { EnrollInCourseInput } from './dto/enroll-in-course.input';
 import { EnrollmentService } from './enrollment.service';
@@ -14,7 +14,7 @@ export class EnrollmentResolver {
   constructor(private readonly enrollmentService: EnrollmentService) {}
 
   @Mutation(() => EnrollmentResponse)
-  @UseGuards(GqlAuthGuard)
+  @UseGuards(ClerkGqlGuard)
   async enrollInCourse(
     @Args('input') input: EnrollInCourseInput,
     @CurrentUser() user: User,
@@ -24,13 +24,13 @@ export class EnrollmentResolver {
 
   // 🆕 NOUVELLE QUERY
   @Query(() => [Enrollment])
-  @UseGuards(GqlAuthGuard)
+  @UseGuards(ClerkGqlGuard)
   async myEnrollments(@CurrentUser() user: User): Promise<Enrollment[]> {
     return this.enrollmentService.getMyEnrollments(user.id);
   }
 
   @Query(() => Boolean)
-  @UseGuards(GqlAuthGuard)
+  @UseGuards(ClerkGqlGuard)
   async isEnrolled(
     @Args('courseId') courseId: string,
     @CurrentUser() user: User,
@@ -39,7 +39,7 @@ export class EnrollmentResolver {
   }
 
   @Query(() => [Course])
-  @UseGuards(GqlAuthGuard)
+  @UseGuards(ClerkGqlGuard)
   async myEnrolledCourses(@CurrentUser() user: User) {
     const enrollments = await this.enrollmentService.getMyEnrollments(user.id);
     return enrollments.map((e) => e.course);

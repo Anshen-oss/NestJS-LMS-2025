@@ -7,7 +7,21 @@ query GetMyEnrollments {
       title
       slug
       description
+      imageUrl
       price
+      duration
+      level
+      category
+      smallDescription
+      chapters {
+        id
+        title
+        lessons {
+          id
+          title
+          completed
+        }
+      }
     }
   }
 }

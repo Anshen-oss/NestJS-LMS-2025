@@ -2,7 +2,6 @@
 
 import { RenderDescription } from '@/components/rich-text-editor/RenderDescription';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLessonAttachmentsQuery, useToggleLessonCompletionMutation } from '@/lib/generated/graphql';
 import { CheckCircle2, Download, FileIcon, FileText, Loader2, PlayCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -18,6 +17,7 @@ interface LessonContentProps {
 export function LessonContent({ courseId, lessonId, course, onProgressUpdate }: LessonContentProps) {
   const [toggleCompletion, { loading: toggleLoading }] = useToggleLessonCompletionMutation();
   const [isCompleted, setIsCompleted] = useState(false);
+  const [activeTab, setActiveTab] = useState<'notes' | 'downloads'>('notes'); // ✅ Custom tab state
 
   // Query pour récupérer les pièces jointes
   const { data: attachmentsData, loading: attachmentsLoading } = useLessonAttachmentsQuery({
@@ -92,12 +92,12 @@ export function LessonContent({ courseId, lessonId, course, onProgressUpdate }: 
 
   return (
     <div className="bg-white">
-      {/* Container principal - Style Coursera */}
+      {/* Container principal */}
       <div className="max-w-4xl mx-auto">
 
-        {/* Zone vidéo - Pleine largeur */}
+        {/* Zone vidéo */}
         <div className="w-full bg-gray-100">
-          <div className="aspect-video bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center relative group">
+          <div className="aspect-video bg-gray-900 flex items-center justify-center relative group">
             <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-all"></div>
 
             <div className="relative text-center z-10">
@@ -117,7 +117,7 @@ export function LessonContent({ courseId, lessonId, course, onProgressUpdate }: 
         {/* Contenu sous la vidéo */}
         <div className="px-8 py-8 space-y-8">
 
-          {/* Titre de la leçon - Style Coursera */}
+          {/* Titre de la leçon */}
           <div>
             <h1 className="text-4xl font-bold text-gray-900 mb-3">
               {currentLesson.title}
@@ -134,7 +134,7 @@ export function LessonContent({ courseId, lessonId, course, onProgressUpdate }: 
               className={`gap-2 transition-all ${
                 isCompleted
                   ? 'bg-green-600 hover:bg-green-700 text-white'
-                  : ''
+                  : 'bg-blue-600 hover:bg-blue-700 text-white'
               }`}
               onClick={handleToggleCompletion}
               disabled={toggleLoading}
@@ -158,26 +158,49 @@ export function LessonContent({ courseId, lessonId, course, onProgressUpdate }: 
             </Button>
           </div>
 
-          {/* Contenu de la leçon - Format Coursera avec Onglets */}
-          <Tabs defaultValue="notes" className="w-full">
-            <TabsList className="w-full grid grid-cols-2 mb-6">
-              <TabsTrigger value="notes" className="gap-2">
+          {/* Contenu de la leçon - Onglets custom modernes */}
+          <div className="w-full">
+            {/* Custom Tab Buttons */}
+            <div className="w-full bg-white border border-gray-200 p-1 flex gap-1 rounded-lg mb-6">
+              <button
+                onClick={() => setActiveTab('notes')}
+                className={`flex items-center gap-2 px-6 py-3 rounded-md transition-all font-medium ${
+                  activeTab === 'notes'
+                    ? 'bg-blue-500 text-white shadow-md'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
                 <FileText className="w-4 h-4" />
-                Notes
-              </TabsTrigger>
-              <TabsTrigger value="downloads" className="gap-2">
+                <span>Notes</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('downloads')}
+                className={`flex items-center gap-2 px-6 py-3 rounded-md transition-all font-medium ${
+                  activeTab === 'downloads'
+                    ? 'bg-purple-500 text-white shadow-md'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
                 <Download className="w-4 h-4" />
-                Téléchargements
+                <span>Téléchargements</span>
                 {attachments.length > 0 && (
-                  <span className="ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">
+                  <span
+                    className={`ml-1 px-2 py-0.5 text-xs rounded-full font-semibold ${
+                      activeTab === 'downloads'
+                        ? 'bg-white text-purple-600'
+                        : 'bg-blue-100 text-blue-700'
+                    }`}
+                  >
                     {attachments.length}
                   </span>
                 )}
-              </TabsTrigger>
-            </TabsList>
+              </button>
+            </div>
 
             {/* ONGLET NOTES */}
-            <TabsContent value="notes">
+            {activeTab === 'notes' && (
+              <div>
               {contentType === 'json' && parsedContent && (
                 <div className="prose prose-lg max-w-none">
                   <RenderDescription json={parsedContent} />
@@ -197,10 +220,12 @@ export function LessonContent({ courseId, lessonId, course, onProgressUpdate }: 
                   <p className="text-gray-500">Aucune note disponible pour cette leçon.</p>
                 </div>
               )}
-            </TabsContent>
+            </div>
+            )}
 
             {/* ONGLET TÉLÉCHARGEMENTS */}
-            <TabsContent value="downloads">
+            {activeTab === 'downloads' && (
+              <div>
               {attachmentsLoading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
@@ -244,8 +269,9 @@ export function LessonContent({ courseId, lessonId, course, onProgressUpdate }: 
                   <p className="text-gray-500">Aucun fichier à télécharger pour cette leçon.</p>
                 </div>
               )}
-            </TabsContent>
-          </Tabs>
+            </div>
+            )}
+          </div>
 
         </div>
       </div>

@@ -3,9 +3,9 @@ import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 
 @InputType()
 export class RegisterInput {
-  @Field()
+  @Field(() => String, { nullable: true })
   @IsEmail()
-  email: string;
+  email?: string | null;
 
   @Field()
   @IsString()

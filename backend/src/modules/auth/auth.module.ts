@@ -4,6 +4,9 @@ import { PassportModule } from '@nestjs/passport';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { AuthResolver } from './auth.resolver';
 import { AuthService } from './auth.service';
+import { ClerkService } from './clerk.service';
+import { ClerkGqlGuard } from './guards/clerk-gql.guard';
+import { GqlAuthGuard } from './guards/gql-auth.guard';
 import { JwtStrategy } from './stategies/jwt.strategy';
 
 @Module({
@@ -17,7 +20,20 @@ import { JwtStrategy } from './stategies/jwt.strategy';
       },
     }),
   ],
-  providers: [AuthService, AuthResolver, JwtStrategy],
-  exports: [AuthService],
+  providers: [
+    AuthService,
+    AuthResolver,
+    JwtStrategy,
+    ClerkGqlGuard,
+    ClerkService,
+    GqlAuthGuard, // ← Ajouté
+  ],
+  exports: [
+    AuthService,
+    ClerkService,
+    JwtStrategy,
+    ClerkGqlGuard,
+    GqlAuthGuard, // ← Ajouté
+  ],
 })
 export class AuthModule {}

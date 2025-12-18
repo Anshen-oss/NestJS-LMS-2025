@@ -442,3 +442,31 @@ body:has(.not-found-page) {
   background: white !important;
   overflow: hidden !important;
 }
+
+
+/* Styles pour les onglets modernes - à ajouter dans globals.css */
+
+/* Onglet Notes actif */
+[data-state="active"][value="notes"] {
+  background-color: rgb(59, 130, 246) !important; /* blue-500 */
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Onglet Téléchargements actif */
+[data-state="active"][value="downloads"] {
+  background-color: rgb(168, 85, 247) !important; /* purple-500 */
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Hover pour onglets inactifs */
+[data-state="inactive"]:hover {
+  background-color: rgb(249, 250, 251) !important; /* gray-50 */
+}
+
+/* Badge dans l'onglet actif */
+[data-state="active"][value="downloads"] span:last-child {
+  background-color: white !important;
+  color: rgb(168, 85, 247) !important; /* purple-500 */
+}

@@ -1,0 +1,24 @@
+query GetCourseWithLessons($id: String!) {
+  course(id: $id) {
+    id
+    title
+    slug
+    description
+    imageUrl
+    chapters {
+      id
+      title
+      position
+      lessons {
+        id
+        title
+        order
+        duration
+        videoUrl
+        content
+        description
+        completed
+      }
+    }
+  }
+}

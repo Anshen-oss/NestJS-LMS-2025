@@ -1,28 +1,33 @@
 'use client';
 
-import { useMeQuery } from '@/lib/generated/graphql';
+import { useUser } from '@clerk/nextjs';
 import { notFound } from 'next/navigation';
 import { useEffect } from 'react';
 
 export function useAdminAuth() {
-  const { data, loading, error } = useMeQuery({
-    // Ne pas afficher d'erreur dans la console si Unauthorized
-    errorPolicy: 'ignore',
-  });
+  const { user, isLoaded } = useUser();
+
+  // Récupérer le rôle depuis Clerk metadata
+  const userRole = user?.publicMetadata?.role as string | undefined;
 
   useEffect(() => {
-    if (!loading) {
-      // Si erreur (Unauthorized) ou pas de données ou pas admin/instructor
-      if (error || !data?.me || (data.me.role !== 'ADMIN' && data.me.role !== 'INSTRUCTOR')) {
+    if (isLoaded) {
+      // Si pas d'utilisateur ou pas admin/instructor
+      if (!user || (userRole !== 'ADMIN' && userRole !== 'INSTRUCTOR')) {
         // Redirige vers 404
         notFound();
       }
     }
-  }, [data, loading, error]);
+  }, [isLoaded, user, userRole]);
 
   return {
-    user: data?.me,
-    loading,
-    isAuthorized: data?.me && (data.me.role === 'ADMIN' || data.me.role === 'INSTRUCTOR'),
+    user: user ? {
+      id: user.id,
+      name: user.fullName || user.firstName || '',
+      email: user.primaryEmailAddress?.emailAddress || '',
+      role: userRole || 'STUDENT',
+    } : null,
+    loading: !isLoaded,
+    isAuthorized: user && (userRole === 'ADMIN' || userRole === 'INSTRUCTOR'),
   };
 }

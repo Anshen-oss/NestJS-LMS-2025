@@ -64,7 +64,7 @@ async function main() {
       email: 'user@test.com',
       name: 'User Test',
       emailVerified: true,
-      role: UserRole.USER,
+      role: UserRole.STUDENT,
       createdAt: new Date(),
       updatedAt: new Date(),
       accounts: {

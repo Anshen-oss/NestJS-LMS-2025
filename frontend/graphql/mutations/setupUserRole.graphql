@@ -1,0 +1,9 @@
+mutation SetupUserRole($clerkUserId: String!, $role: String!) {
+  setupUserRole(clerkUserId: $clerkUserId, role: $role) {
+    id
+    clerkId
+    role
+    name
+    email
+  }
+}
