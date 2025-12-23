@@ -36,7 +36,7 @@ export function DeleteCourseDialog({
   const handleDelete = async () => {
     try {
       await deleteCourse({
-        variables: { id: courseId },
+        variables: { courseId: courseId },
       });
 
       toast.success("Course deleted successfully");

@@ -49,6 +49,10 @@ input ChapterPositionInput {
   position: Int!
 }
 
+type CheckoutSessionResponse {
+  url: String!
+}
+
 type Course {
   category: String!
   chapters: [Chapter!]
@@ -238,6 +242,12 @@ type Mutation {
   adminUpdateUserRole(input: UpdateUserRoleInput!): AdminActionResponse!
   archiveCourse(id: String!): Course!
   createChapter(input: CreateChapterInput!): Chapter!
+
+  """Créer une session Stripe Checkout pour acheter un cours"""
+  createCheckoutSession(
+    """ID du cours à acheter"""
+    courseId: String!
+  ): CheckoutSessionResponse!
   createCourse(input: CreateCourseInput!): Course!
   createLesson(chapterId: String!, input: CreateLessonInput!): Lesson!
   createLessonAttachment(input: CreateLessonAttachmentInput!): LessonAttachment!

@@ -13,6 +13,7 @@ import { EnrollmentModule } from './modules/enrollment/enrollment.module';
 import { LessonsModule } from './modules/lessons/lessons.module';
 import { ProgressModule } from './modules/progress/progress.module';
 import { S3Module } from './modules/s3/s3.module';
+import { StripeModule } from './modules/stripe/stripe.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 
@@ -35,6 +36,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     ProgressModule,
     AdminModule,
     WebhooksModule,
+    StripeModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppResolver],

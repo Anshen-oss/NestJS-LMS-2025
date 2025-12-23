@@ -12,6 +12,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { User } from '../auth/entities/user.entity';
 import { ClerkGqlGuard } from '../auth/guards/clerk-gql.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
 import { Chapter } from '../chapters/entities/chapter.entity';
 import { Lesson } from '../lessons/entities/lesson.entity';
 import { CourseProgressOutput } from '../progress/dto/course-progress.output';
@@ -143,10 +144,15 @@ export class CoursesResolver {
    * AUTORISÉ : ADMIN, INSTRUCTOR (ses cours)
    */
   @Mutation(() => Boolean)
-  @UseGuards(ClerkGqlGuard)
-  async deleteCourse(@Args('id') id: string, @CurrentUser() user: any) {
-    await this.coursesService.deleteCourse(id, user.id, user.role);
-    return true;
+  @UseGuards(ClerkGqlGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
+  async deleteCourse(@Args('id') id: string, @CurrentUser() user: User) {
+    if (!user.role) {
+      throw new UnauthorizedException(
+        'User role is required to perform this action',
+      );
+    }
+    return this.coursesService.deleteCourse(id, user.id, user.role);
   }
 
   /**

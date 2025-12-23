@@ -102,8 +102,8 @@ export function LessonsList({ lessons, chapterId, onUpdate }: LessonsListProps) 
         strategy={verticalListSortingStrategy}
       >
         <div className="space-y-2">
-          {lessons.map((lesson) => (
-            <LessonItem key={lesson.id} lesson={lesson} onUpdate={onUpdate} />
+          {lessons.map((lesson, index) => (
+            <LessonItem key={lesson.id} lesson={lesson} index={index} onUpdate={onUpdate} />
           ))}
         </div>
       </SortableContext>

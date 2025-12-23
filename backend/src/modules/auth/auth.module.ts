@@ -6,7 +6,6 @@ import { AuthResolver } from './auth.resolver';
 import { AuthService } from './auth.service';
 import { ClerkService } from './clerk.service';
 import { ClerkGqlGuard } from './guards/clerk-gql.guard';
-import { GqlAuthGuard } from './guards/gql-auth.guard';
 import { JwtStrategy } from './stategies/jwt.strategy';
 
 @Module({
@@ -26,14 +25,8 @@ import { JwtStrategy } from './stategies/jwt.strategy';
     JwtStrategy,
     ClerkGqlGuard,
     ClerkService,
-    GqlAuthGuard, // ← Ajouté
+    ClerkGqlGuard, // ← Ajouté
   ],
-  exports: [
-    AuthService,
-    ClerkService,
-    JwtStrategy,
-    ClerkGqlGuard,
-    GqlAuthGuard, // ← Ajouté
-  ],
+  exports: [AuthService, ClerkService, JwtStrategy, ClerkGqlGuard],
 })
 export class AuthModule {}

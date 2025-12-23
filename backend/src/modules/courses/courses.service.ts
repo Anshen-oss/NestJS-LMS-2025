@@ -4,7 +4,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { CourseLevel, CourseStatus, UserRole } from '@prisma/client';
+import Stripe from 'stripe';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateChapterInput } from './dto/create-chapter.input';
 import { CreateCourseInput } from './dto/create-course.input';
@@ -26,7 +28,21 @@ function generateSlug(title: string): string {
 
 @Injectable()
 export class CoursesService {
-  constructor(private prisma: PrismaService) {}
+  private stripe: Stripe;
+
+  constructor(
+    private prisma: PrismaService,
+    private configService: ConfigService,
+  ) {
+    // Initialiser Stripe
+    const stripeSecretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
+    if (!stripeSecretKey) {
+      throw new Error('STRIPE_SECRET_KEY is not defined');
+    }
+    this.stripe = new Stripe(stripeSecretKey, {
+      apiVersion: '2025-11-17.clover',
+    });
+  }
 
   // ═══════════════════════════════════════════════════════════
   //                     QUERIES (READ)
@@ -226,6 +242,7 @@ export class CoursesService {
   /**
    * Crée un nouveau cours
    * RÈGLE : Par défaut en Draft, créateur devient propriétaire
+   * ✨ AUTO-CRÉATION STRIPE : Si prix > 0, crée automatiquement le produit Stripe
    */
   async create(userId: string, input: CreateCourseInput) {
     // Générer un slug unique
@@ -242,7 +259,8 @@ export class CoursesService {
       );
     }
 
-    return this.prisma.course.create({
+    // 1️⃣ Créer le cours dans la DB
+    const course = await this.prisma.course.create({
       data: {
         title: input.title,
         slug,
@@ -254,8 +272,8 @@ export class CoursesService {
         duration: input.duration,
         price: input.price,
         category: input.category || 'General',
-        level: input.level || CourseLevel.Beginner, // ✅ CORRIGÉ: Utilise l'enum au lieu de string
-        status: input.status || CourseStatus.Draft, // ✅ Toujours Draft au départ
+        level: input.level || CourseLevel.Beginner,
+        status: input.status || CourseStatus.Draft,
         imageUrl: input.imageUrl,
         stripePriceId: input.stripePriceId,
         userId,
@@ -266,6 +284,66 @@ export class CoursesService {
         },
       },
     });
+
+    // 2️⃣ Si le cours a un prix > 0, créer automatiquement le produit Stripe
+    if (course.price && course.price > 0 && !course.stripePriceId) {
+      try {
+        console.log('🔄 Creating Stripe product for course:', course.title);
+
+        // Créer le produit Stripe
+        const product = await this.stripe.products.create({
+          name: course.title,
+          description: course.smallDescription || undefined,
+          metadata: {
+            courseId: course.id,
+            slug: course.slug,
+          },
+        });
+
+        console.log('✅ Stripe product created:', product.id);
+
+        // Créer le prix Stripe
+        const price = await this.stripe.prices.create({
+          product: product.id,
+          unit_amount: Math.round(course.price * 100), // Convertir en centimes
+          currency: 'eur',
+          metadata: {
+            courseId: course.id,
+          },
+        });
+
+        console.log('✅ Stripe price created:', price.id);
+
+        // Mettre à jour le cours avec le stripePriceId
+        const updatedCourse = await this.prisma.course.update({
+          where: { id: course.id },
+          data: { stripePriceId: price.id },
+          include: {
+            createdBy: {
+              select: { id: true, name: true, email: true },
+            },
+          },
+        });
+
+        console.log(
+          '✅ Course updated with Stripe price ID:',
+          updatedCourse.stripePriceId,
+        );
+
+        return updatedCourse;
+      } catch (error) {
+        // ⚠️ Si Stripe échoue, le cours est quand même créé (fallback)
+        console.error('⚠️ Stripe product creation failed:', error);
+        console.error(
+          '⚠️ Course created without Stripe integration. Please configure manually.',
+        );
+        // Retourner le cours sans Stripe
+        return course;
+      }
+    }
+
+    // 3️⃣ Retourner le cours (si pas de prix ou si stripePriceId déjà fourni)
+    return course;
   }
 
   async createLesson(
@@ -316,7 +394,7 @@ export class CoursesService {
     userRole: UserRole,
     input: UpdateCourseInput,
   ) {
-    const { id, ...updateData } = input; // 🆕 Extrait l'id de l'input
+    const { id, ...updateData } = input;
 
     // 1️⃣ Récupérer le cours
     const course = await this.prisma.course.findUnique({
@@ -338,7 +416,7 @@ export class CoursesService {
       const existingCourse = await this.prisma.course.findFirst({
         where: {
           slug: newSlug,
-          NOT: { id }, // Exclure le cours actuel
+          NOT: { id },
         },
       });
 
@@ -351,7 +429,77 @@ export class CoursesService {
       updateData['slug'] = newSlug;
     }
 
-    // 4️⃣ Mettre à jour
+    // 🆕 4️⃣ Si le prix change, créer/mettre à jour le produit Stripe
+    if (
+      updateData.price !== undefined &&
+      updateData.price !== course.price &&
+      updateData.price > 0
+    ) {
+      try {
+        console.log(
+          '🔄 Price changed, updating Stripe:',
+          course.price,
+          '→',
+          updateData.price,
+        );
+
+        if (course.stripePriceId) {
+          // Si un price existe déjà, on crée un nouveau prix (les prix Stripe ne sont pas modifiables)
+          const product = await this.stripe.products.retrieve(
+            (await this.stripe.prices.retrieve(course.stripePriceId))
+              .product as string,
+          );
+
+          const newPrice = await this.stripe.prices.create({
+            product: product.id,
+            unit_amount: Math.round(updateData.price * 100),
+            currency: 'eur',
+            metadata: {
+              courseId: course.id,
+            },
+          });
+
+          // Archiver l'ancien prix
+          await this.stripe.prices.update(course.stripePriceId, {
+            active: false,
+          });
+
+          updateData['stripePriceId'] = newPrice.id;
+          console.log('✅ New Stripe price created:', newPrice.id);
+        } else {
+          // Pas de price existant, en créer un nouveau
+          const product = await this.stripe.products.create({
+            name: updateData.title || course.title,
+            description:
+              updateData.smallDescription ||
+              course.smallDescription ||
+              undefined,
+            metadata: {
+              courseId: course.id,
+              slug: course.slug,
+            },
+          });
+
+          const price = await this.stripe.prices.create({
+            product: product.id,
+            unit_amount: Math.round(updateData.price * 100),
+            currency: 'eur',
+            metadata: {
+              courseId: course.id,
+            },
+          });
+
+          updateData['stripePriceId'] = price.id;
+          console.log('✅ Stripe product and price created:', price.id);
+        }
+      } catch (error) {
+        console.error('⚠️ Stripe price update failed:', error);
+        console.error('⚠️ Course will be updated without Stripe integration.');
+        // Continue quand même la mise à jour du cours
+      }
+    }
+
+    // 5️⃣ Mettre à jour
     return this.prisma.course.update({
       where: { id },
       data: updateData,
@@ -519,14 +667,10 @@ export class CoursesService {
     // 3️⃣ Mettre à jour les orders en transaction
     await this.prisma.$transaction(
       lessons.map((lesson) => {
-        // ✅ Cast via unknown pour forcer TypeScript
-        const { id, order } = lesson as unknown as {
-          id: string;
-          order: number;
-        };
+        // ✅ CORRIGÉ : L'input envoie "position", on le map vers "order" en DB
         return this.prisma.lesson.update({
-          where: { id },
-          data: { order },
+          where: { id: lesson.id },
+          data: { order: lesson.position }, // ✅ position → order
         });
       }),
     );
@@ -537,7 +681,6 @@ export class CoursesService {
       orderBy: { order: 'asc' },
     });
   }
-
   /**
    * Créer un chapter
    * RÈGLE : Admin peut tout supprimer, User seulement ses cours

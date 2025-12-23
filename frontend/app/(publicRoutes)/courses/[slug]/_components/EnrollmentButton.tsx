@@ -7,41 +7,38 @@ import {
   useEnrollInCourseMutation,
 } from '@/lib/generated/graphql';
 import { Loader2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
 export function EnrollmentButton({ courseId }: { courseId: string }) {
-  const router = useRouter();
-
   const [enrollInCourse, { loading }] = useEnrollInCourseMutation({
     // ✅ Refetch après enrollment
     refetchQueries: [
       { query: GetMyEnrolledCoursesDocument },
       {
         query: IsEnrolledDocument,
-        variables: { courseId }
+        variables: { courseId },
       },
     ],
-    awaitRefetchQueries: true, // ✅ Attendre que les queries soient refetchées
+    awaitRefetchQueries: true,
     onCompleted: (data) => {
       const { success, message, checkoutUrl } = data.enrollInCourse;
 
       if (success) {
         if (checkoutUrl) {
-          // Rediriger vers Stripe Checkout
+          // ✅ CRITIQUE : Redirection vers Stripe Checkout
+          console.log('🔄 Redirecting to Stripe:', checkoutUrl);
           window.location.href = checkoutUrl;
         } else {
-          // Déjà enrollé
-          toast.success(message);
-          router.push('/dashboard');
+          // Cas rare : Déjà enrollé
+          toast.info(message);
         }
       } else {
         toast.error(message);
       }
     },
     onError: (error) => {
-      console.error('Enrollment error:', error);
-      toast.error(error.message || 'An unexpected error occurred');
+      console.error('❌ Enrollment error:', error);
+      toast.error(error.message || 'Une erreur est survenue');
     },
   });
 
@@ -54,11 +51,16 @@ export function EnrollmentButton({ courseId }: { courseId: string }) {
   };
 
   return (
-    <Button onClick={handleEnroll} disabled={loading} className="w-full">
+    <Button
+      onClick={handleEnroll}
+      disabled={loading}
+      className="w-full"
+      size="lg"
+    >
       {loading ? (
         <>
-          <Loader2 className="size-4 animate-spin" />
-          Loading...
+          <Loader2 className="mr-2 size-4 animate-spin" />
+          Chargement...
         </>
       ) : (
         'Enroll now!'

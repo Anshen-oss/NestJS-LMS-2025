@@ -64,6 +64,11 @@ export type ChapterPositionInput = {
   position: Scalars['Int']['input'];
 };
 
+export type CheckoutSessionResponse = {
+  __typename?: 'CheckoutSessionResponse';
+  url: Scalars['String']['output'];
+};
+
 export type Course = {
   __typename?: 'Course';
   category: Scalars['String']['output'];
@@ -253,6 +258,8 @@ export type Mutation = {
   adminUpdateUserRole: AdminActionResponse;
   archiveCourse: Course;
   createChapter: Chapter;
+  /** Créer une session Stripe Checkout pour acheter un cours */
+  createCheckoutSession: CheckoutSessionResponse;
   createCourse: Course;
   createLesson: Lesson;
   createLessonAttachment: LessonAttachment;
@@ -297,6 +304,11 @@ export type MutationArchiveCourseArgs = {
 
 export type MutationCreateChapterArgs = {
   input: CreateChapterInput;
+};
+
+
+export type MutationCreateCheckoutSessionArgs = {
+  courseId: Scalars['String']['input'];
 };
 
 

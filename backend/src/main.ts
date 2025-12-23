@@ -6,7 +6,7 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    rawBody: true,
+    rawBody: true, // ✅ Activer rawBody pour les webhooks
   });
 
   //Enable CORS
@@ -29,22 +29,23 @@ async function bootstrap() {
     }),
   );
 
-  // Webhook endpoint accessible publiquement
-  app.use('/webhooks/clerk', (req, res, next) => {
-    // Pas de middleware d'auth pour les webhooks
-    next();
-  });
-
-  // ✅ RAW uniquement sur le webhook Clerk (Svix)
+  // ✅ RAW body pour les webhooks Clerk (Svix)
   app.use('/webhooks/clerk', bodyParser.raw({ type: 'application/json' }));
 
-  // ✅ JSON normal pour le reste
+  // ✅ RAW body pour les webhooks Stripe
+  app.use('/webhooks/stripe', bodyParser.raw({ type: 'application/json' }));
+
+  // ✅ JSON normal pour le reste de l'API
   app.use(bodyParser.json());
-
-  app.use('/webhooks/clerk', bodyParser.raw({ type: 'application/json' }));
 
   const port = process.env.PORT || 4000;
   await app.listen(port);
-  console.log('🚀 Backend GraphQL running on http://localhost:4000/graphql');
+  // console.log('🚀 Backend GraphQL running on http://localhost:4000/graphql');
+  // console.log(
+  //   '🪝 Webhook Clerk endpoint: http://localhost:4000/webhooks/clerk',
+  // );
+  // console.log(
+  //   '🪝 Webhook Stripe endpoint: http://localhost:4000/webhooks/stripe',
+  // );
 }
 bootstrap();

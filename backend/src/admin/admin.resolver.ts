@@ -1,7 +1,7 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { User } from 'src/modules/auth/entities/user.entity';
-import { GqlAuthGuard } from 'src/modules/auth/guards/gql-auth.guard';
+import { ClerkGqlGuard } from 'src/modules/auth/guards/clerk-gql.guard';
 import { Course } from 'src/modules/courses/entities/course.entity';
 import { AdminGuard } from './admin.guard';
 import { AdminService } from './admin.service';
@@ -21,7 +21,7 @@ import {
  * - Les actions administratives
  */
 @Resolver()
-@UseGuards(GqlAuthGuard, AdminGuard) // Protection double : authentifié + admin
+@UseGuards(ClerkGqlGuard, AdminGuard) // Protection double : authentifié + admin
 export class AdminResolver {
   constructor(private readonly adminService: AdminService) {}
 
@@ -47,7 +47,7 @@ export class AdminResolver {
   @Query(() => [User], {
     description: 'Liste de tous les utilisateurs (ADMIN uniquement)',
   })
-  @UseGuards(GqlAuthGuard, AdminGuard)
+  @UseGuards(ClerkGqlGuard, AdminGuard)
   async users(): Promise<User[]> {
     return this.adminService.getAllUsers();
   }
