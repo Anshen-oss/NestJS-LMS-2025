@@ -10,7 +10,6 @@ import { LoginInput } from './dto/login.input';
 import { RegisterInput } from './dto/register.input';
 import { User } from './entities/user.entity';
 import { ClerkGqlGuard } from './guards/clerk-gql.guard';
-import { GqlAuthGuard } from './guards/gql-auth.guard';
 
 @Resolver()
 export class AuthResolver {
@@ -35,9 +34,9 @@ export class AuthResolver {
     @Args('role', { type: () => String }) role: string, // ✅ Type explicite
     @CurrentUser() user: User,
   ) {
-    console.log('🔍 updateUserRole called');
-    console.log('🔍 Role:', role);
-    console.log('🔍 User:', user);
+    // console.log('🔍 updateUserRole called');
+    // console.log('🔍 Role:', role);
+    // console.log('🔍 User:', user);
 
     // Valider le rôle
     if (!Object.values(UserRole).includes(role as UserRole)) {
@@ -149,7 +148,7 @@ export class AuthResolver {
   }
 
   @Query(() => User)
-  @UseGuards(GqlAuthGuard)
+  @UseGuards(ClerkGqlGuard)
   me(@CurrentUser() user: User): User {
     // ✅ Plus de async
     return user;

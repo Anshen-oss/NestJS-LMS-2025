@@ -16,7 +16,7 @@ export default function PaymentSuccessPage() {
 
       // ✅ Rediriger après 2 secondes
       setTimeout(() => {
-        router.push('/my-courses');
+        router.push('/student/my-courses');
       }, 2000);
     };
 

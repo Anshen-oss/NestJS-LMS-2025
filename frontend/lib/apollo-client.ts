@@ -60,7 +60,7 @@ export function useApolloClient() {
           },
         };
       } catch (error) {
-        console.error(`❌ Error getting token for ${operationName}:`, error);
+        //console.error(`❌ Error getting token for ${operationName}:`, error);
         return { headers };
       }
     });
@@ -90,6 +90,8 @@ export function useApolloClient() {
       // Network Errors
       if (networkError) {
         console.group(`❌ Network Error - ${operationName}`);
+        console.error('NetworkError full:', JSON.stringify(networkError, null, 2));
+
         console.error('Error:', networkError);
         console.error('Operation:', operationName);
         console.groupEnd();

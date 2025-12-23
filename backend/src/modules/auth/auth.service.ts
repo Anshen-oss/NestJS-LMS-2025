@@ -81,7 +81,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    console.log('🔐 Password hash exists:', !!credentialAccount.password);
+    //console.log('🔐 Password hash exists:', !!credentialAccount.password);
 
     // 3️⃣ Vérifier le password
     const isPasswordValid = await bcrypt.compare(

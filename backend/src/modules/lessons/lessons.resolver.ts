@@ -11,7 +11,6 @@ import { UserRole } from '@prisma/client';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../auth/entities/user.entity';
 import { ClerkGqlGuard } from '../auth/guards/clerk-gql.guard';
-//import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 import { LessonProgress } from '../progress/entities/lesson-progress.entity';
 import { ProgressService } from '../progress/progress.service';
 import { CreateLessonAttachmentInput } from './dto/create-lesson-attachment.input';

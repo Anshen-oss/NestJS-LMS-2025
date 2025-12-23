@@ -51,10 +51,11 @@ interface Lesson {
 
 interface LessonItemProps {
   lesson: Lesson;
+  index: number;
   onUpdate: () => void;
 }
 
-export function LessonItem({ lesson, onUpdate }: LessonItemProps) {
+export function LessonItem({ lesson, index, onUpdate }: LessonItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isEditingContent, setIsEditingContent] = useState(false); // 👈 NOUVEAU
   const [deleteLesson, { loading: deleting }] = useDeleteLessonMutation();
@@ -135,7 +136,7 @@ export function LessonItem({ lesson, onUpdate }: LessonItemProps) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-sm font-medium">
-              {lesson.position}. {lesson.title}
+               {index + 1}. {lesson.title}
             </span>
             {lesson.isFree && (
               <Badge variant="secondary" className="text-xs">
