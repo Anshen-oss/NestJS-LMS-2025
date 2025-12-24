@@ -31,10 +31,11 @@ interface Lesson {
 interface LessonsListProps {
   lessons: Lesson[];
   chapterId: string;
+  courseId: string; // ✅ FIX : Ajout du type
   onUpdate: () => void;
 }
 
-export function LessonsList({ lessons, chapterId, onUpdate }: LessonsListProps) {
+export function LessonsList({ lessons, chapterId, courseId, onUpdate }: LessonsListProps) {
   const [reorderLessons] = useReorderLessonsMutation();
 
   const sensors = useSensors(
@@ -71,9 +72,9 @@ export function LessonsList({ lessons, chapterId, onUpdate }: LessonsListProps) 
 
     try {
       console.log("📤 Sending reorder lessons:", {
-  chapterId,
-  lessons: lessonsWithNewPositions,
-});
+        chapterId,
+        lessons: lessonsWithNewPositions,
+      });
       await reorderLessons({
         variables: {
           input: {
@@ -103,7 +104,14 @@ export function LessonsList({ lessons, chapterId, onUpdate }: LessonsListProps) 
       >
         <div className="space-y-2">
           {lessons.map((lesson, index) => (
-            <LessonItem key={lesson.id} lesson={lesson} index={index} onUpdate={onUpdate} />
+            <LessonItem
+              key={lesson.id}
+              lesson={lesson}
+              index={index}
+              courseId={courseId} // ✅ Passé correctement
+              chapterId={chapterId}
+              onUpdate={onUpdate}
+            />
           ))}
         </div>
       </SortableContext>

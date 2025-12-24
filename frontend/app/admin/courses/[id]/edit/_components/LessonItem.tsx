@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription, // 👈 NOUVEAU
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -32,7 +32,9 @@ import {
   PlayCircle,
   Trash2,
   Unlock,
+  Video, // 🆕 Import Video icon
 } from "lucide-react";
+import { useRouter } from "next/navigation"; // 🆕 Import useRouter
 import { useState } from "react";
 import { toast } from "sonner";
 import { EditLessonForm } from "./EditLessonForm";
@@ -41,8 +43,8 @@ interface Lesson {
   id: string;
   title: string;
   description?: string | null;
-  content?: string | null; // 👈 NOUVEAU
-  isPublished?: boolean; // 👈 NOUVEAU
+  content?: string | null;
+  isPublished?: boolean;
   videoUrl?: string | null;
   duration?: number | null;
   position: number;
@@ -52,12 +54,21 @@ interface Lesson {
 interface LessonItemProps {
   lesson: Lesson;
   index: number;
+  courseId: string; // 🆕 Ajout courseId
+  chapterId: string; // 🆕 Ajout chapterId
   onUpdate: () => void;
 }
 
-export function LessonItem({ lesson, index, onUpdate }: LessonItemProps) {
+export function LessonItem({
+  lesson,
+  index,
+  courseId, // 🆕
+  chapterId, // 🆕
+  onUpdate
+}: LessonItemProps) {
+  const router = useRouter(); // 🆕
   const [isEditing, setIsEditing] = useState(false);
-  const [isEditingContent, setIsEditingContent] = useState(false); // 👈 NOUVEAU
+  const [isEditingContent, setIsEditingContent] = useState(false);
   const [deleteLesson, { loading: deleting }] = useDeleteLessonMutation();
 
   // Sortable hook
@@ -92,6 +103,21 @@ export function LessonItem({ lesson, index, onUpdate }: LessonItemProps) {
       console.error("Delete error:", error);
       toast.error(error.message || "Failed to delete lesson");
     }
+  };
+
+  // 🆕 Handler pour naviguer vers la page d'édition complète
+  const handleEditVideo = () => {
+    // ✅ Route correcte : /admin/courses/[id]/lessons/[lessonId]
+    const url = `/admin/courses/${courseId}/lessons/${lesson.id}?courseId=${courseId}&chapterId=${chapterId}`;
+
+    console.log('🚀 Navigation to edit video:', {
+      courseId,
+      chapterId,
+      lessonId: lesson.id,
+      fullUrl: url
+    });
+
+    router.push(url);
   };
 
   const formatDuration = (seconds: number | null | undefined) => {
@@ -189,7 +215,11 @@ export function LessonItem({ lesson, index, onUpdate }: LessonItemProps) {
               <Pencil className="w-4 h-4 mr-2" />
               Edit Info
             </DropdownMenuItem>
-            {/* 👇 NOUVEAU : Option pour éditer le contenu */}
+            {/* 🆕 Nouvelle option pour éditer la vidéo */}
+            <DropdownMenuItem onClick={handleEditVideo}>
+              <Video className="w-4 h-4 mr-2" />
+              Edit Video
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setIsEditingContent(true)}>
               <FileEdit className="w-4 h-4 mr-2" />
               Edit Content
@@ -206,29 +236,27 @@ export function LessonItem({ lesson, index, onUpdate }: LessonItemProps) {
         </DropdownMenu>
       </div>
 
-      {/* 👇 NOUVEAU : Dialog pour éditer le contenu */}
-{/* Dialog pour éditer le contenu */}
-<Dialog open={isEditingContent} onOpenChange={setIsEditingContent}>
-  <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
-    <DialogHeader>
-      <DialogTitle>Edit Content: {lesson.title}</DialogTitle>
-      {/* 👇 NOUVEAU : Ajoute une description */}
-      <DialogDescription>
-        Edit the lesson content using the rich text editor below.
-      </DialogDescription>
-    </DialogHeader>
-<div className="flex-1 overflow-y-auto pr-2">
-  {lesson.id && (
-    <LessonEditor
-      lessonId={lesson.id}
-      initialContent={lesson.content || ""}
-      isPublished={lesson.isPublished ?? false}
-      onSave={onUpdate}
-    />
-  )}
-</div>
-  </DialogContent>
-</Dialog>
+      {/* Dialog pour éditer le contenu */}
+      <Dialog open={isEditingContent} onOpenChange={setIsEditingContent}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Edit Content: {lesson.title}</DialogTitle>
+            <DialogDescription>
+              Edit the lesson content using the rich text editor below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto pr-2">
+            {lesson.id && (
+              <LessonEditor
+                lessonId={lesson.id}
+                initialContent={lesson.content || ""}
+                isPublished={lesson.isPublished ?? false}
+                onSave={onUpdate}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
