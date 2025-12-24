@@ -29,6 +29,9 @@ export class Lesson {
   @Field(() => String, { nullable: true }) // ← Type explicite
   videoUrl?: string | null;
 
+  @Field(() => String, { nullable: true })
+  externalVideoUrl?: string | null;
+
   // Properties
   @Field(() => Int, { nullable: true })
   duration?: number | null;

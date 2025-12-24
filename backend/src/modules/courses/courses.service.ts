@@ -16,6 +16,24 @@ import { UpdateChapterInput } from './dto/update-chapter.input';
 import { UpdateCourseInput } from './dto/update-course.input';
 import { UpdateLessonInput } from './dto/update-lesson.input';
 
+// Fonction helper pour convertir null en undefined pour GraphQL
+function convertNullToUndefined<T>(obj: T): T {
+  if (!obj || typeof obj !== 'object') {
+    return obj;
+  }
+
+  const result: any = Array.isArray(obj) ? [] : {};
+
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      const value = obj[key];
+      result[key] = value === null ? undefined : value;
+    }
+  }
+
+  return result as T;
+}
+
 // Fonction helper pour générer un slug
 function generateSlug(title: string): string {
   return title
@@ -358,6 +376,7 @@ export class CoursesService {
       thumbnailKey?: string;
       videoKey?: string;
       videoUrl?: string;
+      externalVideoUrl?: string;
       duration?: number;
       isFree?: boolean;
     },
@@ -366,7 +385,7 @@ export class CoursesService {
     const finalOrder =
       input.order ?? (await this.getNextLessonOrder(input.chapterId));
 
-    return this.prisma.lesson.create({
+    const lesson = await this.prisma.lesson.create({
       data: {
         title: input.title,
         description: input.description,
@@ -376,10 +395,12 @@ export class CoursesService {
         thumbnailKey: input.thumbnailKey,
         videoKey: input.videoKey,
         videoUrl: input.videoUrl,
+        externalVideoUrl: input.externalVideoUrl,
         duration: input.duration,
         isFree: input.isFree ?? false,
       },
     });
+    return convertNullToUndefined(lesson); // 🆕 CONVERSION
   }
   // ═══════════════════════════════════════════════════════════
   //                    MUTATIONS (UPDATE)
@@ -544,10 +565,12 @@ export class CoursesService {
     this.checkPermissions(lesson.chapter.course, userId, userRole, 'update');
 
     // 3️⃣ Mettre à jour
-    return this.prisma.lesson.update({
+    const updated = await this.prisma.lesson.update({
       where: { id },
       data: updateData,
     });
+
+    return convertNullToUndefined(updated); // 🆕 CONVERSION
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -611,9 +634,11 @@ export class CoursesService {
     this.checkPermissions(lesson.chapter.course, userId, userRole, 'delete');
 
     // 3️⃣ Supprimer la leçon
-    return this.prisma.lesson.delete({
+    const deleted = await this.prisma.lesson.delete({
       where: { id },
     });
+
+    return convertNullToUndefined(deleted); // 🆕 CONVERSION
   }
 
   async deleteChapter(

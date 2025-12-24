@@ -43,6 +43,25 @@ export class S3Resolver {
   }
 
   /**
+   * Génère une URL pré-signée pour upload de vidéo avec validation
+   */
+  @Mutation(() => UploadUrlResponse)
+  @UseGuards(ClerkGqlGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
+  async getUploadUrlForVideo(
+    @Args('fileName') fileName: string,
+    @Args('fileType') fileType: string,
+    @Args('fileSize') fileSize: number,
+  ): Promise<UploadUrlResponse> {
+    const result = await this.s3Service.getUploadUrlForVideo(
+      fileName,
+      fileType,
+      fileSize,
+    );
+    return result;
+  }
+
+  /**
    * Supprime un fichier de S3
    */
   @Mutation(() => Boolean)

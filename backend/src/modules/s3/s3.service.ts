@@ -4,7 +4,7 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -12,6 +12,11 @@ export class S3Service {
   private s3Client: S3Client;
   private bucketName: string;
   private publicUrl: string;
+
+  // 🆕 Configuration vidéo
+  private readonly VIDEO_MAX_SIZE = 2 * 1024 * 1024 * 1024; // 2GB en bytes
+  private readonly ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm'];
+  private readonly ALLOWED_VIDEO_EXTENSIONS = ['.mp4', '.webm'];
 
   constructor(private configService: ConfigService) {
     this.s3Client = new S3Client({
@@ -111,5 +116,92 @@ export class S3Service {
       key,
       publicUrl,
     };
+  }
+
+  // ========================================
+  // 🆕 NOUVELLES MÉTHODES POUR LES VIDÉOS
+  // ========================================
+
+  /**
+   * 🆕 Génère une URL pré-signée pour upload de vidéo avec validation
+   * @param fileName - Nom du fichier vidéo
+   * @param fileType - Type MIME (video/mp4, video/webm)
+   * @param fileSize - Taille du fichier en bytes
+   * @returns Object contenant uploadUrl, key et publicUrl
+   */
+  async getUploadUrlForVideo(
+    fileName: string,
+    fileType: string,
+    fileSize: number,
+  ): Promise<{ uploadUrl: string; key: string; publicUrl: string }> {
+    // Validation du type MIME
+    if (!this.ALLOWED_VIDEO_TYPES.includes(fileType)) {
+      throw new BadRequestException(
+        `Type de fichier non supporté. Formats acceptés: ${this.ALLOWED_VIDEO_TYPES.join(', ')}`,
+      );
+    }
+
+    // Validation de l'extension
+    const hasValidExtension = this.ALLOWED_VIDEO_EXTENSIONS.some((ext) =>
+      fileName.toLowerCase().endsWith(ext),
+    );
+    if (!hasValidExtension) {
+      throw new BadRequestException(
+        `Extension de fichier non supportée. Extensions acceptées: ${this.ALLOWED_VIDEO_EXTENSIONS.join(', ')}`,
+      );
+    }
+
+    // Validation de la taille
+    if (fileSize > this.VIDEO_MAX_SIZE) {
+      const maxSizeGB = this.VIDEO_MAX_SIZE / (1024 * 1024 * 1024);
+      throw new BadRequestException(
+        `La taille du fichier dépasse la limite de ${maxSizeGB}GB`,
+      );
+    }
+
+    // Génère un nom de fichier unique dans le dossier videos/
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(7);
+    const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const key = `videos/${timestamp}-${randomString}-${sanitizedFileName}`;
+
+    const command = new PutObjectCommand({
+      Bucket: this.bucketName,
+      Key: key,
+      ContentType: fileType,
+      ContentLength: fileSize,
+    });
+
+    // URL valide pendant 10 minutes (plus long pour les vidéos)
+    const uploadUrl = await getSignedUrl(this.s3Client, command, {
+      expiresIn: 600,
+    });
+
+    const publicUrl = `${this.publicUrl}/${key}`;
+
+    return {
+      uploadUrl,
+      key,
+      publicUrl,
+    };
+  }
+
+  /**
+   * 🆕 Supprime une vidéo de S3
+   * @param key - La clé S3 de la vidéo (ex: "videos/1234-abc-intro.mp4")
+   */
+  async deleteVideo(key: string): Promise<void> {
+    try {
+      const command = new DeleteObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+      });
+
+      await this.s3Client.send(command);
+      console.log(`✅ Vidéo supprimée de S3: ${key}`);
+    } catch (error) {
+      console.error('❌ Erreur lors de la suppression de la vidéo:', error);
+      throw new BadRequestException('Impossible de supprimer la vidéo de S3');
+    }
   }
 }
