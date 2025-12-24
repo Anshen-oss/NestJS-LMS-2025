@@ -2,8 +2,9 @@
 
 import { RenderDescription } from '@/components/rich-text-editor/RenderDescription';
 import { Button } from '@/components/ui/button';
+import { VideoPlayer } from '@/components/VideoPlayer';
 import { useLessonAttachmentsQuery, useToggleLessonCompletionMutation } from '@/lib/generated/graphql';
-import { CheckCircle2, Download, FileIcon, FileText, Loader2, PlayCircle } from 'lucide-react';
+import { CheckCircle2, Download, FileIcon, FileText, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -17,7 +18,7 @@ interface LessonContentProps {
 export function LessonContent({ courseId, lessonId, course, onProgressUpdate }: LessonContentProps) {
   const [toggleCompletion, { loading: toggleLoading }] = useToggleLessonCompletionMutation();
   const [isCompleted, setIsCompleted] = useState(false);
-  const [activeTab, setActiveTab] = useState<'notes' | 'downloads'>('notes'); // ✅ Custom tab state
+  const [activeTab, setActiveTab] = useState<'notes' | 'downloads'>('notes');
 
   // Query pour récupérer les pièces jointes
   const { data: attachmentsData, loading: attachmentsLoading } = useLessonAttachmentsQuery({
@@ -95,24 +96,13 @@ export function LessonContent({ courseId, lessonId, course, onProgressUpdate }: 
       {/* Container principal */}
       <div className="max-w-4xl mx-auto">
 
-        {/* Zone vidéo */}
-        <div className="w-full bg-gray-100">
-          <div className="aspect-video bg-gray-900 flex items-center justify-center relative group">
-            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-all"></div>
-
-            <div className="relative text-center z-10">
-              <div className="w-20 h-20 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                <PlayCircle className="w-12 h-12 text-white" />
-              </div>
-              <p className="text-xl font-semibold text-white">Vidéo à venir</p>
-              {currentLesson.videoUrl && (
-                <p className="text-sm text-gray-300 mt-2 max-w-md mx-auto truncate px-4">
-                  {currentLesson.videoUrl}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
+      {/* Zone vidéo */}
+      <div className="w-full bg-gray-100">
+        <VideoPlayer
+          videoUrl={currentLesson.videoUrl}
+          externalVideoUrl={currentLesson.externalVideoUrl}
+        />
+      </div>
 
         {/* Contenu sous la vidéo */}
         <div className="px-8 py-8 space-y-8">

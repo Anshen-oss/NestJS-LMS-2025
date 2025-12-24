@@ -139,7 +139,7 @@ export function LessonSidebar({ course, currentLessonId }: LessonSidebarProps) {
                                 <FileText className="w-3.5 h-3.5 text-gray-400" />
                               )}
                               <span className="text-xs text-gray-500">
-                                {lesson.videoUrl ? 'Vidéo' : 'Lecture'}
+                                {lesson.videoUrl || lesson.externalVideoUrl ? 'Vidéo' : 'Lecture'}
                               </span>
                             </div>
                             {lesson.duration && (

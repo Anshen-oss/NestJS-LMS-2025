@@ -165,6 +165,7 @@ export type CreateLessonInput = {
   content?: InputMaybe<Scalars['String']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
   duration?: InputMaybe<Scalars['Int']['input']>;
+  externalVideoUrl?: InputMaybe<Scalars['String']['input']>;
   isFree?: InputMaybe<Scalars['Boolean']['input']>;
   order?: InputMaybe<Scalars['Int']['input']>;
   thumbnailKey?: InputMaybe<Scalars['String']['input']>;
@@ -206,6 +207,7 @@ export type Lesson = {
   createdAt: Scalars['DateTime']['output'];
   description?: Maybe<Scalars['String']['output']>;
   duration?: Maybe<Scalars['Int']['output']>;
+  externalVideoUrl?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   isCompleted?: Maybe<Scalars['Boolean']['output']>;
   isFree: Scalars['Boolean']['output'];
@@ -273,6 +275,7 @@ export type Mutation = {
   deleteLessonAttachment: Scalars['Boolean']['output'];
   enrollInCourse: EnrollmentResponse;
   getUploadUrl: UploadUrlResponse;
+  getUploadUrlForVideo: UploadUrlResponse;
   login: AuthPayload;
   markLessonAsCompleted: LessonProgress;
   /** Promouvoir un utilisateur en instructeur (ADMIN uniquement) */
@@ -369,6 +372,13 @@ export type MutationGetUploadUrlArgs = {
 };
 
 
+export type MutationGetUploadUrlForVideoArgs = {
+  fileName: Scalars['String']['input'];
+  fileSize: Scalars['Float']['input'];
+  fileType: Scalars['String']['input'];
+};
+
+
 export type MutationLoginArgs = {
   input: LoginInput;
 };
@@ -461,6 +471,7 @@ export type Query = {
   isEnrolled: Scalars['Boolean']['output'];
   lesson: Lesson;
   lessonAttachments: Array<LessonAttachment>;
+  lessonForEdit: Lesson;
   lessonProgress?: Maybe<LessonProgress>;
   lessonsByChapter: Array<Lesson>;
   me: User;
@@ -513,6 +524,11 @@ export type QueryLessonArgs = {
 
 export type QueryLessonAttachmentsArgs = {
   lessonId: Scalars['String']['input'];
+};
+
+
+export type QueryLessonForEditArgs = {
+  id: Scalars['String']['input'];
 };
 
 
@@ -574,6 +590,7 @@ export type UpdateLessonInput = {
   content?: InputMaybe<Scalars['String']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
   duration?: InputMaybe<Scalars['Int']['input']>;
+  externalVideoUrl?: InputMaybe<Scalars['String']['input']>;
   isFree?: InputMaybe<Scalars['Boolean']['input']>;
   order?: InputMaybe<Scalars['Int']['input']>;
   thumbnailKey?: InputMaybe<Scalars['String']['input']>;
@@ -742,6 +759,15 @@ export type ToggleLessonCompletionMutationVariables = Exact<{
 
 export type ToggleLessonCompletionMutation = { __typename?: 'Mutation', toggleLessonCompletion: { __typename?: 'LessonProgress', userId: string, lessonId: string, courseId: string, completed: boolean, completedAt?: any | null } };
 
+export type GetUploadUrlForVideoMutationVariables = Exact<{
+  fileName: Scalars['String']['input'];
+  fileType: Scalars['String']['input'];
+  fileSize: Scalars['Float']['input'];
+}>;
+
+
+export type GetUploadUrlForVideoMutation = { __typename?: 'Mutation', getUploadUrlForVideo: { __typename?: 'UploadUrlResponse', uploadUrl: string, key: string, publicUrl: string } };
+
 export type RegisterUserMutationVariables = Exact<{
   input: RegisterInput;
 }>;
@@ -833,7 +859,7 @@ export type GetCourseWithLessonsQueryVariables = Exact<{
 }>;
 
 
-export type GetCourseWithLessonsQuery = { __typename?: 'Query', course: { __typename?: 'Course', id: string, title: string, slug: string, description: string, imageUrl?: string | null, chapters?: Array<{ __typename?: 'Chapter', id: string, title: string, position: number, lessons?: Array<{ __typename?: 'Lesson', id: string, title: string, order: number, duration?: number | null, videoUrl?: string | null, content?: string | null, description?: string | null, completed?: boolean | null }> | null }> | null } };
+export type GetCourseWithLessonsQuery = { __typename?: 'Query', course: { __typename?: 'Course', id: string, title: string, slug: string, description: string, imageUrl?: string | null, chapters?: Array<{ __typename?: 'Chapter', id: string, title: string, position: number, lessons?: Array<{ __typename?: 'Lesson', id: string, title: string, order: number, duration?: number | null, videoUrl?: string | null, externalVideoUrl?: string | null, content?: string | null, description?: string | null, completed?: boolean | null }> | null }> | null } };
 
 export type LessonAttachmentsQueryVariables = Exact<{
   lessonId: Scalars['String']['input'];
@@ -855,6 +881,13 @@ export type GetLessonsByChapterQueryVariables = Exact<{
 
 
 export type GetLessonsByChapterQuery = { __typename?: 'Query', lessonsByChapter: Array<{ __typename?: 'Lesson', id: string, title: string, description?: string | null, content?: string | null, videoUrl?: string | null, thumbnailKey?: string | null, videoKey?: string | null, duration?: number | null, order: number, isFree: boolean, createdAt: any, updatedAt: any }> };
+
+export type GetLessonForEditQueryVariables = Exact<{
+  id: Scalars['String']['input'];
+}>;
+
+
+export type GetLessonForEditQuery = { __typename?: 'Query', lessonForEdit: { __typename?: 'Lesson', id: string, title: string, description?: string | null, content?: string | null, isPublished: boolean, videoUrl?: string | null, videoKey?: string | null, externalVideoUrl?: string | null, duration?: number | null, isFree: boolean, order: number } };
 
 export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1545,6 +1578,47 @@ export function useToggleLessonCompletionMutation(baseOptions?: Apollo.MutationH
 export type ToggleLessonCompletionMutationHookResult = ReturnType<typeof useToggleLessonCompletionMutation>;
 export type ToggleLessonCompletionMutationResult = Apollo.MutationResult<ToggleLessonCompletionMutation>;
 export type ToggleLessonCompletionMutationOptions = Apollo.BaseMutationOptions<ToggleLessonCompletionMutation, ToggleLessonCompletionMutationVariables>;
+export const GetUploadUrlForVideoDocument = gql`
+    mutation GetUploadUrlForVideo($fileName: String!, $fileType: String!, $fileSize: Float!) {
+  getUploadUrlForVideo(
+    fileName: $fileName
+    fileType: $fileType
+    fileSize: $fileSize
+  ) {
+    uploadUrl
+    key
+    publicUrl
+  }
+}
+    `;
+export type GetUploadUrlForVideoMutationFn = Apollo.MutationFunction<GetUploadUrlForVideoMutation, GetUploadUrlForVideoMutationVariables>;
+
+/**
+ * __useGetUploadUrlForVideoMutation__
+ *
+ * To run a mutation, you first call `useGetUploadUrlForVideoMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useGetUploadUrlForVideoMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [getUploadUrlForVideoMutation, { data, loading, error }] = useGetUploadUrlForVideoMutation({
+ *   variables: {
+ *      fileName: // value for 'fileName'
+ *      fileType: // value for 'fileType'
+ *      fileSize: // value for 'fileSize'
+ *   },
+ * });
+ */
+export function useGetUploadUrlForVideoMutation(baseOptions?: Apollo.MutationHookOptions<GetUploadUrlForVideoMutation, GetUploadUrlForVideoMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<GetUploadUrlForVideoMutation, GetUploadUrlForVideoMutationVariables>(GetUploadUrlForVideoDocument, options);
+      }
+export type GetUploadUrlForVideoMutationHookResult = ReturnType<typeof useGetUploadUrlForVideoMutation>;
+export type GetUploadUrlForVideoMutationResult = Apollo.MutationResult<GetUploadUrlForVideoMutation>;
+export type GetUploadUrlForVideoMutationOptions = Apollo.BaseMutationOptions<GetUploadUrlForVideoMutation, GetUploadUrlForVideoMutationVariables>;
 export const RegisterUserDocument = gql`
     mutation RegisterUser($input: RegisterInput!) {
   register(input: $input) {
@@ -2192,6 +2266,7 @@ export const GetCourseWithLessonsDocument = gql`
         order
         duration
         videoUrl
+        externalVideoUrl
         content
         description
         completed
@@ -2373,6 +2448,56 @@ export type GetLessonsByChapterQueryHookResult = ReturnType<typeof useGetLessons
 export type GetLessonsByChapterLazyQueryHookResult = ReturnType<typeof useGetLessonsByChapterLazyQuery>;
 export type GetLessonsByChapterSuspenseQueryHookResult = ReturnType<typeof useGetLessonsByChapterSuspenseQuery>;
 export type GetLessonsByChapterQueryResult = Apollo.QueryResult<GetLessonsByChapterQuery, GetLessonsByChapterQueryVariables>;
+export const GetLessonForEditDocument = gql`
+    query GetLessonForEdit($id: String!) {
+  lessonForEdit(id: $id) {
+    id
+    title
+    description
+    content
+    isPublished
+    videoUrl
+    videoKey
+    externalVideoUrl
+    duration
+    isFree
+    order
+  }
+}
+    `;
+
+/**
+ * __useGetLessonForEditQuery__
+ *
+ * To run a query within a React component, call `useGetLessonForEditQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetLessonForEditQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetLessonForEditQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useGetLessonForEditQuery(baseOptions: Apollo.QueryHookOptions<GetLessonForEditQuery, GetLessonForEditQueryVariables> & ({ variables: GetLessonForEditQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetLessonForEditQuery, GetLessonForEditQueryVariables>(GetLessonForEditDocument, options);
+      }
+export function useGetLessonForEditLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetLessonForEditQuery, GetLessonForEditQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetLessonForEditQuery, GetLessonForEditQueryVariables>(GetLessonForEditDocument, options);
+        }
+export function useGetLessonForEditSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetLessonForEditQuery, GetLessonForEditQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetLessonForEditQuery, GetLessonForEditQueryVariables>(GetLessonForEditDocument, options);
+        }
+export type GetLessonForEditQueryHookResult = ReturnType<typeof useGetLessonForEditQuery>;
+export type GetLessonForEditLazyQueryHookResult = ReturnType<typeof useGetLessonForEditLazyQuery>;
+export type GetLessonForEditSuspenseQueryHookResult = ReturnType<typeof useGetLessonForEditSuspenseQuery>;
+export type GetLessonForEditQueryResult = Apollo.QueryResult<GetLessonForEditQuery, GetLessonForEditQueryVariables>;
 export const MeDocument = gql`
     query Me {
   me {

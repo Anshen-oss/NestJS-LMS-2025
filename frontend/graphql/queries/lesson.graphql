@@ -1,0 +1,15 @@
+query GetLessonForEdit($id: String!) {
+  lessonForEdit(id: $id) {
+    id
+    title
+    description
+    content
+    isPublished
+    videoUrl
+    videoKey
+    externalVideoUrl
+    duration
+    isFree
+    order
+  }
+}

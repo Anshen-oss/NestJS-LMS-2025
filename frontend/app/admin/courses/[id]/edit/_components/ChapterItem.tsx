@@ -53,10 +53,11 @@ interface Lesson {
 
 interface ChapterItemProps {
   chapter: Chapter;
+  courseId: string; // ✅ FIX : Ajouter courseId dans les props
   onUpdate: () => void;
 }
 
-export function ChapterItem({ chapter, onUpdate }: ChapterItemProps) {
+export function ChapterItem({ chapter, courseId, onUpdate }: ChapterItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(chapter.title);
@@ -274,6 +275,7 @@ export function ChapterItem({ chapter, onUpdate }: ChapterItemProps) {
               <LessonsList
                 lessons={chapter.lessons || []}
                 chapterId={chapter.id}
+                courseId={courseId} // ✅ FIX : Passer courseId à LessonsList
                 onUpdate={onUpdate}
               />
 

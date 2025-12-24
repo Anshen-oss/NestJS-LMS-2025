@@ -99,6 +99,7 @@ export function ChapterList({ chapters, courseId, onUpdate }: ChapterListProps) 
             <ChapterItem
               key={chapter.id}
               chapter={chapter}
+              courseId={courseId} // ✅ FIX : Passer courseId
               onUpdate={onUpdate}
             />
           ))}

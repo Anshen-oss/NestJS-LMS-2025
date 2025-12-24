@@ -9,3 +9,18 @@ mutation ToggleLessonCompletion($lessonId: String!) {
   }
 }
 
+mutation GetUploadUrlForVideo(
+  $fileName: String!
+  $fileType: String!
+  $fileSize: Float!
+) {
+  getUploadUrlForVideo(
+    fileName: $fileName
+    fileType: $fileType
+    fileSize: $fileSize
+  ) {
+    uploadUrl
+    key
+    publicUrl
+  }
+}
