@@ -180,6 +180,7 @@ model Lesson {
   videoUrl     String?
   order        Int
   videoKey     String?
+  externalVideoUrl String?
   thumbnailKey String?
   duration     Int?
   isFree       Boolean  @default(false)

@@ -9,8 +9,10 @@ import {
 } from '@nestjs/graphql';
 import { UserRole } from '@prisma/client';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { User } from '../auth/entities/user.entity';
 import { ClerkGqlGuard } from '../auth/guards/clerk-gql.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
 import { LessonProgress } from '../progress/entities/lesson-progress.entity';
 import { ProgressService } from '../progress/progress.service';
 import { CreateLessonAttachmentInput } from './dto/create-lesson-attachment.input';
@@ -46,6 +48,22 @@ export class LessonsResolver {
     // ✅ Pour les queries publiques, utiliser USER comme rôle par défaut si undefined
     const userRole = user?.role ?? UserRole.STUDENT;
     return this.lessonsService.findOne(id, user?.id, userRole);
+  }
+
+  /**
+   * Récupérer une lesson pour l'édition (ADMIN/INSTRUCTOR seulement)
+   * Ne fait PAS les checks d'enrollment
+   */
+  @Query(() => Lesson, { name: 'lessonForEdit' })
+  @UseGuards(ClerkGqlGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
+  async findOneForEdit(@Args('id') id: string, @CurrentUser() user: User) {
+    // ✅ Vérification explicite du rôle
+    if (!user.role) {
+      throw new UnauthorizedException('User role is required');
+    }
+
+    return this.lessonsService.findOneForEdit(id, user.id, user.role);
   }
 
   // ═══════════════════════════════════════════════════════════

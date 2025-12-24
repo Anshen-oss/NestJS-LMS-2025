@@ -5,12 +5,34 @@ import {
 } from '@nestjs/common';
 import { Lesson, LessonAttachment, UserRole } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { S3Service } from '../s3/s3.service'; // 🆕 Import S3Service
 import { CreateLessonInput } from './dto/create-lesson.input';
 import { UpdateLessonInput } from './dto/update-lesson.input';
 
+// Fonction helper pour convertir null en undefined pour GraphQL
+function convertNullToUndefined<T>(obj: T): T {
+  if (!obj || typeof obj !== 'object') {
+    return obj;
+  }
+
+  const result: any = Array.isArray(obj) ? [] : {};
+
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      const value = obj[key];
+      result[key] = value === null ? undefined : value;
+    }
+  }
+
+  return result as T;
+}
+
 @Injectable()
 export class LessonsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private s3Service: S3Service, // 🆕 Injection S3Service
+  ) {}
 
   // ═══════════════════════════════════════════════════════════
   //                     QUERIES (READ)
@@ -101,14 +123,14 @@ export class LessonsService {
         },
       });
 
-      return {
+      return convertNullToUndefined({
         ...lesson,
         completed: progress?.completed ?? false,
         completedAt: progress?.completedAt ?? null,
-      };
+      });
     }
 
-    return lesson;
+    return convertNullToUndefined(lesson);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -148,14 +170,16 @@ export class LessonsService {
     const order = input.order ?? (await this.getNextOrder(chapterId));
 
     // 4️⃣ Créer la leçon
-    return this.prisma.lesson.create({
+    const lesson = await this.prisma.lesson.create({
       data: {
         title: input.title,
         description: input.description,
-        order, // ⬅️ order au lieu de position
+        content: input.content, // 🆕 Ajout du content
+        order,
         thumbnailKey: input.thumbnailKey,
-        videoKey: input.videoKey,
-        videoUrl: input.videoUrl,
+        videoKey: input.videoKey, // 🆕 videoKey
+        videoUrl: input.videoUrl, // 🆕 videoUrl
+        externalVideoUrl: input.externalVideoUrl,
         duration: input.duration,
         isFree: input.isFree ?? false,
         chapterId,
@@ -170,6 +194,7 @@ export class LessonsService {
         },
       },
     });
+    return convertNullToUndefined(lesson);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -179,6 +204,7 @@ export class LessonsService {
   /**
    * Met à jour une leçon
    * RÈGLE : Seulement l'instructeur du cours ou un admin
+   * 🆕 Gère automatiquement la suppression de l'ancienne vidéo si changement
    */
   async update(
     id: string,
@@ -212,8 +238,34 @@ export class LessonsService {
       );
     }
 
-    // 3️⃣ Mettre à jour
-    return this.prisma.lesson.update({
+    // 🆕 3️⃣ Gérer la suppression de l'ancienne vidéo si changement
+    if (input.videoUrl !== undefined && lesson.videoKey) {
+      const isRemovingVideo = !input.videoUrl;
+      const isChangingVideo =
+        input.videoUrl && input.videoUrl !== lesson.videoUrl;
+      const isSwitchingToExternal = input.externalVideoUrl && !input.videoUrl;
+
+      if (isRemovingVideo || isChangingVideo || isSwitchingToExternal) {
+        try {
+          await this.s3Service.deleteVideo(lesson.videoKey);
+          console.log(`✅ Ancienne vidéo supprimée: ${lesson.videoKey}`);
+        } catch (error) {
+          console.error(
+            `⚠️ Erreur suppression vidéo ${lesson.videoKey}:`,
+            error.message,
+          );
+        }
+      }
+    }
+
+    // 🆕 Si on passe à une URL externe, vider videoUrl et videoKey
+    if (input.externalVideoUrl && !input.videoUrl) {
+      input.videoUrl = '';
+      input.videoKey = '';
+    }
+
+    // 4️⃣ Mettre à jour
+    const updated = await this.prisma.lesson.update({
       where: { id },
       data: input,
       include: {
@@ -226,6 +278,7 @@ export class LessonsService {
         },
       },
     });
+    return convertNullToUndefined(updated);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -235,6 +288,7 @@ export class LessonsService {
   /**
    * Supprime une leçon
    * RÈGLE : Seulement l'instructeur du cours ou un admin
+   * 🆕 Supprime automatiquement la vidéo de S3 si elle existe
    */
   async delete(id: string, userId: string, userRole: UserRole) {
     // 1️⃣ Récupérer la leçon
@@ -263,42 +317,28 @@ export class LessonsService {
       );
     }
 
-    // 3️⃣ Supprimer
-    await this.prisma.lesson.delete({ where: { id } });
+    // 🆕 3️⃣ Supprimer la vidéo de S3 si elle existe
+    if (lesson.videoKey) {
+      try {
+        await this.s3Service.deleteVideo(lesson.videoKey);
+        console.log(`✅ Vidéo supprimée de S3: ${lesson.videoKey}`);
+      } catch (error) {
+        console.error(
+          `⚠️ Erreur suppression vidéo ${lesson.videoKey}:`,
+          error.message,
+        );
+        // On continue quand même la suppression de la lesson
+      }
+    }
 
-    // 4️⃣ Réorganiser les positions des leçons restantes
+    // 4️⃣ Supprimer la lesson de la DB (cascade sur lessonProgress)
+    const deletedLesson = await this.prisma.lesson.delete({ where: { id } });
+
+    // 5️⃣ Réorganiser les positions des leçons restantes
     await this.reorderLessons(lesson.chapterId);
 
-    return true;
+    return convertNullToUndefined(deletedLesson);
   }
-
-  // async updateLessonContent(
-  //   lessonId: string,
-  //   content?: string,
-  //   isPublished?: boolean,
-  // ): Promise<Lesson> {
-  //   // 1. Vérifier que la lesson existe
-  //   const lesson = await this.prisma.lesson.findUnique({
-  //     where: { id: lessonId },
-  //   });
-
-  //   if (!lesson) {
-  //     throw new NotFoundException(`lesson with ID ${lessonId} not found`);
-  //   }
-  //   // 2. Mettre à jour uniquement les champs fournis
-  //   return this.prisma.lesson.update({
-  //     where: { id: lessonId },
-  //     data: {
-  //       ...(content !== undefined && {
-  //         content,
-  //       }),
-  //       ...(isPublished !== undefined && {
-  //         isPublished,
-  //       }),
-  //       updatedAt: new Date(),
-  //     },
-  //   });
-  // }
 
   // ═══════════════════════════════════════════════════════════
   //              PROGRESSION (LESSON PROGRESS)
@@ -309,7 +349,6 @@ export class LessonsService {
     content?: string,
     isPublished?: boolean,
   ): Promise<Lesson> {
-    console.log('🔵 updateLessonContent appelé');
     console.log('📦 lessonId:', lessonId);
     console.log('📦 content:', content);
     console.log('📦 isPublished:', isPublished);
@@ -323,8 +362,6 @@ export class LessonsService {
       console.log('❌ Lesson not found');
       throw new NotFoundException(`lesson with ID ${lessonId} not found`);
     }
-
-    //console.log('✅ Lesson trouvée:', lesson.title);
 
     // 2. Construire l'objet de mise à jour
     const updateData = {
@@ -342,7 +379,8 @@ export class LessonsService {
     });
 
     console.log('✅ Lesson mise à jour avec succès');
-    return updated;
+    // 🆕 Convertir null en undefined pour GraphQL
+    return convertNullToUndefined(updated);
   }
 
   /**
@@ -380,7 +418,7 @@ export class LessonsService {
       create: {
         userId,
         lessonId,
-        courseId: lesson.chapter.courseId, // ⬅️ Ajout du courseId
+        courseId: lesson.chapter.courseId,
         completed: true,
         completedAt: new Date(),
       },
@@ -455,10 +493,10 @@ export class LessonsService {
       where: { courseId },
       include: {
         lessons: {
-          orderBy: { order: 'asc' }, // ⬅️ Lesson utilise 'order'
+          orderBy: { order: 'asc' },
         },
       },
-      orderBy: { position: 'asc' }, // ⬅️ Chapter utilise 'position'
+      orderBy: { position: 'asc' },
     });
 
     const allLessons = chapters.flatMap((chapter) => chapter.lessons);
@@ -488,6 +526,45 @@ export class LessonsService {
     };
   }
 
+  /**
+   * Récupère une lesson pour l'édition (sans checks d'enrollment)
+   * Vérifie seulement que l'utilisateur est propriétaire ou admin
+   */
+  async findOneForEdit(id: string, userId: string, userRole: UserRole) {
+    const lesson = await this.prisma.lesson.findUnique({
+      where: { id },
+      include: {
+        chapter: {
+          include: {
+            course: {
+              select: {
+                id: true,
+                title: true,
+                userId: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!lesson) {
+      throw new NotFoundException(`Lesson #${id} not found`);
+    }
+
+    // Vérifier que l'utilisateur a le droit d'éditer
+    const isAdmin = userRole === UserRole.ADMIN;
+    const isOwner = lesson.chapter.course.userId === userId;
+
+    if (!isAdmin && !isOwner) {
+      throw new ForbiddenException(
+        'You do not have permission to edit this lesson',
+      );
+    }
+
+    return convertNullToUndefined(lesson);
+  }
+
   // ═══════════════════════════════════════════════════════════
   //                     HELPER METHODS
   // ═══════════════════════════════════════════════════════════
@@ -498,10 +575,10 @@ export class LessonsService {
   private async getNextOrder(chapterId: string): Promise<number> {
     const lastLesson = await this.prisma.lesson.findFirst({
       where: { chapterId },
-      orderBy: { order: 'desc' }, // ⬅️ order au lieu de position
+      orderBy: { order: 'desc' },
     });
 
-    return lastLesson ? lastLesson.order + 1 : 0; // ⬅️ Commence à 0
+    return lastLesson ? lastLesson.order + 1 : 0;
   }
 
   /**
@@ -510,7 +587,7 @@ export class LessonsService {
   private async reorderLessons(chapterId: string): Promise<void> {
     const lessons = await this.prisma.lesson.findMany({
       where: { chapterId },
-      orderBy: { order: 'asc' }, // ⬅️ order au lieu de position
+      orderBy: { order: 'asc' },
     });
 
     // Réattribuer les positions de manière séquentielle (0, 1, 2...)
@@ -518,7 +595,7 @@ export class LessonsService {
       lessons.map((lesson, index) =>
         this.prisma.lesson.update({
           where: { id: lesson.id },
-          data: { order: index }, // ⬅️ order commence à 0
+          data: { order: index },
         }),
       ),
     );

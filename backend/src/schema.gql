@@ -150,6 +150,7 @@ input CreateLessonInput {
   content: String
   description: String
   duration: Int
+  externalVideoUrl: String
   isFree: Boolean = false
   order: Int
   thumbnailKey: String
@@ -193,6 +194,7 @@ type Lesson {
   createdAt: DateTime!
   description: String
   duration: Int
+  externalVideoUrl: String
   id: ID!
   isCompleted: Boolean
   isFree: Boolean!
@@ -263,6 +265,7 @@ type Mutation {
   deleteLessonAttachment(id: String!): Boolean!
   enrollInCourse(input: EnrollInCourseInput!): EnrollmentResponse!
   getUploadUrl(contentType: String!, fileName: String!): UploadUrlResponse!
+  getUploadUrlForVideo(fileName: String!, fileSize: Float!, fileType: String!): UploadUrlResponse!
   login(input: LoginInput!): AuthPayload!
   markLessonAsCompleted(lessonId: String!): LessonProgress!
 
@@ -297,6 +300,7 @@ type Query {
   isEnrolled(courseId: String!): Boolean!
   lesson(id: String!): Lesson!
   lessonAttachments(lessonId: String!): [LessonAttachment!]!
+  lessonForEdit(id: String!): Lesson!
   lessonProgress(lessonId: String!): LessonProgress
   lessonsByChapter(chapterId: String!): [Lesson!]!
   me: User!
@@ -363,6 +367,7 @@ input UpdateLessonInput {
   content: String
   description: String
   duration: Int
+  externalVideoUrl: String
   isFree: Boolean = false
   order: Int
   thumbnailKey: String

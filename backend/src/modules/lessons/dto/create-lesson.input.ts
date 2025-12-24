@@ -33,6 +33,10 @@ export class CreateLessonInput {
   @IsOptional()
   videoUrl?: string;
 
+  @Field({ nullable: true })
+  @IsOptional()
+  externalVideoUrl?: string;
+
   @Field(() => Int, { nullable: true })
   @IsOptional()
   @Min(0)
