@@ -1,5 +1,5 @@
-// Schema Prisma Hybride - LMS 2025
-// Combine Better-Auth + Features avancées + Tracking progression
+// Schema Prisma - LMS 2025
+// Clerk Authentication + Video Progress Tracking
 
 generator client {
   provider = "prisma-client-js"
@@ -11,7 +11,7 @@ datasource db {
 }
 
 // ========================================
-// AUTHENTICATION (Better-Auth)
+// AUTHENTICATION (Clerk)
 // ========================================
 
 enum UserRole {
@@ -22,7 +22,7 @@ enum UserRole {
 
 model User {
   id               String   @id @default(uuid())
-  clerkId          String?   @unique
+  clerkId          String   @unique
   name             String
   email            String?  @unique
   emailVerified    Boolean  @default(false)
@@ -36,61 +36,13 @@ model User {
   banExpires       DateTime?
   stripeCustomerId String?  @unique
 
-  coursesCreated   Course[]         @relation("CourseCreator")
-  enrollments      Enrollment[]
-  lessonProgress   LessonProgress[]
-  accounts         Account[]
-  sessions         Session[]
+  // Relations
+  coursesCreated Course[]         @relation("CourseCreator")
+  enrollments    Enrollment[]
+  lessonProgress LessonProgress[]
+  videoProgress  VideoProgress[]  // 🆕 Nouvelle relation
 
   @@map("user")
-}
-
-
-model Session {
-  id             String   @id
-  expiresAt      DateTime
-  token          String   @unique
-  createdAt      DateTime
-  updatedAt      DateTime
-  ipAddress      String?
-  userAgent      String?
-  impersonatedBy String?
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("session")
-}
-
-model Account {
-  id                    String    @id
-  accountId             String
-  providerId            String
-  accessToken           String?
-  refreshToken          String?
-  idToken               String?
-  accessTokenExpiresAt  DateTime?
-  refreshTokenExpiresAt DateTime?
-  scope                 String?
-  password              String?
-  createdAt             DateTime
-  updatedAt             DateTime
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("account")
-}
-
-model Verification {
-  id         String    @id
-  identifier String
-  value      String
-  expiresAt  DateTime
-  createdAt  DateTime?
-  updatedAt  DateTime?
-
-  @@map("verification")
 }
 
 // ========================================
@@ -116,7 +68,7 @@ model Course {
   description      String @db.Text
   smallDescription String
 
-  // 🆕 Nouveaux champs pour Tiptap
+  // Tiptap rich content
   requirements String? @db.Text
   outcomes     String? @db.Text
 
@@ -144,9 +96,8 @@ model Course {
   createdBy User   @relation("CourseCreator", fields: [userId], references: [id], onDelete: Cascade)
 
   lessonProgress LessonProgress[]
-
-  chapters    Chapter[]
-  enrollments Enrollment[]
+  chapters       Chapter[]
+  enrollments    Enrollment[]
 
   @@index([slug])
   @@index([status])
@@ -172,32 +123,55 @@ model Chapter {
 }
 
 model Lesson {
-  id           String   @id @default(cuid())
-  title        String
-  description  String?
-  content      String?  @db.Text // ← Ton nouveau champ
-  isPublished  Boolean  @default(false) // ← Ton nouveau champ
-  videoUrl     String?
-  order        Int
-  videoKey     String?
+  id               String   @id @default(cuid())
+  title            String
+  description      String?
+  content          String?  @db.Text
+  isPublished      Boolean  @default(false)
+
+  // Video fields
+  videoUrl         String?
+  videoKey         String?
   externalVideoUrl String?
-  thumbnailKey String?
-  duration     Int?
-  isFree       Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  thumbnailKey     String?
+  duration         Int?     // Durée en secondes
+
+  order            Int
+  isFree           Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   chapterId String
   chapter   Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
-  attachments LessonAttachment[] // 👈 NOUVEAU
-
-  // ✅ AJOUTE CETTE LIGNE
+  attachments    LessonAttachment[]
   lessonProgress LessonProgress[]
+  videoProgress  VideoProgress[]      // 🆕 Nouvelle relation
 
   @@index([chapterId])
 }
 
+model LessonAttachment {
+  id       String @id @default(cuid())
+  lessonId String
+  lesson   Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  fileName String
+  fileUrl  String
+  fileSize Int    // Taille en bytes
+  fileType String // MIME type (application/pdf, etc.)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([lessonId])
+}
+
+// ========================================
+// PROGRESS TRACKING
+// ========================================
+
+// Progression générale d'une leçon (complétion officielle)
 model LessonProgress {
   id          String    @id @default(cuid())
   userId      String
@@ -217,7 +191,7 @@ model LessonProgress {
 }
 
 // ========================================
-// ENROLLMENTS & PROGRESS
+// ENROLLMENTS
 // ========================================
 
 enum EnrollmentStatus {
@@ -245,18 +219,36 @@ model Enrollment {
   @@index([status])
 }
 
-model LessonAttachment {
-  id       String @id @default(cuid())
-  lessonId String
-  lesson   Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+model VideoProgress {
+  id              String   @id @default(cuid())
 
-  fileName String
-  fileUrl  String
-  fileSize Int // Taille en bytes
-  fileType String // MIME type (application/pdf, etc.)
+  // Relations
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  lessonId        String
+  lesson          Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
+  // Données de progression vidéo
+  currentTime     Float    @default(0)    // Position actuelle en secondes
+  duration        Float    @default(0)    // Durée totale de la vidéo en secondes
+  progressPercent Float    @default(0)    // Pourcentage calculé (0-100)
+
+  // Tracking de complétion vidéo
+  isCompleted     Boolean  @default(false) // true quand >= 90%
+  completedAt     DateTime?
+
+  // Dernière activité
+  lastWatchedAt   DateTime @default(now()) // Mise à jour à chaque sauvegarde
+
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Contraintes et index
+  @@unique([userId, lessonId])  // Un user = une seule progression par leçon
+  @@index([userId])
   @@index([lessonId])
+  @@index([lastWatchedAt])      // Pour trier par "récemment regardé"
+  @@map("video_progress")
 }

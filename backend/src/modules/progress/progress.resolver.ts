@@ -1,8 +1,8 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { User } from '../auth/entities/user.entity';
 import { ClerkGqlGuard } from '../auth/guards/clerk-gql.guard';
+import { User } from '../users/entities/user.entity';
 import { CourseProgressOutput } from './dto/course-progress.output';
 import { LessonProgress } from './entities/lesson-progress.entity';
 import { ProgressService } from './progress.service';

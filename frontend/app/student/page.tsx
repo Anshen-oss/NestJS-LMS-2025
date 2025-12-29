@@ -2,11 +2,13 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ContinueWatching } from '@/components/video/Continuewatching';
 import { useGetMyEnrollmentsQuery } from '@/lib/generated/graphql';
 import { useUser } from '@clerk/nextjs';
 import { Award, BookOpen, Clock, Loader2, Play, TrendingUp } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+
 
 export default function StudentDashboard() {
   const { user } = useUser();
@@ -151,6 +153,11 @@ export default function StudentDashboard() {
               </p>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Section Continue Watching */}
+        <div className="mb-8">
+          <ContinueWatching />
         </div>
 
         {/* Mes cours ou Empty State */}

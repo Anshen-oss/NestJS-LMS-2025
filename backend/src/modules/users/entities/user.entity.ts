@@ -1,0 +1,76 @@
+import { Field, ID, ObjectType, registerEnumType } from '@nestjs/graphql';
+import { UserRole } from '@prisma/client';
+
+registerEnumType(UserRole, {
+  name: 'UserRole',
+  description: 'User role in the system',
+});
+
+@ObjectType()
+export class UserCounts {
+  @Field()
+  coursesCreated: number;
+
+  @Field()
+  enrollments: number;
+}
+
+@ObjectType()
+export class UserStats {
+  @Field()
+  totalUsers: number;
+
+  @Field()
+  students: number;
+
+  @Field()
+  instructors: number;
+
+  @Field()
+  admins: number;
+}
+
+@ObjectType()
+export class User {
+  @Field(() => ID)
+  id: string;
+
+  @Field(() => String, { nullable: true })
+  clerkId?: string | null;
+
+  @Field(() => String, { nullable: true })
+  email?: string | null;
+
+  @Field(() => String, { nullable: true })
+  name?: string | null;
+
+  @Field(() => UserRole, { nullable: true })
+  role?: UserRole;
+
+  @Field(() => String, { nullable: true })
+  image?: string | null;
+
+  @Field(() => Boolean, { nullable: true })
+  emailVerified?: boolean | null;
+
+  @Field(() => Boolean, { nullable: true })
+  banned?: boolean | null;
+
+  @Field(() => String, { nullable: true })
+  banReason?: string | null;
+
+  @Field(() => Date, { nullable: true })
+  banExpires?: Date | null;
+
+  @Field(() => String, { nullable: true })
+  stripeCustomerId?: string | null;
+
+  @Field(() => Date)
+  createdAt: Date;
+
+  @Field(() => Date, { nullable: true })
+  updatedAt?: Date | null;
+
+  @Field(() => UserCounts, { nullable: true })
+  _count?: UserCounts;
+}

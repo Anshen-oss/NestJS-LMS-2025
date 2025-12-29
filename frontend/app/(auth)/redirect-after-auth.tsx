@@ -14,12 +14,16 @@ export function RedirectAfterAuth() {
 
       console.log('User role:', role);
 
-      // Rediriger selon le rôle
+      // ✅ Rediriger selon le rôle
       switch (role) {
         case 'ADMIN':
-        case 'INSTRUCTOR':
           console.log('Redirecting to /admin');
           router.push('/admin');
+          break;
+
+        case 'INSTRUCTOR':  // ✅ Séparé !
+          console.log('Redirecting to /instructor');
+          router.push('/instructor');
           break;
 
         case 'STUDENT':

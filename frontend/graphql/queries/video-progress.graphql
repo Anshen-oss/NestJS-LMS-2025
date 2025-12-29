@@ -1,0 +1,85 @@
+# ============================================
+# QUERIES
+# ============================================
+
+# Récupérer la progression d'une leçon spécifique
+query GetVideoProgress($lessonId: String!) {
+  getVideoProgress(lessonId: $lessonId) {
+    id
+    lessonId
+    currentTime
+    duration
+    progressPercent
+    isCompleted
+    completedAt
+    lastWatchedAt
+    createdAt
+    updatedAt
+  }
+}
+
+# Récupérer toutes les progressions de l'utilisateur connecté
+query GetUserVideoProgress {
+  getUserVideoProgress {
+    id
+    lessonId
+    currentTime
+    duration
+    progressPercent
+    isCompleted
+    completedAt
+    lastWatchedAt
+    lesson {
+      id
+      title
+      description
+      videoUrl
+      externalVideoUrl
+      duration
+      chapter {
+        id
+        title
+        course {
+          id
+          title
+          slug
+          imageUrl
+        }
+      }
+    }
+  }
+}
+
+# ============================================
+# MUTATIONS
+# ============================================
+
+# Sauvegarder la progression (appelée toutes les 5s)
+mutation SaveVideoProgress($input: SaveVideoProgressInput!) {
+  saveVideoProgress(input: $input) {
+    id
+    lessonId
+    currentTime
+    duration
+    progressPercent
+    isCompleted
+    completedAt
+    lastWatchedAt
+  }
+}
+
+# Marquer manuellement comme complété
+mutation MarkLessonCompleted($lessonId: String!) {
+  markLessonCompleted(lessonId: $lessonId) {
+    id
+    lessonId
+    isCompleted
+    completedAt
+    progressPercent
+  }
+}
+
+# Supprimer la progression (reset)
+mutation DeleteVideoProgress($lessonId: String!) {
+  deleteVideoProgress(lessonId: $lessonId)
+}

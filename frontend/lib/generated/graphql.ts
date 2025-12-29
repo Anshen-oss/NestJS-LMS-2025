@@ -40,12 +40,6 @@ export type AdminStats = {
   totalUsers: Scalars['Int']['output'];
 };
 
-export type AuthPayload = {
-  __typename?: 'AuthPayload';
-  accessToken: Scalars['String']['output'];
-  user: User;
-};
-
 export type Chapter = {
   __typename?: 'Chapter';
   completedLessonsCount?: Maybe<Scalars['Int']['output']>;
@@ -250,15 +244,12 @@ export type LessonProgress = {
   userId: Scalars['String']['output'];
 };
 
-export type LoginInput = {
-  email: Scalars['String']['input'];
-  password: Scalars['String']['input'];
-};
-
 export type Mutation = {
   __typename?: 'Mutation';
   adminUpdateUserRole: AdminActionResponse;
   archiveCourse: Course;
+  /** Ban user (ADMIN only) */
+  banUser: User;
   createChapter: Chapter;
   /** Créer une session Stripe Checkout pour acheter un cours */
   createCheckoutSession: CheckoutSessionResponse;
@@ -273,24 +264,31 @@ export type Mutation = {
   deleteFile: Scalars['Boolean']['output'];
   deleteLesson: Scalars['Boolean']['output'];
   deleteLessonAttachment: Scalars['Boolean']['output'];
+  /** Delete video progress (reset) */
+  deleteVideoProgress: Scalars['Boolean']['output'];
   enrollInCourse: EnrollmentResponse;
   getUploadUrl: UploadUrlResponse;
   getUploadUrlForVideo: UploadUrlResponse;
-  login: AuthPayload;
   markLessonAsCompleted: LessonProgress;
-  /** Promouvoir un utilisateur en instructeur (ADMIN uniquement) */
-  promoteToInstructor: AdminActionResponse;
+  /** Manually mark a lesson as completed */
+  markLessonCompleted: VideoProgress;
+  /** Promote STUDENT to INSTRUCTOR (ADMIN only) */
+  promoteToInstructor: User;
   publishCourse: Course;
-  register: AuthPayload;
   reorderChapters: Array<Chapter>;
   reorderLessons: Array<Lesson>;
+  /** Save video progress (auto-save every 5 seconds) */
+  saveVideoProgress: VideoProgress;
   setupUserRole: User;
   toggleLessonCompletion: LessonProgress;
+  /** Unban user (ADMIN only) */
+  unbanUser: User;
   updateChapter: Chapter;
   updateCourse: Course;
   updateLesson: Lesson;
   updateLessonContent: Lesson;
   updateLessonProgress: LessonProgress;
+  /** Update user role (ADMIN only) */
   updateUserRole: User;
 };
 
@@ -302,6 +300,13 @@ export type MutationAdminUpdateUserRoleArgs = {
 
 export type MutationArchiveCourseArgs = {
   id: Scalars['String']['input'];
+};
+
+
+export type MutationBanUserArgs = {
+  expiresAt?: InputMaybe<Scalars['DateTime']['input']>;
+  reason?: InputMaybe<Scalars['String']['input']>;
+  userId: Scalars['String']['input'];
 };
 
 
@@ -361,6 +366,11 @@ export type MutationDeleteLessonAttachmentArgs = {
 };
 
 
+export type MutationDeleteVideoProgressArgs = {
+  lessonId: Scalars['String']['input'];
+};
+
+
 export type MutationEnrollInCourseArgs = {
   input: EnrollInCourseInput;
 };
@@ -379,28 +389,23 @@ export type MutationGetUploadUrlForVideoArgs = {
 };
 
 
-export type MutationLoginArgs = {
-  input: LoginInput;
-};
-
-
 export type MutationMarkLessonAsCompletedArgs = {
   lessonId: Scalars['String']['input'];
 };
 
 
+export type MutationMarkLessonCompletedArgs = {
+  lessonId: Scalars['String']['input'];
+};
+
+
 export type MutationPromoteToInstructorArgs = {
-  userId: Scalars['String']['input'];
+  input: PromoteUserInput;
 };
 
 
 export type MutationPublishCourseArgs = {
   id: Scalars['String']['input'];
-};
-
-
-export type MutationRegisterArgs = {
-  input: RegisterInput;
 };
 
 
@@ -414,6 +419,11 @@ export type MutationReorderLessonsArgs = {
 };
 
 
+export type MutationSaveVideoProgressArgs = {
+  input: SaveVideoProgressInput;
+};
+
+
 export type MutationSetupUserRoleArgs = {
   clerkUserId: Scalars['String']['input'];
   role: Scalars['String']['input'];
@@ -422,6 +432,11 @@ export type MutationSetupUserRoleArgs = {
 
 export type MutationToggleLessonCompletionArgs = {
   lessonId: Scalars['String']['input'];
+};
+
+
+export type MutationUnbanUserArgs = {
+  userId: Scalars['String']['input'];
 };
 
 
@@ -453,7 +468,11 @@ export type MutationUpdateLessonProgressArgs = {
 
 
 export type MutationUpdateUserRoleArgs = {
-  role: Scalars['String']['input'];
+  input: UpdateUserRoleInput;
+};
+
+export type PromoteUserInput = {
+  userId: Scalars['String']['input'];
 };
 
 export type Query = {
@@ -466,7 +485,17 @@ export type Query = {
   courseProgress: CourseProgressOutput;
   /** Liste de tous les cours, publiés ou non (ADMIN uniquement) */
   courses: Array<Course>;
+  /** Get all users (ADMIN only) */
+  getAllUsers: Array<User>;
   getCourseForEdit: Course;
+  /** Get user by ID */
+  getUserById: User;
+  /** Get user statistics */
+  getUserStats: UserStats;
+  /** Get all video progress for current user (sorted by recent) */
+  getUserVideoProgress: Array<VideoProgress>;
+  /** Get video progress for a specific lesson */
+  getVideoProgress?: Maybe<VideoProgress>;
   hello: Scalars['String']['output'];
   isEnrolled: Scalars['Boolean']['output'];
   lesson: Lesson;
@@ -512,6 +541,16 @@ export type QueryGetCourseForEditArgs = {
 };
 
 
+export type QueryGetUserByIdArgs = {
+  userId: Scalars['String']['input'];
+};
+
+
+export type QueryGetVideoProgressArgs = {
+  lessonId: Scalars['String']['input'];
+};
+
+
 export type QueryIsEnrolledArgs = {
   courseId: Scalars['String']['input'];
 };
@@ -541,12 +580,6 @@ export type QueryLessonsByChapterArgs = {
   chapterId: Scalars['String']['input'];
 };
 
-export type RegisterInput = {
-  email?: InputMaybe<Scalars['String']['input']>;
-  name?: InputMaybe<Scalars['String']['input']>;
-  password: Scalars['String']['input'];
-};
-
 export type ReorderChaptersInput = {
   chapters: Array<ChapterPositionInput>;
   courseId: Scalars['String']['input'];
@@ -555,6 +588,12 @@ export type ReorderChaptersInput = {
 export type ReorderLessonsInput = {
   chapterId: Scalars['String']['input'];
   lessons: Array<LessonPositionInput>;
+};
+
+export type SaveVideoProgressInput = {
+  currentTime: Scalars['Float']['input'];
+  duration: Scalars['Float']['input'];
+  lessonId: Scalars['String']['input'];
 };
 
 export type UpdateChapterInput = {
@@ -619,12 +658,26 @@ export type UploadUrlResponse = {
 
 export type User = {
   __typename?: 'User';
+  _count?: Maybe<UserCounts>;
+  banExpires?: Maybe<Scalars['DateTime']['output']>;
+  banReason?: Maybe<Scalars['String']['output']>;
+  banned?: Maybe<Scalars['Boolean']['output']>;
   clerkId?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
   email?: Maybe<Scalars['String']['output']>;
+  emailVerified?: Maybe<Scalars['Boolean']['output']>;
   id: Scalars['ID']['output'];
+  image?: Maybe<Scalars['String']['output']>;
   name?: Maybe<Scalars['String']['output']>;
   role?: Maybe<UserRole>;
+  stripeCustomerId?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['DateTime']['output']>;
+};
+
+export type UserCounts = {
+  __typename?: 'UserCounts';
+  coursesCreated: Scalars['Float']['output'];
+  enrollments: Scalars['Float']['output'];
 };
 
 /** The role of a user in the system */
@@ -637,12 +690,30 @@ export enum UserRole {
   Student = 'STUDENT'
 }
 
-export type LoginMutationVariables = Exact<{
-  input: LoginInput;
-}>;
+export type UserStats = {
+  __typename?: 'UserStats';
+  admins: Scalars['Int']['output'];
+  instructors: Scalars['Int']['output'];
+  students: Scalars['Int']['output'];
+  totalUsers: Scalars['Int']['output'];
+};
 
-
-export type LoginMutation = { __typename?: 'Mutation', login: { __typename?: 'AuthPayload', accessToken: string, user: { __typename?: 'User', id: string, email?: string | null, name?: string | null, role?: UserRole | null } } };
+export type VideoProgress = {
+  __typename?: 'VideoProgress';
+  completedAt?: Maybe<Scalars['DateTime']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  currentTime: Scalars['Float']['output'];
+  duration: Scalars['Float']['output'];
+  id: Scalars['ID']['output'];
+  isCompleted: Scalars['Boolean']['output'];
+  lastWatchedAt: Scalars['DateTime']['output'];
+  lesson?: Maybe<Lesson>;
+  lessonId: Scalars['String']['output'];
+  progressPercent: Scalars['Float']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  user?: Maybe<User>;
+  userId: Scalars['String']['output'];
+};
 
 export type CreateChapterMutationVariables = Exact<{
   input: CreateChapterInput;
@@ -768,13 +839,6 @@ export type GetUploadUrlForVideoMutationVariables = Exact<{
 
 export type GetUploadUrlForVideoMutation = { __typename?: 'Mutation', getUploadUrlForVideo: { __typename?: 'UploadUrlResponse', uploadUrl: string, key: string, publicUrl: string } };
 
-export type RegisterUserMutationVariables = Exact<{
-  input: RegisterInput;
-}>;
-
-
-export type RegisterUserMutation = { __typename?: 'Mutation', register: { __typename?: 'AuthPayload', accessToken: string, user: { __typename?: 'User', id: string, email?: string | null, name?: string | null, role?: UserRole | null } } };
-
 export type SetupUserRoleMutationVariables = Exact<{
   clerkUserId: Scalars['String']['input'];
   role: Scalars['String']['input'];
@@ -789,13 +853,6 @@ export type UpdateLessonContentMutationVariables = Exact<{
 
 
 export type UpdateLessonContentMutation = { __typename?: 'Mutation', updateLessonContent: { __typename?: 'Lesson', id: string, title: string, content?: string | null, isPublished: boolean, updatedAt: any } };
-
-export type UpdateUserRoleMutationVariables = Exact<{
-  role: Scalars['String']['input'];
-}>;
-
-
-export type UpdateUserRoleMutation = { __typename?: 'Mutation', updateUserRole: { __typename?: 'User', id: string, role?: UserRole | null } };
 
 export type GetChaptersByCourseQueryVariables = Exact<{
   courseId: Scalars['String']['input'];
@@ -916,46 +973,87 @@ export type GetCoursesQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type GetCoursesQuery = { __typename?: 'Query', courses: Array<{ __typename?: 'Course', id: string, title: string }> };
 
+export type GetAllUsersQueryVariables = Exact<{ [key: string]: never; }>;
 
-export const LoginDocument = gql`
-    mutation Login($input: LoginInput!) {
-  login(input: $input) {
-    accessToken
-    user {
-      id
-      email
-      name
-      role
-    }
-  }
-}
-    `;
-export type LoginMutationFn = Apollo.MutationFunction<LoginMutation, LoginMutationVariables>;
 
-/**
- * __useLoginMutation__
- *
- * To run a mutation, you first call `useLoginMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useLoginMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [loginMutation, { data, loading, error }] = useLoginMutation({
- *   variables: {
- *      input: // value for 'input'
- *   },
- * });
- */
-export function useLoginMutation(baseOptions?: Apollo.MutationHookOptions<LoginMutation, LoginMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useMutation<LoginMutation, LoginMutationVariables>(LoginDocument, options);
-      }
-export type LoginMutationHookResult = ReturnType<typeof useLoginMutation>;
-export type LoginMutationResult = Apollo.MutationResult<LoginMutation>;
-export type LoginMutationOptions = Apollo.BaseMutationOptions<LoginMutation, LoginMutationVariables>;
+export type GetAllUsersQuery = { __typename?: 'Query', getAllUsers: Array<{ __typename?: 'User', id: string, clerkId?: string | null, name?: string | null, email?: string | null, role?: UserRole | null, image?: string | null, emailVerified?: boolean | null, banned?: boolean | null, banReason?: string | null, createdAt: any, updatedAt?: any | null, _count?: { __typename?: 'UserCounts', coursesCreated: number, enrollments: number } | null }> };
+
+export type GetUserByIdQueryVariables = Exact<{
+  userId: Scalars['String']['input'];
+}>;
+
+
+export type GetUserByIdQuery = { __typename?: 'Query', getUserById: { __typename?: 'User', id: string, clerkId?: string | null, name?: string | null, email?: string | null, role?: UserRole | null, image?: string | null, emailVerified?: boolean | null, banned?: boolean | null, banReason?: string | null, banExpires?: any | null, createdAt: any, updatedAt?: any | null } };
+
+export type GetUserStatsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetUserStatsQuery = { __typename?: 'Query', getUserStats: { __typename?: 'UserStats', totalUsers: number, students: number, instructors: number, admins: number } };
+
+export type PromoteToInstructorMutationVariables = Exact<{
+  input: PromoteUserInput;
+}>;
+
+
+export type PromoteToInstructorMutation = { __typename?: 'Mutation', promoteToInstructor: { __typename?: 'User', id: string, email?: string | null, name?: string | null, role?: UserRole | null } };
+
+export type UpdateUserRoleMutationVariables = Exact<{
+  input: UpdateUserRoleInput;
+}>;
+
+
+export type UpdateUserRoleMutation = { __typename?: 'Mutation', updateUserRole: { __typename?: 'User', id: string, email?: string | null, name?: string | null, role?: UserRole | null } };
+
+export type BanUserMutationVariables = Exact<{
+  userId: Scalars['String']['input'];
+  reason?: InputMaybe<Scalars['String']['input']>;
+  expiresAt?: InputMaybe<Scalars['DateTime']['input']>;
+}>;
+
+
+export type BanUserMutation = { __typename?: 'Mutation', banUser: { __typename?: 'User', id: string, email?: string | null, banned?: boolean | null, banReason?: string | null } };
+
+export type UnbanUserMutationVariables = Exact<{
+  userId: Scalars['String']['input'];
+}>;
+
+
+export type UnbanUserMutation = { __typename?: 'Mutation', unbanUser: { __typename?: 'User', id: string, email?: string | null, banned?: boolean | null } };
+
+export type GetVideoProgressQueryVariables = Exact<{
+  lessonId: Scalars['String']['input'];
+}>;
+
+
+export type GetVideoProgressQuery = { __typename?: 'Query', getVideoProgress?: { __typename?: 'VideoProgress', id: string, lessonId: string, currentTime: number, duration: number, progressPercent: number, isCompleted: boolean, completedAt?: any | null, lastWatchedAt: any, createdAt: any, updatedAt: any } | null };
+
+export type GetUserVideoProgressQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetUserVideoProgressQuery = { __typename?: 'Query', getUserVideoProgress: Array<{ __typename?: 'VideoProgress', id: string, lessonId: string, currentTime: number, duration: number, progressPercent: number, isCompleted: boolean, completedAt?: any | null, lastWatchedAt: any, lesson?: { __typename?: 'Lesson', id: string, title: string, description?: string | null, videoUrl?: string | null, externalVideoUrl?: string | null, duration?: number | null, chapter?: { __typename?: 'Chapter', id: string, title: string, course: { __typename?: 'Course', id: string, title: string, slug: string, imageUrl?: string | null } } | null } | null }> };
+
+export type SaveVideoProgressMutationVariables = Exact<{
+  input: SaveVideoProgressInput;
+}>;
+
+
+export type SaveVideoProgressMutation = { __typename?: 'Mutation', saveVideoProgress: { __typename?: 'VideoProgress', id: string, lessonId: string, currentTime: number, duration: number, progressPercent: number, isCompleted: boolean, completedAt?: any | null, lastWatchedAt: any } };
+
+export type MarkLessonCompletedMutationVariables = Exact<{
+  lessonId: Scalars['String']['input'];
+}>;
+
+
+export type MarkLessonCompletedMutation = { __typename?: 'Mutation', markLessonCompleted: { __typename?: 'VideoProgress', id: string, lessonId: string, isCompleted: boolean, completedAt?: any | null, progressPercent: number } };
+
+export type DeleteVideoProgressMutationVariables = Exact<{
+  lessonId: Scalars['String']['input'];
+}>;
+
+
+export type DeleteVideoProgressMutation = { __typename?: 'Mutation', deleteVideoProgress: boolean };
+
+
 export const CreateChapterDocument = gql`
     mutation CreateChapter($input: CreateChapterInput!) {
   createChapter(input: $input) {
@@ -1619,45 +1717,6 @@ export function useGetUploadUrlForVideoMutation(baseOptions?: Apollo.MutationHoo
 export type GetUploadUrlForVideoMutationHookResult = ReturnType<typeof useGetUploadUrlForVideoMutation>;
 export type GetUploadUrlForVideoMutationResult = Apollo.MutationResult<GetUploadUrlForVideoMutation>;
 export type GetUploadUrlForVideoMutationOptions = Apollo.BaseMutationOptions<GetUploadUrlForVideoMutation, GetUploadUrlForVideoMutationVariables>;
-export const RegisterUserDocument = gql`
-    mutation RegisterUser($input: RegisterInput!) {
-  register(input: $input) {
-    accessToken
-    user {
-      id
-      email
-      name
-      role
-    }
-  }
-}
-    `;
-export type RegisterUserMutationFn = Apollo.MutationFunction<RegisterUserMutation, RegisterUserMutationVariables>;
-
-/**
- * __useRegisterUserMutation__
- *
- * To run a mutation, you first call `useRegisterUserMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useRegisterUserMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [registerUserMutation, { data, loading, error }] = useRegisterUserMutation({
- *   variables: {
- *      input: // value for 'input'
- *   },
- * });
- */
-export function useRegisterUserMutation(baseOptions?: Apollo.MutationHookOptions<RegisterUserMutation, RegisterUserMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useMutation<RegisterUserMutation, RegisterUserMutationVariables>(RegisterUserDocument, options);
-      }
-export type RegisterUserMutationHookResult = ReturnType<typeof useRegisterUserMutation>;
-export type RegisterUserMutationResult = Apollo.MutationResult<RegisterUserMutation>;
-export type RegisterUserMutationOptions = Apollo.BaseMutationOptions<RegisterUserMutation, RegisterUserMutationVariables>;
 export const SetupUserRoleDocument = gql`
     mutation SetupUserRole($clerkUserId: String!, $role: String!) {
   setupUserRole(clerkUserId: $clerkUserId, role: $role) {
@@ -1733,40 +1792,6 @@ export function useUpdateLessonContentMutation(baseOptions?: Apollo.MutationHook
 export type UpdateLessonContentMutationHookResult = ReturnType<typeof useUpdateLessonContentMutation>;
 export type UpdateLessonContentMutationResult = Apollo.MutationResult<UpdateLessonContentMutation>;
 export type UpdateLessonContentMutationOptions = Apollo.BaseMutationOptions<UpdateLessonContentMutation, UpdateLessonContentMutationVariables>;
-export const UpdateUserRoleDocument = gql`
-    mutation UpdateUserRole($role: String!) {
-  updateUserRole(role: $role) {
-    id
-    role
-  }
-}
-    `;
-export type UpdateUserRoleMutationFn = Apollo.MutationFunction<UpdateUserRoleMutation, UpdateUserRoleMutationVariables>;
-
-/**
- * __useUpdateUserRoleMutation__
- *
- * To run a mutation, you first call `useUpdateUserRoleMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useUpdateUserRoleMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [updateUserRoleMutation, { data, loading, error }] = useUpdateUserRoleMutation({
- *   variables: {
- *      role: // value for 'role'
- *   },
- * });
- */
-export function useUpdateUserRoleMutation(baseOptions?: Apollo.MutationHookOptions<UpdateUserRoleMutation, UpdateUserRoleMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useMutation<UpdateUserRoleMutation, UpdateUserRoleMutationVariables>(UpdateUserRoleDocument, options);
-      }
-export type UpdateUserRoleMutationHookResult = ReturnType<typeof useUpdateUserRoleMutation>;
-export type UpdateUserRoleMutationResult = Apollo.MutationResult<UpdateUserRoleMutation>;
-export type UpdateUserRoleMutationOptions = Apollo.BaseMutationOptions<UpdateUserRoleMutation, UpdateUserRoleMutationVariables>;
 export const GetChaptersByCourseDocument = gql`
     query GetChaptersByCourse($courseId: String!) {
   chaptersByCourse(courseId: $courseId) {
@@ -2738,3 +2763,515 @@ export type GetCoursesQueryHookResult = ReturnType<typeof useGetCoursesQuery>;
 export type GetCoursesLazyQueryHookResult = ReturnType<typeof useGetCoursesLazyQuery>;
 export type GetCoursesSuspenseQueryHookResult = ReturnType<typeof useGetCoursesSuspenseQuery>;
 export type GetCoursesQueryResult = Apollo.QueryResult<GetCoursesQuery, GetCoursesQueryVariables>;
+export const GetAllUsersDocument = gql`
+    query GetAllUsers {
+  getAllUsers {
+    id
+    clerkId
+    name
+    email
+    role
+    image
+    emailVerified
+    banned
+    banReason
+    createdAt
+    updatedAt
+    _count {
+      coursesCreated
+      enrollments
+    }
+  }
+}
+    `;
+
+/**
+ * __useGetAllUsersQuery__
+ *
+ * To run a query within a React component, call `useGetAllUsersQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetAllUsersQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetAllUsersQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useGetAllUsersQuery(baseOptions?: Apollo.QueryHookOptions<GetAllUsersQuery, GetAllUsersQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetAllUsersQuery, GetAllUsersQueryVariables>(GetAllUsersDocument, options);
+      }
+export function useGetAllUsersLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetAllUsersQuery, GetAllUsersQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetAllUsersQuery, GetAllUsersQueryVariables>(GetAllUsersDocument, options);
+        }
+export function useGetAllUsersSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetAllUsersQuery, GetAllUsersQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetAllUsersQuery, GetAllUsersQueryVariables>(GetAllUsersDocument, options);
+        }
+export type GetAllUsersQueryHookResult = ReturnType<typeof useGetAllUsersQuery>;
+export type GetAllUsersLazyQueryHookResult = ReturnType<typeof useGetAllUsersLazyQuery>;
+export type GetAllUsersSuspenseQueryHookResult = ReturnType<typeof useGetAllUsersSuspenseQuery>;
+export type GetAllUsersQueryResult = Apollo.QueryResult<GetAllUsersQuery, GetAllUsersQueryVariables>;
+export const GetUserByIdDocument = gql`
+    query GetUserById($userId: String!) {
+  getUserById(userId: $userId) {
+    id
+    clerkId
+    name
+    email
+    role
+    image
+    emailVerified
+    banned
+    banReason
+    banExpires
+    createdAt
+    updatedAt
+  }
+}
+    `;
+
+/**
+ * __useGetUserByIdQuery__
+ *
+ * To run a query within a React component, call `useGetUserByIdQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetUserByIdQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetUserByIdQuery({
+ *   variables: {
+ *      userId: // value for 'userId'
+ *   },
+ * });
+ */
+export function useGetUserByIdQuery(baseOptions: Apollo.QueryHookOptions<GetUserByIdQuery, GetUserByIdQueryVariables> & ({ variables: GetUserByIdQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetUserByIdQuery, GetUserByIdQueryVariables>(GetUserByIdDocument, options);
+      }
+export function useGetUserByIdLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetUserByIdQuery, GetUserByIdQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetUserByIdQuery, GetUserByIdQueryVariables>(GetUserByIdDocument, options);
+        }
+export function useGetUserByIdSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetUserByIdQuery, GetUserByIdQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetUserByIdQuery, GetUserByIdQueryVariables>(GetUserByIdDocument, options);
+        }
+export type GetUserByIdQueryHookResult = ReturnType<typeof useGetUserByIdQuery>;
+export type GetUserByIdLazyQueryHookResult = ReturnType<typeof useGetUserByIdLazyQuery>;
+export type GetUserByIdSuspenseQueryHookResult = ReturnType<typeof useGetUserByIdSuspenseQuery>;
+export type GetUserByIdQueryResult = Apollo.QueryResult<GetUserByIdQuery, GetUserByIdQueryVariables>;
+export const GetUserStatsDocument = gql`
+    query GetUserStats {
+  getUserStats {
+    totalUsers
+    students
+    instructors
+    admins
+  }
+}
+    `;
+
+/**
+ * __useGetUserStatsQuery__
+ *
+ * To run a query within a React component, call `useGetUserStatsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetUserStatsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetUserStatsQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useGetUserStatsQuery(baseOptions?: Apollo.QueryHookOptions<GetUserStatsQuery, GetUserStatsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetUserStatsQuery, GetUserStatsQueryVariables>(GetUserStatsDocument, options);
+      }
+export function useGetUserStatsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetUserStatsQuery, GetUserStatsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetUserStatsQuery, GetUserStatsQueryVariables>(GetUserStatsDocument, options);
+        }
+export function useGetUserStatsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetUserStatsQuery, GetUserStatsQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetUserStatsQuery, GetUserStatsQueryVariables>(GetUserStatsDocument, options);
+        }
+export type GetUserStatsQueryHookResult = ReturnType<typeof useGetUserStatsQuery>;
+export type GetUserStatsLazyQueryHookResult = ReturnType<typeof useGetUserStatsLazyQuery>;
+export type GetUserStatsSuspenseQueryHookResult = ReturnType<typeof useGetUserStatsSuspenseQuery>;
+export type GetUserStatsQueryResult = Apollo.QueryResult<GetUserStatsQuery, GetUserStatsQueryVariables>;
+export const PromoteToInstructorDocument = gql`
+    mutation PromoteToInstructor($input: PromoteUserInput!) {
+  promoteToInstructor(input: $input) {
+    id
+    email
+    name
+    role
+  }
+}
+    `;
+export type PromoteToInstructorMutationFn = Apollo.MutationFunction<PromoteToInstructorMutation, PromoteToInstructorMutationVariables>;
+
+/**
+ * __usePromoteToInstructorMutation__
+ *
+ * To run a mutation, you first call `usePromoteToInstructorMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `usePromoteToInstructorMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [promoteToInstructorMutation, { data, loading, error }] = usePromoteToInstructorMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function usePromoteToInstructorMutation(baseOptions?: Apollo.MutationHookOptions<PromoteToInstructorMutation, PromoteToInstructorMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<PromoteToInstructorMutation, PromoteToInstructorMutationVariables>(PromoteToInstructorDocument, options);
+      }
+export type PromoteToInstructorMutationHookResult = ReturnType<typeof usePromoteToInstructorMutation>;
+export type PromoteToInstructorMutationResult = Apollo.MutationResult<PromoteToInstructorMutation>;
+export type PromoteToInstructorMutationOptions = Apollo.BaseMutationOptions<PromoteToInstructorMutation, PromoteToInstructorMutationVariables>;
+export const UpdateUserRoleDocument = gql`
+    mutation UpdateUserRole($input: UpdateUserRoleInput!) {
+  updateUserRole(input: $input) {
+    id
+    email
+    name
+    role
+  }
+}
+    `;
+export type UpdateUserRoleMutationFn = Apollo.MutationFunction<UpdateUserRoleMutation, UpdateUserRoleMutationVariables>;
+
+/**
+ * __useUpdateUserRoleMutation__
+ *
+ * To run a mutation, you first call `useUpdateUserRoleMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateUserRoleMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateUserRoleMutation, { data, loading, error }] = useUpdateUserRoleMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useUpdateUserRoleMutation(baseOptions?: Apollo.MutationHookOptions<UpdateUserRoleMutation, UpdateUserRoleMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<UpdateUserRoleMutation, UpdateUserRoleMutationVariables>(UpdateUserRoleDocument, options);
+      }
+export type UpdateUserRoleMutationHookResult = ReturnType<typeof useUpdateUserRoleMutation>;
+export type UpdateUserRoleMutationResult = Apollo.MutationResult<UpdateUserRoleMutation>;
+export type UpdateUserRoleMutationOptions = Apollo.BaseMutationOptions<UpdateUserRoleMutation, UpdateUserRoleMutationVariables>;
+export const BanUserDocument = gql`
+    mutation BanUser($userId: String!, $reason: String, $expiresAt: DateTime) {
+  banUser(userId: $userId, reason: $reason, expiresAt: $expiresAt) {
+    id
+    email
+    banned
+    banReason
+  }
+}
+    `;
+export type BanUserMutationFn = Apollo.MutationFunction<BanUserMutation, BanUserMutationVariables>;
+
+/**
+ * __useBanUserMutation__
+ *
+ * To run a mutation, you first call `useBanUserMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useBanUserMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [banUserMutation, { data, loading, error }] = useBanUserMutation({
+ *   variables: {
+ *      userId: // value for 'userId'
+ *      reason: // value for 'reason'
+ *      expiresAt: // value for 'expiresAt'
+ *   },
+ * });
+ */
+export function useBanUserMutation(baseOptions?: Apollo.MutationHookOptions<BanUserMutation, BanUserMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<BanUserMutation, BanUserMutationVariables>(BanUserDocument, options);
+      }
+export type BanUserMutationHookResult = ReturnType<typeof useBanUserMutation>;
+export type BanUserMutationResult = Apollo.MutationResult<BanUserMutation>;
+export type BanUserMutationOptions = Apollo.BaseMutationOptions<BanUserMutation, BanUserMutationVariables>;
+export const UnbanUserDocument = gql`
+    mutation UnbanUser($userId: String!) {
+  unbanUser(userId: $userId) {
+    id
+    email
+    banned
+  }
+}
+    `;
+export type UnbanUserMutationFn = Apollo.MutationFunction<UnbanUserMutation, UnbanUserMutationVariables>;
+
+/**
+ * __useUnbanUserMutation__
+ *
+ * To run a mutation, you first call `useUnbanUserMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUnbanUserMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [unbanUserMutation, { data, loading, error }] = useUnbanUserMutation({
+ *   variables: {
+ *      userId: // value for 'userId'
+ *   },
+ * });
+ */
+export function useUnbanUserMutation(baseOptions?: Apollo.MutationHookOptions<UnbanUserMutation, UnbanUserMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<UnbanUserMutation, UnbanUserMutationVariables>(UnbanUserDocument, options);
+      }
+export type UnbanUserMutationHookResult = ReturnType<typeof useUnbanUserMutation>;
+export type UnbanUserMutationResult = Apollo.MutationResult<UnbanUserMutation>;
+export type UnbanUserMutationOptions = Apollo.BaseMutationOptions<UnbanUserMutation, UnbanUserMutationVariables>;
+export const GetVideoProgressDocument = gql`
+    query GetVideoProgress($lessonId: String!) {
+  getVideoProgress(lessonId: $lessonId) {
+    id
+    lessonId
+    currentTime
+    duration
+    progressPercent
+    isCompleted
+    completedAt
+    lastWatchedAt
+    createdAt
+    updatedAt
+  }
+}
+    `;
+
+/**
+ * __useGetVideoProgressQuery__
+ *
+ * To run a query within a React component, call `useGetVideoProgressQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetVideoProgressQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetVideoProgressQuery({
+ *   variables: {
+ *      lessonId: // value for 'lessonId'
+ *   },
+ * });
+ */
+export function useGetVideoProgressQuery(baseOptions: Apollo.QueryHookOptions<GetVideoProgressQuery, GetVideoProgressQueryVariables> & ({ variables: GetVideoProgressQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetVideoProgressQuery, GetVideoProgressQueryVariables>(GetVideoProgressDocument, options);
+      }
+export function useGetVideoProgressLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetVideoProgressQuery, GetVideoProgressQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetVideoProgressQuery, GetVideoProgressQueryVariables>(GetVideoProgressDocument, options);
+        }
+export function useGetVideoProgressSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetVideoProgressQuery, GetVideoProgressQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetVideoProgressQuery, GetVideoProgressQueryVariables>(GetVideoProgressDocument, options);
+        }
+export type GetVideoProgressQueryHookResult = ReturnType<typeof useGetVideoProgressQuery>;
+export type GetVideoProgressLazyQueryHookResult = ReturnType<typeof useGetVideoProgressLazyQuery>;
+export type GetVideoProgressSuspenseQueryHookResult = ReturnType<typeof useGetVideoProgressSuspenseQuery>;
+export type GetVideoProgressQueryResult = Apollo.QueryResult<GetVideoProgressQuery, GetVideoProgressQueryVariables>;
+export const GetUserVideoProgressDocument = gql`
+    query GetUserVideoProgress {
+  getUserVideoProgress {
+    id
+    lessonId
+    currentTime
+    duration
+    progressPercent
+    isCompleted
+    completedAt
+    lastWatchedAt
+    lesson {
+      id
+      title
+      description
+      videoUrl
+      externalVideoUrl
+      duration
+      chapter {
+        id
+        title
+        course {
+          id
+          title
+          slug
+          imageUrl
+        }
+      }
+    }
+  }
+}
+    `;
+
+/**
+ * __useGetUserVideoProgressQuery__
+ *
+ * To run a query within a React component, call `useGetUserVideoProgressQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetUserVideoProgressQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetUserVideoProgressQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useGetUserVideoProgressQuery(baseOptions?: Apollo.QueryHookOptions<GetUserVideoProgressQuery, GetUserVideoProgressQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetUserVideoProgressQuery, GetUserVideoProgressQueryVariables>(GetUserVideoProgressDocument, options);
+      }
+export function useGetUserVideoProgressLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetUserVideoProgressQuery, GetUserVideoProgressQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetUserVideoProgressQuery, GetUserVideoProgressQueryVariables>(GetUserVideoProgressDocument, options);
+        }
+export function useGetUserVideoProgressSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetUserVideoProgressQuery, GetUserVideoProgressQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetUserVideoProgressQuery, GetUserVideoProgressQueryVariables>(GetUserVideoProgressDocument, options);
+        }
+export type GetUserVideoProgressQueryHookResult = ReturnType<typeof useGetUserVideoProgressQuery>;
+export type GetUserVideoProgressLazyQueryHookResult = ReturnType<typeof useGetUserVideoProgressLazyQuery>;
+export type GetUserVideoProgressSuspenseQueryHookResult = ReturnType<typeof useGetUserVideoProgressSuspenseQuery>;
+export type GetUserVideoProgressQueryResult = Apollo.QueryResult<GetUserVideoProgressQuery, GetUserVideoProgressQueryVariables>;
+export const SaveVideoProgressDocument = gql`
+    mutation SaveVideoProgress($input: SaveVideoProgressInput!) {
+  saveVideoProgress(input: $input) {
+    id
+    lessonId
+    currentTime
+    duration
+    progressPercent
+    isCompleted
+    completedAt
+    lastWatchedAt
+  }
+}
+    `;
+export type SaveVideoProgressMutationFn = Apollo.MutationFunction<SaveVideoProgressMutation, SaveVideoProgressMutationVariables>;
+
+/**
+ * __useSaveVideoProgressMutation__
+ *
+ * To run a mutation, you first call `useSaveVideoProgressMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useSaveVideoProgressMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [saveVideoProgressMutation, { data, loading, error }] = useSaveVideoProgressMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useSaveVideoProgressMutation(baseOptions?: Apollo.MutationHookOptions<SaveVideoProgressMutation, SaveVideoProgressMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<SaveVideoProgressMutation, SaveVideoProgressMutationVariables>(SaveVideoProgressDocument, options);
+      }
+export type SaveVideoProgressMutationHookResult = ReturnType<typeof useSaveVideoProgressMutation>;
+export type SaveVideoProgressMutationResult = Apollo.MutationResult<SaveVideoProgressMutation>;
+export type SaveVideoProgressMutationOptions = Apollo.BaseMutationOptions<SaveVideoProgressMutation, SaveVideoProgressMutationVariables>;
+export const MarkLessonCompletedDocument = gql`
+    mutation MarkLessonCompleted($lessonId: String!) {
+  markLessonCompleted(lessonId: $lessonId) {
+    id
+    lessonId
+    isCompleted
+    completedAt
+    progressPercent
+  }
+}
+    `;
+export type MarkLessonCompletedMutationFn = Apollo.MutationFunction<MarkLessonCompletedMutation, MarkLessonCompletedMutationVariables>;
+
+/**
+ * __useMarkLessonCompletedMutation__
+ *
+ * To run a mutation, you first call `useMarkLessonCompletedMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useMarkLessonCompletedMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [markLessonCompletedMutation, { data, loading, error }] = useMarkLessonCompletedMutation({
+ *   variables: {
+ *      lessonId: // value for 'lessonId'
+ *   },
+ * });
+ */
+export function useMarkLessonCompletedMutation(baseOptions?: Apollo.MutationHookOptions<MarkLessonCompletedMutation, MarkLessonCompletedMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<MarkLessonCompletedMutation, MarkLessonCompletedMutationVariables>(MarkLessonCompletedDocument, options);
+      }
+export type MarkLessonCompletedMutationHookResult = ReturnType<typeof useMarkLessonCompletedMutation>;
+export type MarkLessonCompletedMutationResult = Apollo.MutationResult<MarkLessonCompletedMutation>;
+export type MarkLessonCompletedMutationOptions = Apollo.BaseMutationOptions<MarkLessonCompletedMutation, MarkLessonCompletedMutationVariables>;
+export const DeleteVideoProgressDocument = gql`
+    mutation DeleteVideoProgress($lessonId: String!) {
+  deleteVideoProgress(lessonId: $lessonId)
+}
+    `;
+export type DeleteVideoProgressMutationFn = Apollo.MutationFunction<DeleteVideoProgressMutation, DeleteVideoProgressMutationVariables>;
+
+/**
+ * __useDeleteVideoProgressMutation__
+ *
+ * To run a mutation, you first call `useDeleteVideoProgressMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDeleteVideoProgressMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [deleteVideoProgressMutation, { data, loading, error }] = useDeleteVideoProgressMutation({
+ *   variables: {
+ *      lessonId: // value for 'lessonId'
+ *   },
+ * });
+ */
+export function useDeleteVideoProgressMutation(baseOptions?: Apollo.MutationHookOptions<DeleteVideoProgressMutation, DeleteVideoProgressMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<DeleteVideoProgressMutation, DeleteVideoProgressMutationVariables>(DeleteVideoProgressDocument, options);
+      }
+export type DeleteVideoProgressMutationHookResult = ReturnType<typeof useDeleteVideoProgressMutation>;
+export type DeleteVideoProgressMutationResult = Apollo.MutationResult<DeleteVideoProgressMutation>;
+export type DeleteVideoProgressMutationOptions = Apollo.BaseMutationOptions<DeleteVideoProgressMutation, DeleteVideoProgressMutationVariables>;

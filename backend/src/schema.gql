@@ -27,11 +27,6 @@ type AdminStats {
   totalUsers: Int!
 }
 
-type AuthPayload {
-  accessToken: String!
-  user: User!
-}
-
 type Chapter {
   completedLessonsCount: Int
   course: Course!
@@ -235,14 +230,12 @@ type LessonProgress {
   userId: String!
 }
 
-input LoginInput {
-  email: String!
-  password: String!
-}
-
 type Mutation {
   adminUpdateUserRole(input: UpdateUserRoleInput!): AdminActionResponse!
   archiveCourse(id: String!): Course!
+
+  """Ban user (ADMIN only)"""
+  banUser(expiresAt: DateTime, reason: String, userId: String!): User!
   createChapter(input: CreateChapterInput!): Chapter!
 
   """Créer une session Stripe Checkout pour acheter un cours"""
@@ -263,26 +256,42 @@ type Mutation {
   deleteFile(url: String!): Boolean!
   deleteLesson(id: String!): Boolean!
   deleteLessonAttachment(id: String!): Boolean!
+
+  """Delete video progress (reset)"""
+  deleteVideoProgress(lessonId: String!): Boolean!
   enrollInCourse(input: EnrollInCourseInput!): EnrollmentResponse!
   getUploadUrl(contentType: String!, fileName: String!): UploadUrlResponse!
   getUploadUrlForVideo(fileName: String!, fileSize: Float!, fileType: String!): UploadUrlResponse!
-  login(input: LoginInput!): AuthPayload!
   markLessonAsCompleted(lessonId: String!): LessonProgress!
 
-  """Promouvoir un utilisateur en instructeur (ADMIN uniquement)"""
-  promoteToInstructor(userId: String!): AdminActionResponse!
+  """Manually mark a lesson as completed"""
+  markLessonCompleted(lessonId: String!): VideoProgress!
+
+  """Promote STUDENT to INSTRUCTOR (ADMIN only)"""
+  promoteToInstructor(input: PromoteUserInput!): User!
   publishCourse(id: String!): Course!
-  register(input: RegisterInput!): AuthPayload!
   reorderChapters(input: ReorderChaptersInput!): [Chapter!]!
   reorderLessons(input: ReorderLessonsInput!): [Lesson!]!
+
+  """Save video progress (auto-save every 5 seconds)"""
+  saveVideoProgress(input: SaveVideoProgressInput!): VideoProgress!
   setupUserRole(clerkUserId: String!, role: String!): User!
   toggleLessonCompletion(lessonId: String!): LessonProgress!
+
+  """Unban user (ADMIN only)"""
+  unbanUser(userId: String!): User!
   updateChapter(input: UpdateChapterInput!): Chapter!
   updateCourse(input: UpdateCourseInput!): Course!
   updateLesson(id: String!, input: UpdateLessonInput!): Lesson!
   updateLessonContent(input: UpdateLessonContentInput!): Lesson!
   updateLessonProgress(input: UpdateProgressInput!, lessonId: String!): LessonProgress!
-  updateUserRole(role: String!): User!
+
+  """Update user role (ADMIN only)"""
+  updateUserRole(input: UpdateUserRoleInput!): User!
+}
+
+input PromoteUserInput {
+  userId: String!
 }
 
 type Query {
@@ -295,7 +304,22 @@ type Query {
 
   """Liste de tous les cours, publiés ou non (ADMIN uniquement)"""
   courses: [Course!]!
+
+  """Get all users (ADMIN only)"""
+  getAllUsers: [User!]!
   getCourseForEdit(id: String!): Course!
+
+  """Get user by ID"""
+  getUserById(userId: String!): User!
+
+  """Get user statistics"""
+  getUserStats: UserStats!
+
+  """Get all video progress for current user (sorted by recent)"""
+  getUserVideoProgress: [VideoProgress!]!
+
+  """Get video progress for a specific lesson"""
+  getVideoProgress(lessonId: String!): VideoProgress
   hello: String!
   isEnrolled(courseId: String!): Boolean!
   lesson(id: String!): Lesson!
@@ -318,12 +342,6 @@ type Query {
   version: String!
 }
 
-input RegisterInput {
-  email: String
-  name: String
-  password: String!
-}
-
 input ReorderChaptersInput {
   chapters: [ChapterPositionInput!]!
   courseId: String!
@@ -332,6 +350,12 @@ input ReorderChaptersInput {
 input ReorderLessonsInput {
   chapterId: String!
   lessons: [LessonPositionInput!]!
+}
+
+input SaveVideoProgressInput {
+  currentTime: Float!
+  duration: Float!
+  lessonId: String!
 }
 
 input UpdateChapterInput {
@@ -395,12 +419,25 @@ type UploadUrlResponse {
 }
 
 type User {
+  _count: UserCounts
+  banExpires: DateTime
+  banReason: String
+  banned: Boolean
   clerkId: String
   createdAt: DateTime!
   email: String
+  emailVerified: Boolean
   id: ID!
+  image: String
   name: String
   role: UserRole
+  stripeCustomerId: String
+  updatedAt: DateTime
+}
+
+type UserCounts {
+  coursesCreated: Float!
+  enrollments: Float!
 }
 
 """The role of a user in the system"""
@@ -413,4 +450,27 @@ enum UserRole {
 
   """Regular user with basic permissions"""
   STUDENT
+}
+
+type UserStats {
+  admins: Int!
+  instructors: Int!
+  students: Int!
+  totalUsers: Int!
+}
+
+type VideoProgress {
+  completedAt: DateTime
+  createdAt: DateTime!
+  currentTime: Float!
+  duration: Float!
+  id: ID!
+  isCompleted: Boolean!
+  lastWatchedAt: DateTime!
+  lesson: Lesson
+  lessonId: String!
+  progressPercent: Float!
+  updatedAt: DateTime!
+  user: User
+  userId: String!
 }

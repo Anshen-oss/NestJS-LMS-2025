@@ -36,7 +36,7 @@ export class AdminActionResponse {
 /**
  * Input pour modifier le rôle d'un utilisateur
  */
-import { InputType, registerEnumType } from '@nestjs/graphql';
+import { registerEnumType } from '@nestjs/graphql';
 import { UserRole } from '@prisma/client';
 
 // Enregistrer l'enum pour GraphQL
@@ -44,12 +44,3 @@ registerEnumType(UserRole, {
   name: 'UserRole',
   description: 'Rôles disponibles pour les utilisateurs',
 });
-
-@InputType()
-export class UpdateUserRoleInput {
-  @Field(() => String, { description: "ID de l'utilisateur" })
-  userId: string;
-
-  @Field(() => UserRole, { description: 'Nouveau rôle à attribuer' })
-  newRole: UserRole;
-}

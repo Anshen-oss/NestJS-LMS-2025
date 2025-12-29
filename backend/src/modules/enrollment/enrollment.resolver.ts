@@ -1,9 +1,9 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { User } from '../auth/entities/user.entity';
 import { ClerkGqlGuard } from '../auth/guards/clerk-gql.guard';
 import { Course } from '../courses/entities/course.entity';
+import { User } from '../users/entities/user.entity';
 import { EnrollInCourseInput } from './dto/enroll-in-course.input';
 import { EnrollmentService } from './enrollment.service';
 import { Enrollment } from './entities/enrollment.entity';
