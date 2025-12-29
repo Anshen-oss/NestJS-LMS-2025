@@ -1,15 +1,12 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
-import { User } from 'src/modules/auth/entities/user.entity';
 import { ClerkGqlGuard } from 'src/modules/auth/guards/clerk-gql.guard';
 import { Course } from 'src/modules/courses/entities/course.entity';
+import { UpdateUserRoleInput } from 'src/modules/users/dto/promote-user.input';
+import { User } from 'src/modules/users/entities/user.entity';
 import { AdminGuard } from './admin.guard';
 import { AdminService } from './admin.service';
-import {
-  AdminActionResponse,
-  AdminStats,
-  UpdateUserRoleInput,
-} from './admin.types';
+import { AdminActionResponse, AdminStats } from './admin.types';
 
 /**
  * 🔐 Resolver Admin - Toutes les routes nécessitent le rôle ADMIN

@@ -14,6 +14,8 @@ import { LessonsModule } from './modules/lessons/lessons.module';
 import { ProgressModule } from './modules/progress/progress.module';
 import { S3Module } from './modules/s3/s3.module';
 import { StripeModule } from './modules/stripe/stripe.module';
+import { UsersModule } from './modules/users/users.module';
+import { VideoProgressModule } from './modules/video-progress/video-progress.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 
@@ -37,6 +39,8 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     AdminModule,
     WebhooksModule,
     StripeModule,
+    VideoProgressModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppResolver],

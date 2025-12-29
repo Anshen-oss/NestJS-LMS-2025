@@ -1,0 +1,95 @@
+# ============================================
+# QUERIES
+# ============================================
+
+# Récupérer tous les utilisateurs (ADMIN uniquement)
+query GetAllUsers {
+  getAllUsers {
+    id
+    clerkId
+    name
+    email
+    role
+    image
+    emailVerified
+    banned
+    banReason
+    createdAt
+    updatedAt
+    _count {
+      coursesCreated
+      enrollments
+    }
+  }
+}
+
+# Récupérer un utilisateur par ID
+query GetUserById($userId: String!) {
+  getUserById(userId: $userId) {
+    id
+    clerkId
+    name
+    email
+    role
+    image
+    emailVerified
+    banned
+    banReason
+    banExpires
+    createdAt
+    updatedAt
+  }
+}
+
+# Statistiques des utilisateurs
+query GetUserStats {
+  getUserStats {
+    totalUsers
+    students
+    instructors
+    admins
+  }
+}
+
+# ============================================
+# MUTATIONS
+# ============================================
+
+# Promouvoir un STUDENT en INSTRUCTOR
+mutation PromoteToInstructor($input: PromoteUserInput!) {
+  promoteToInstructor(input: $input) {
+    id
+    email
+    name
+    role
+  }
+}
+
+# Changer le rôle d'un utilisateur
+mutation UpdateUserRole($input: UpdateUserRoleInput!) {
+  updateUserRole(input: $input) {
+    id
+    email
+    name
+    role
+  }
+}
+
+# Bannir un utilisateur
+mutation BanUser($userId: String!, $reason: String, $expiresAt: DateTime) {
+  banUser(userId: $userId, reason: $reason, expiresAt: $expiresAt) {
+    id
+    email
+    banned
+    banReason
+  }
+}
+
+# Débannir un utilisateur
+mutation UnbanUser($userId: String!) {
+  unbanUser(userId: $userId) {
+    id
+    email
+    banned
+  }
+}

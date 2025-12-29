@@ -2,7 +2,7 @@
 
 import { RenderDescription } from '@/components/rich-text-editor/RenderDescription';
 import { Button } from '@/components/ui/button';
-import { VideoPlayer } from '@/components/VideoPlayer';
+import { VideoPlayer } from '@/components/video/VideoPlayer';
 import { useLessonAttachmentsQuery, useToggleLessonCompletionMutation } from '@/lib/generated/graphql';
 import { CheckCircle2, Download, FileIcon, FileText, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -99,8 +99,13 @@ export function LessonContent({ courseId, lessonId, course, onProgressUpdate }: 
       {/* Zone vidéo */}
       <div className="w-full bg-gray-100">
         <VideoPlayer
+          lessonId={currentLesson.id}  // ✅ currentLesson au lieu de lesson
           videoUrl={currentLesson.videoUrl}
           externalVideoUrl={currentLesson.externalVideoUrl}
+          title={currentLesson.title}
+          onComplete={() => {
+            console.log('🎉 Leçon terminée !');
+          }}
         />
       </div>
 

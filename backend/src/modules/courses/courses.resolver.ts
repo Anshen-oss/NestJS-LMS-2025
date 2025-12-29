@@ -10,13 +10,13 @@ import {
 import { CourseStatus, UserRole } from '@prisma/client';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { User } from '../auth/entities/user.entity';
 import { ClerkGqlGuard } from '../auth/guards/clerk-gql.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Chapter } from '../chapters/entities/chapter.entity';
 import { Lesson } from '../lessons/entities/lesson.entity';
 import { CourseProgressOutput } from '../progress/dto/course-progress.output';
 import { ProgressService } from '../progress/progress.service';
+import { User } from '../users/entities/user.entity';
 import { CoursesService } from './courses.service';
 import { CreateChapterInput } from './dto/create-chapter.input';
 import { CreateCourseInput } from './dto/create-course.input';

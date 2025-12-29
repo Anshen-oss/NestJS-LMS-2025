@@ -1,8 +1,8 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Field, Mutation, ObjectType, Resolver } from '@nestjs/graphql';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { User } from '../auth/entities/user.entity';
 import { ClerkGqlGuard } from '../auth/guards/clerk-gql.guard';
+import { User } from '../users/entities/user.entity';
 import { StripeService } from './stripe.service';
 
 // DTO pour la réponse

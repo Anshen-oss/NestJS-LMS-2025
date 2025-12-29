@@ -8,6 +8,7 @@ export interface VideoInfo {
   source: VideoSource;
   id: string | null;
   embedUrl: string | null;
+  videoId?: string;
 }
 
 /**
@@ -57,12 +58,15 @@ export function getVideoInfo(url: string): VideoInfo {
   }
 
   // YouTube
-  if (url.includes('youtube.com') || url.includes('youtu.be')) {
-    const id = extractYouTubeId(url);
+  const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+  const youtubeMatch = url.match(youtubeRegex);
+
+  if (youtubeMatch && youtubeMatch[1]) {
     return {
-      source: 'youtube',
-      id,
-      embedUrl: id ? `https://www.youtube.com/embed/${id}` : null,
+      source: 'youtube' as const,
+      id: youtubeMatch[1],
+      videoId: youtubeMatch[1],
+      embedUrl: `https://www.youtube.com/embed/${youtubeMatch[1]}`,
     };
   }
 

@@ -3,12 +3,9 @@ import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UserRole } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { User } from '../users/entities/user.entity';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './decorators/current-user.decorator';
-import { AuthPayload } from './dto/auth.payload';
-import { LoginInput } from './dto/login.input';
-import { RegisterInput } from './dto/register.input';
-import { User } from './entities/user.entity';
 import { ClerkGqlGuard } from './guards/clerk-gql.guard';
 
 @Resolver()
@@ -18,26 +15,13 @@ export class AuthResolver {
     private prisma: PrismaService,
   ) {}
 
-  @Mutation(() => AuthPayload)
-  async login(@Args('input') input: LoginInput) {
-    return this.authService.login(input.email, input.password);
-  }
-
-  @Mutation(() => AuthPayload)
-  async register(@Args('input') input: RegisterInput): Promise<AuthPayload> {
-    return this.authService.register(input);
-  }
-
-  @Mutation(() => User, { name: 'updateUserRole' }) // ✅ Nom de la mutation
+  // ✅ Mutation pour mettre à jour le rôle (utilisateur connecté)
+  @Mutation(() => User, { name: 'updateUserRole' })
   @UseGuards(ClerkGqlGuard)
   async updateUserRole(
-    @Args('role', { type: () => String }) role: string, // ✅ Type explicite
+    @Args('role', { type: () => String }) role: string,
     @CurrentUser() user: User,
   ) {
-    // console.log('🔍 updateUserRole called');
-    // console.log('🔍 Role:', role);
-    // console.log('🔍 User:', user);
-
     // Valider le rôle
     if (!Object.values(UserRole).includes(role as UserRole)) {
       throw new Error(`Invalid role: ${role}`);
@@ -54,10 +38,10 @@ export class AuthResolver {
 
       console.log('✅ User updated in DB:', updatedUser);
 
-      // TODO: Mettre à jour dans Clerk
-      // await clerkClient.users.updateUser(user.id, {
-      //   publicMetadata: { role: userRole },
-      // });
+      // Mettre à jour dans Clerk
+      await clerkClient.users.updateUser(user.id, {
+        publicMetadata: { role: userRole },
+      });
 
       return updatedUser;
     } catch (error) {
@@ -66,7 +50,7 @@ export class AuthResolver {
     }
   }
 
-  // ✅ Mutation SANS guard pour l'onboarding
+  // ✅ Mutation pour setup initial du rôle (onboarding)
   @Mutation(() => User, { name: 'setupUserRole' })
   async setupUserRole(
     @Args('clerkUserId') clerkUserId: string,
@@ -94,7 +78,7 @@ export class AuthResolver {
         `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() ||
         'Unknown';
 
-      // ✅ Vérifier si un user existe déjà avec cet email
+      // Vérifier si un user existe déjà avec cet email
       const existingUserByEmail = await this.prisma.user.findUnique({
         where: { email },
       });
@@ -147,10 +131,10 @@ export class AuthResolver {
     }
   }
 
+  // ✅ Query pour récupérer l'utilisateur connecté
   @Query(() => User)
   @UseGuards(ClerkGqlGuard)
   me(@CurrentUser() user: User): User {
-    // ✅ Plus de async
     return user;
   }
 }
