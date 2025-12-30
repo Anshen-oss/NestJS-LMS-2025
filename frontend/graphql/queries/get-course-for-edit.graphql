@@ -40,7 +40,6 @@ query GetCourseForEdit($id: String!) {
         videoUrl
         order
         isFree
-        completed
       }
     }
   }

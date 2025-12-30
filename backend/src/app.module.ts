@@ -10,6 +10,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { CoursesModule } from './modules/courses/courses.module';
 import { EnrollmentModule } from './modules/enrollment/enrollment.module';
+import { InstructorModule } from './modules/instructor/instructor.module';
 import { LessonsModule } from './modules/lessons/lessons.module';
 import { ProgressModule } from './modules/progress/progress.module';
 import { S3Module } from './modules/s3/s3.module';
@@ -41,6 +42,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     StripeModule,
     VideoProgressModule,
     UsersModule,
+    InstructorModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppResolver],

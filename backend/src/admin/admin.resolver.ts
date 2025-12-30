@@ -92,21 +92,6 @@ export class AdminResolver {
   }
 
   /**
-   * 🗑️ Supprimer un cours définitivement
-   *
-   * @param {string} courseId - ID du cours à supprimer
-   * @returns {AdminActionResponse} Confirmation de l'action
-   */
-  @Mutation(() => AdminActionResponse, {
-    description: 'Supprimer un cours définitivement (ADMIN uniquement)',
-  })
-  async deleteCourse(
-    @Args('courseId') courseId: string,
-  ): Promise<AdminActionResponse> {
-    return this.adminService.deleteCourse(courseId);
-  }
-
-  /**
    * 🚫 Désactiver un compte utilisateur
    *
    * @param {string} userId - ID de l'utilisateur à désactiver

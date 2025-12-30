@@ -2,6 +2,27 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type ActivityCourse {
+  id: ID!
+  slug: String!
+  title: String!
+}
+
+type ActivityStudent {
+  id: ID!
+  image: String
+  name: String!
+}
+
+"""Type d'activité récente"""
+enum ActivityType {
+  COMPLETION
+  ENROLLMENT
+  LESSON_COMPLETED
+  QUESTION
+  REVIEW
+}
+
 type AdminActionResponse {
   """Message de confirmation ou d'erreur"""
   message: String!
@@ -93,6 +114,27 @@ enum CourseLevel {
   Intermediate
 }
 
+type CoursePerformanceOutput {
+  activeStudentsCount: Int!
+  averageRating: Float
+  chaptersCount: Int!
+  completionRate: Float!
+  createdAt: DateTime!
+  duration: Int
+  id: ID!
+  imageUrl: String
+  lessonsCount: Int!
+  price: Float!
+  publishedAt: DateTime
+  revenue: Float!
+  reviewsCount: Int
+  slug: String!
+  status: CourseStatus!
+  studentsCount: Int!
+  title: String!
+  updatedAt: DateTime!
+}
+
 type CourseProgressOutput {
   completedCount: Int!
   percentage: Int!
@@ -182,6 +224,21 @@ type EnrollmentResponse {
   success: Boolean!
 }
 
+type InstructorStatsOutput {
+  activeStudents: Int!
+  archivedCourses: Int!
+  averageCompletionRate: Float!
+  averageRating: Float
+  draftCourses: Int!
+  monthlyRevenue: Float!
+  publishedCourses: Int!
+  totalCourses: Int!
+  totalRevenue: Float!
+  totalStudents: Int!
+  totalViews: Int!
+  weeklyViews: Int!
+}
+
 type Lesson {
   chapter: Chapter
   completed: Boolean
@@ -250,9 +307,7 @@ type Mutation {
   """Désactiver un compte utilisateur (ADMIN uniquement)"""
   deactivateUser(userId: String!): AdminActionResponse!
   deleteChapter(id: String!): Boolean!
-
-  """Supprimer un cours définitivement (ADMIN uniquement)"""
-  deleteCourse(courseId: String!): AdminActionResponse!
+  deleteCourse(courseId: String!): Boolean!
   deleteFile(url: String!): Boolean!
   deleteLesson(id: String!): Boolean!
   deleteLessonAttachment(id: String!): Boolean!
@@ -300,6 +355,9 @@ type Query {
   chaptersByCourse(courseId: String!): [Chapter!]!
   course(id: String!): Course!
   courseBySlug(slug: String!): Course!
+
+  """Performances détaillées d'un cours"""
+  coursePerformance(courseId: String!): CoursePerformanceOutput!
   courseProgress(courseId: String!): CourseProgressOutput!
 
   """Liste de tous les cours, publiés ou non (ADMIN uniquement)"""
@@ -321,6 +379,12 @@ type Query {
   """Get video progress for a specific lesson"""
   getVideoProgress(lessonId: String!): VideoProgress
   hello: String!
+
+  """Liste des cours de l'instructeur avec performances"""
+  instructorCourses(status: CourseStatus): [CoursePerformanceOutput!]!
+
+  """Statistiques globales de l'instructeur (dashboard)"""
+  instructorStats: InstructorStatsOutput!
   isEnrolled(courseId: String!): Boolean!
   lesson(id: String!): Lesson!
   lessonAttachments(lessonId: String!): [LessonAttachment!]!
@@ -335,11 +399,25 @@ type Query {
   """Liste publique des cours publiés"""
   publicCourses: [Course!]!
 
+  """Activités récentes de l'instructeur (enrollments, completions)"""
+  recentActivity(limit: Int = 10): [RecentActivityOutput!]!
+
   """Liste de tous les utilisateurs (ADMIN uniquement)"""
   users: [User!]!
 
   """API version"""
   version: String!
+}
+
+type RecentActivityOutput {
+  course: ActivityCourse!
+  createdAt: DateTime!
+  id: ID!
+  lessonTitle: String
+  rating: Float
+  reviewText: String
+  student: ActivityStudent!
+  type: ActivityType!
 }
 
 input ReorderChaptersInput {
