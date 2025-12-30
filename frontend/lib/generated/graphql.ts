@@ -18,6 +18,29 @@ export type Scalars = {
   DateTime: { input: any; output: any; }
 };
 
+export type ActivityCourse = {
+  __typename?: 'ActivityCourse';
+  id: Scalars['ID']['output'];
+  slug: Scalars['String']['output'];
+  title: Scalars['String']['output'];
+};
+
+export type ActivityStudent = {
+  __typename?: 'ActivityStudent';
+  id: Scalars['ID']['output'];
+  image?: Maybe<Scalars['String']['output']>;
+  name: Scalars['String']['output'];
+};
+
+/** Type d'activité récente */
+export enum ActivityType {
+  Completion = 'COMPLETION',
+  Enrollment = 'ENROLLMENT',
+  LessonCompleted = 'LESSON_COMPLETED',
+  Question = 'QUESTION',
+  Review = 'REVIEW'
+}
+
 export type AdminActionResponse = {
   __typename?: 'AdminActionResponse';
   /** Message de confirmation ou d'erreur */
@@ -108,6 +131,28 @@ export enum CourseLevel {
   Intermediate = 'Intermediate'
 }
 
+export type CoursePerformanceOutput = {
+  __typename?: 'CoursePerformanceOutput';
+  activeStudentsCount: Scalars['Int']['output'];
+  averageRating?: Maybe<Scalars['Float']['output']>;
+  chaptersCount: Scalars['Int']['output'];
+  completionRate: Scalars['Float']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  duration?: Maybe<Scalars['Int']['output']>;
+  id: Scalars['ID']['output'];
+  imageUrl?: Maybe<Scalars['String']['output']>;
+  lessonsCount: Scalars['Int']['output'];
+  price: Scalars['Float']['output'];
+  publishedAt?: Maybe<Scalars['DateTime']['output']>;
+  revenue: Scalars['Float']['output'];
+  reviewsCount?: Maybe<Scalars['Int']['output']>;
+  slug: Scalars['String']['output'];
+  status: CourseStatus;
+  studentsCount: Scalars['Int']['output'];
+  title: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+};
+
 export type CourseProgressOutput = {
   __typename?: 'CourseProgressOutput';
   completedCount: Scalars['Int']['output'];
@@ -193,6 +238,22 @@ export type EnrollmentResponse = {
   success: Scalars['Boolean']['output'];
 };
 
+export type InstructorStatsOutput = {
+  __typename?: 'InstructorStatsOutput';
+  activeStudents: Scalars['Int']['output'];
+  archivedCourses: Scalars['Int']['output'];
+  averageCompletionRate: Scalars['Float']['output'];
+  averageRating?: Maybe<Scalars['Float']['output']>;
+  draftCourses: Scalars['Int']['output'];
+  monthlyRevenue: Scalars['Float']['output'];
+  publishedCourses: Scalars['Int']['output'];
+  totalCourses: Scalars['Int']['output'];
+  totalRevenue: Scalars['Float']['output'];
+  totalStudents: Scalars['Int']['output'];
+  totalViews: Scalars['Int']['output'];
+  weeklyViews: Scalars['Int']['output'];
+};
+
 export type Lesson = {
   __typename?: 'Lesson';
   chapter?: Maybe<Chapter>;
@@ -259,8 +320,7 @@ export type Mutation = {
   /** Désactiver un compte utilisateur (ADMIN uniquement) */
   deactivateUser: AdminActionResponse;
   deleteChapter: Scalars['Boolean']['output'];
-  /** Supprimer un cours définitivement (ADMIN uniquement) */
-  deleteCourse: AdminActionResponse;
+  deleteCourse: Scalars['Boolean']['output'];
   deleteFile: Scalars['Boolean']['output'];
   deleteLesson: Scalars['Boolean']['output'];
   deleteLessonAttachment: Scalars['Boolean']['output'];
@@ -482,6 +542,8 @@ export type Query = {
   chaptersByCourse: Array<Chapter>;
   course: Course;
   courseBySlug: Course;
+  /** Performances détaillées d'un cours */
+  coursePerformance: CoursePerformanceOutput;
   courseProgress: CourseProgressOutput;
   /** Liste de tous les cours, publiés ou non (ADMIN uniquement) */
   courses: Array<Course>;
@@ -497,6 +559,10 @@ export type Query = {
   /** Get video progress for a specific lesson */
   getVideoProgress?: Maybe<VideoProgress>;
   hello: Scalars['String']['output'];
+  /** Liste des cours de l'instructeur avec performances */
+  instructorCourses: Array<CoursePerformanceOutput>;
+  /** Statistiques globales de l'instructeur (dashboard) */
+  instructorStats: InstructorStatsOutput;
   isEnrolled: Scalars['Boolean']['output'];
   lesson: Lesson;
   lessonAttachments: Array<LessonAttachment>;
@@ -509,6 +575,8 @@ export type Query = {
   myEnrollments: Array<Enrollment>;
   /** Liste publique des cours publiés */
   publicCourses: Array<Course>;
+  /** Activités récentes de l'instructeur (enrollments, completions) */
+  recentActivity: Array<RecentActivityOutput>;
   /** Liste de tous les utilisateurs (ADMIN uniquement) */
   users: Array<User>;
   /** API version */
@@ -531,6 +599,11 @@ export type QueryCourseBySlugArgs = {
 };
 
 
+export type QueryCoursePerformanceArgs = {
+  courseId: Scalars['String']['input'];
+};
+
+
 export type QueryCourseProgressArgs = {
   courseId: Scalars['String']['input'];
 };
@@ -548,6 +621,11 @@ export type QueryGetUserByIdArgs = {
 
 export type QueryGetVideoProgressArgs = {
   lessonId: Scalars['String']['input'];
+};
+
+
+export type QueryInstructorCoursesArgs = {
+  status?: InputMaybe<CourseStatus>;
 };
 
 
@@ -578,6 +656,23 @@ export type QueryLessonProgressArgs = {
 
 export type QueryLessonsByChapterArgs = {
   chapterId: Scalars['String']['input'];
+};
+
+
+export type QueryRecentActivityArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type RecentActivityOutput = {
+  __typename?: 'RecentActivityOutput';
+  course: ActivityCourse;
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  lessonTitle?: Maybe<Scalars['String']['output']>;
+  rating?: Maybe<Scalars['Float']['output']>;
+  reviewText?: Maybe<Scalars['String']['output']>;
+  student: ActivityStudent;
+  type: ActivityType;
 };
 
 export type ReorderChaptersInput = {
@@ -755,7 +850,7 @@ export type DeleteCourseMutationVariables = Exact<{
 }>;
 
 
-export type DeleteCourseMutation = { __typename?: 'Mutation', deleteCourse: { __typename?: 'AdminActionResponse', success: boolean, message: string } };
+export type DeleteCourseMutation = { __typename?: 'Mutation', deleteCourse: boolean };
 
 export type CreateCourseMutationVariables = Exact<{
   input: CreateCourseInput;
@@ -897,7 +992,7 @@ export type GetCourseForEditQueryVariables = Exact<{
 }>;
 
 
-export type GetCourseForEditQuery = { __typename?: 'Query', getCourseForEdit: { __typename?: 'Course', id: string, title: string, description: string, smallDescription: string, requirements?: string | null, outcomes?: string | null, imageUrl?: string | null, price: number, category: string, stripePriceId?: string | null, status: CourseStatus, level: CourseLevel, slug: string, duration?: number | null, createdAt: any, updatedAt: any, publishedAt?: any | null, createdBy: { __typename?: 'CourseCreator', id: string, name: string, email?: string | null, role: UserRole }, chapters?: Array<{ __typename?: 'Chapter', id: string, title: string, position: number, lessons?: Array<{ __typename?: 'Lesson', id: string, title: string, description?: string | null, content?: string | null, isPublished: boolean, videoUrl?: string | null, order: number, isFree: boolean, completed?: boolean | null }> | null }> | null } };
+export type GetCourseForEditQuery = { __typename?: 'Query', getCourseForEdit: { __typename?: 'Course', id: string, title: string, description: string, smallDescription: string, requirements?: string | null, outcomes?: string | null, imageUrl?: string | null, price: number, category: string, stripePriceId?: string | null, status: CourseStatus, level: CourseLevel, slug: string, duration?: number | null, createdAt: any, updatedAt: any, publishedAt?: any | null, createdBy: { __typename?: 'CourseCreator', id: string, name: string, email?: string | null, role: UserRole }, chapters?: Array<{ __typename?: 'Chapter', id: string, title: string, position: number, lessons?: Array<{ __typename?: 'Lesson', id: string, title: string, description?: string | null, content?: string | null, isPublished: boolean, videoUrl?: string | null, order: number, isFree: boolean }> | null }> | null } };
 
 export type GetLessonQueryVariables = Exact<{
   id: Scalars['String']['input'];
@@ -917,6 +1012,32 @@ export type GetCourseWithLessonsQueryVariables = Exact<{
 
 
 export type GetCourseWithLessonsQuery = { __typename?: 'Query', course: { __typename?: 'Course', id: string, title: string, slug: string, description: string, imageUrl?: string | null, chapters?: Array<{ __typename?: 'Chapter', id: string, title: string, position: number, lessons?: Array<{ __typename?: 'Lesson', id: string, title: string, order: number, duration?: number | null, videoUrl?: string | null, externalVideoUrl?: string | null, content?: string | null, description?: string | null, completed?: boolean | null }> | null }> | null } };
+
+export type GetInstructorStatsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetInstructorStatsQuery = { __typename?: 'Query', instructorStats: { __typename?: 'InstructorStatsOutput', totalCourses: number, publishedCourses: number, draftCourses: number, archivedCourses: number, totalStudents: number, activeStudents: number, totalRevenue: number, monthlyRevenue: number, totalViews: number, weeklyViews: number, averageCompletionRate: number, averageRating?: number | null } };
+
+export type GetInstructorCoursesQueryVariables = Exact<{
+  status?: InputMaybe<CourseStatus>;
+}>;
+
+
+export type GetInstructorCoursesQuery = { __typename?: 'Query', instructorCourses: Array<{ __typename?: 'CoursePerformanceOutput', id: string, title: string, slug: string, imageUrl?: string | null, status: CourseStatus, price: number, studentsCount: number, activeStudentsCount: number, revenue: number, completionRate: number, chaptersCount: number, lessonsCount: number, duration?: number | null, createdAt: any, updatedAt: any, publishedAt?: any | null, averageRating?: number | null, reviewsCount?: number | null }> };
+
+export type GetCoursePerformanceQueryVariables = Exact<{
+  courseId: Scalars['String']['input'];
+}>;
+
+
+export type GetCoursePerformanceQuery = { __typename?: 'Query', coursePerformance: { __typename?: 'CoursePerformanceOutput', id: string, title: string, slug: string, imageUrl?: string | null, status: CourseStatus, price: number, studentsCount: number, activeStudentsCount: number, revenue: number, completionRate: number, chaptersCount: number, lessonsCount: number, duration?: number | null, createdAt: any, updatedAt: any, publishedAt?: any | null, averageRating?: number | null, reviewsCount?: number | null } };
+
+export type GetRecentActivityQueryVariables = Exact<{
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type GetRecentActivityQuery = { __typename?: 'Query', recentActivity: Array<{ __typename?: 'RecentActivityOutput', id: string, type: ActivityType, createdAt: any, lessonTitle?: string | null, reviewText?: string | null, rating?: number | null, student: { __typename?: 'ActivityStudent', id: string, name: string, image?: string | null }, course: { __typename?: 'ActivityCourse', id: string, title: string, slug: string } }> };
 
 export type LessonAttachmentsQueryVariables = Exact<{
   lessonId: Scalars['String']['input'];
@@ -1269,10 +1390,7 @@ export type UpdateCourseMutationResult = Apollo.MutationResult<UpdateCourseMutat
 export type UpdateCourseMutationOptions = Apollo.BaseMutationOptions<UpdateCourseMutation, UpdateCourseMutationVariables>;
 export const DeleteCourseDocument = gql`
     mutation DeleteCourse($courseId: String!) {
-  deleteCourse(courseId: $courseId) {
-    success
-    message
-  }
+  deleteCourse(courseId: $courseId)
 }
     `;
 export type DeleteCourseMutationFn = Apollo.MutationFunction<DeleteCourseMutation, DeleteCourseMutationVariables>;
@@ -2125,7 +2243,6 @@ export const GetCourseForEditDocument = gql`
         videoUrl
         order
         isFree
-        completed
       }
     }
   }
@@ -2333,6 +2450,225 @@ export type GetCourseWithLessonsQueryHookResult = ReturnType<typeof useGetCourse
 export type GetCourseWithLessonsLazyQueryHookResult = ReturnType<typeof useGetCourseWithLessonsLazyQuery>;
 export type GetCourseWithLessonsSuspenseQueryHookResult = ReturnType<typeof useGetCourseWithLessonsSuspenseQuery>;
 export type GetCourseWithLessonsQueryResult = Apollo.QueryResult<GetCourseWithLessonsQuery, GetCourseWithLessonsQueryVariables>;
+export const GetInstructorStatsDocument = gql`
+    query GetInstructorStats {
+  instructorStats {
+    totalCourses
+    publishedCourses
+    draftCourses
+    archivedCourses
+    totalStudents
+    activeStudents
+    totalRevenue
+    monthlyRevenue
+    totalViews
+    weeklyViews
+    averageCompletionRate
+    averageRating
+  }
+}
+    `;
+
+/**
+ * __useGetInstructorStatsQuery__
+ *
+ * To run a query within a React component, call `useGetInstructorStatsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetInstructorStatsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetInstructorStatsQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useGetInstructorStatsQuery(baseOptions?: Apollo.QueryHookOptions<GetInstructorStatsQuery, GetInstructorStatsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetInstructorStatsQuery, GetInstructorStatsQueryVariables>(GetInstructorStatsDocument, options);
+      }
+export function useGetInstructorStatsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetInstructorStatsQuery, GetInstructorStatsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetInstructorStatsQuery, GetInstructorStatsQueryVariables>(GetInstructorStatsDocument, options);
+        }
+export function useGetInstructorStatsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetInstructorStatsQuery, GetInstructorStatsQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetInstructorStatsQuery, GetInstructorStatsQueryVariables>(GetInstructorStatsDocument, options);
+        }
+export type GetInstructorStatsQueryHookResult = ReturnType<typeof useGetInstructorStatsQuery>;
+export type GetInstructorStatsLazyQueryHookResult = ReturnType<typeof useGetInstructorStatsLazyQuery>;
+export type GetInstructorStatsSuspenseQueryHookResult = ReturnType<typeof useGetInstructorStatsSuspenseQuery>;
+export type GetInstructorStatsQueryResult = Apollo.QueryResult<GetInstructorStatsQuery, GetInstructorStatsQueryVariables>;
+export const GetInstructorCoursesDocument = gql`
+    query GetInstructorCourses($status: CourseStatus) {
+  instructorCourses(status: $status) {
+    id
+    title
+    slug
+    imageUrl
+    status
+    price
+    studentsCount
+    activeStudentsCount
+    revenue
+    completionRate
+    chaptersCount
+    lessonsCount
+    duration
+    createdAt
+    updatedAt
+    publishedAt
+    averageRating
+    reviewsCount
+  }
+}
+    `;
+
+/**
+ * __useGetInstructorCoursesQuery__
+ *
+ * To run a query within a React component, call `useGetInstructorCoursesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetInstructorCoursesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetInstructorCoursesQuery({
+ *   variables: {
+ *      status: // value for 'status'
+ *   },
+ * });
+ */
+export function useGetInstructorCoursesQuery(baseOptions?: Apollo.QueryHookOptions<GetInstructorCoursesQuery, GetInstructorCoursesQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetInstructorCoursesQuery, GetInstructorCoursesQueryVariables>(GetInstructorCoursesDocument, options);
+      }
+export function useGetInstructorCoursesLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetInstructorCoursesQuery, GetInstructorCoursesQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetInstructorCoursesQuery, GetInstructorCoursesQueryVariables>(GetInstructorCoursesDocument, options);
+        }
+export function useGetInstructorCoursesSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetInstructorCoursesQuery, GetInstructorCoursesQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetInstructorCoursesQuery, GetInstructorCoursesQueryVariables>(GetInstructorCoursesDocument, options);
+        }
+export type GetInstructorCoursesQueryHookResult = ReturnType<typeof useGetInstructorCoursesQuery>;
+export type GetInstructorCoursesLazyQueryHookResult = ReturnType<typeof useGetInstructorCoursesLazyQuery>;
+export type GetInstructorCoursesSuspenseQueryHookResult = ReturnType<typeof useGetInstructorCoursesSuspenseQuery>;
+export type GetInstructorCoursesQueryResult = Apollo.QueryResult<GetInstructorCoursesQuery, GetInstructorCoursesQueryVariables>;
+export const GetCoursePerformanceDocument = gql`
+    query GetCoursePerformance($courseId: String!) {
+  coursePerformance(courseId: $courseId) {
+    id
+    title
+    slug
+    imageUrl
+    status
+    price
+    studentsCount
+    activeStudentsCount
+    revenue
+    completionRate
+    chaptersCount
+    lessonsCount
+    duration
+    createdAt
+    updatedAt
+    publishedAt
+    averageRating
+    reviewsCount
+  }
+}
+    `;
+
+/**
+ * __useGetCoursePerformanceQuery__
+ *
+ * To run a query within a React component, call `useGetCoursePerformanceQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetCoursePerformanceQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetCoursePerformanceQuery({
+ *   variables: {
+ *      courseId: // value for 'courseId'
+ *   },
+ * });
+ */
+export function useGetCoursePerformanceQuery(baseOptions: Apollo.QueryHookOptions<GetCoursePerformanceQuery, GetCoursePerformanceQueryVariables> & ({ variables: GetCoursePerformanceQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetCoursePerformanceQuery, GetCoursePerformanceQueryVariables>(GetCoursePerformanceDocument, options);
+      }
+export function useGetCoursePerformanceLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetCoursePerformanceQuery, GetCoursePerformanceQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetCoursePerformanceQuery, GetCoursePerformanceQueryVariables>(GetCoursePerformanceDocument, options);
+        }
+export function useGetCoursePerformanceSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetCoursePerformanceQuery, GetCoursePerformanceQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetCoursePerformanceQuery, GetCoursePerformanceQueryVariables>(GetCoursePerformanceDocument, options);
+        }
+export type GetCoursePerformanceQueryHookResult = ReturnType<typeof useGetCoursePerformanceQuery>;
+export type GetCoursePerformanceLazyQueryHookResult = ReturnType<typeof useGetCoursePerformanceLazyQuery>;
+export type GetCoursePerformanceSuspenseQueryHookResult = ReturnType<typeof useGetCoursePerformanceSuspenseQuery>;
+export type GetCoursePerformanceQueryResult = Apollo.QueryResult<GetCoursePerformanceQuery, GetCoursePerformanceQueryVariables>;
+export const GetRecentActivityDocument = gql`
+    query GetRecentActivity($limit: Int) {
+  recentActivity(limit: $limit) {
+    id
+    type
+    student {
+      id
+      name
+      image
+    }
+    course {
+      id
+      title
+      slug
+    }
+    createdAt
+    lessonTitle
+    reviewText
+    rating
+  }
+}
+    `;
+
+/**
+ * __useGetRecentActivityQuery__
+ *
+ * To run a query within a React component, call `useGetRecentActivityQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetRecentActivityQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetRecentActivityQuery({
+ *   variables: {
+ *      limit: // value for 'limit'
+ *   },
+ * });
+ */
+export function useGetRecentActivityQuery(baseOptions?: Apollo.QueryHookOptions<GetRecentActivityQuery, GetRecentActivityQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetRecentActivityQuery, GetRecentActivityQueryVariables>(GetRecentActivityDocument, options);
+      }
+export function useGetRecentActivityLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetRecentActivityQuery, GetRecentActivityQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetRecentActivityQuery, GetRecentActivityQueryVariables>(GetRecentActivityDocument, options);
+        }
+export function useGetRecentActivitySuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetRecentActivityQuery, GetRecentActivityQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetRecentActivityQuery, GetRecentActivityQueryVariables>(GetRecentActivityDocument, options);
+        }
+export type GetRecentActivityQueryHookResult = ReturnType<typeof useGetRecentActivityQuery>;
+export type GetRecentActivityLazyQueryHookResult = ReturnType<typeof useGetRecentActivityLazyQuery>;
+export type GetRecentActivitySuspenseQueryHookResult = ReturnType<typeof useGetRecentActivitySuspenseQuery>;
+export type GetRecentActivityQueryResult = Apollo.QueryResult<GetRecentActivityQuery, GetRecentActivityQueryVariables>;
 export const LessonAttachmentsDocument = gql`
     query LessonAttachments($lessonId: String!) {
   lessonAttachments(lessonId: $lessonId) {

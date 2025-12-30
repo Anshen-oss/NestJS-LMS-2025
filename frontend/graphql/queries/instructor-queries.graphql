@@ -1,0 +1,91 @@
+# ================================================================
+# INSTRUCTOR DASHBOARD QUERIES
+# ================================================================
+
+# Query 1: Stats globales du dashboard
+query GetInstructorStats {
+  instructorStats {
+    totalCourses
+    publishedCourses
+    draftCourses
+    archivedCourses
+    totalStudents
+    activeStudents
+    totalRevenue
+    monthlyRevenue
+    totalViews
+    weeklyViews
+    averageCompletionRate
+    averageRating
+  }
+}
+
+# Query 2: Liste des cours avec performances
+query GetInstructorCourses($status: CourseStatus) {
+  instructorCourses(status: $status) {
+    id
+    title
+    slug
+    imageUrl
+    status
+    price
+    studentsCount
+    activeStudentsCount
+    revenue
+    completionRate
+    chaptersCount
+    lessonsCount
+    duration
+    createdAt
+    updatedAt
+    publishedAt
+    averageRating
+    reviewsCount
+  }
+}
+
+# Query 3: Performance d'un cours spécifique
+query GetCoursePerformance($courseId: String!) {
+  coursePerformance(courseId: $courseId) {
+    id
+    title
+    slug
+    imageUrl
+    status
+    price
+    studentsCount
+    activeStudentsCount
+    revenue
+    completionRate
+    chaptersCount
+    lessonsCount
+    duration
+    createdAt
+    updatedAt
+    publishedAt
+    averageRating
+    reviewsCount
+  }
+}
+
+# Query 4: Activités récentes
+query GetRecentActivity($limit: Int) {
+  recentActivity(limit: $limit) {
+    id
+    type
+    student {
+      id
+      name
+      image
+    }
+    course {
+      id
+      title
+      slug
+    }
+    createdAt
+    lessonTitle
+    reviewText
+    rating
+  }
+}

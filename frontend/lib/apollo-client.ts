@@ -76,6 +76,8 @@ export function useApolloClient() {
           console.error('Message:', message);
           console.error('Path:', path);
           console.error('Locations:', locations);
+          console.error('Extensions:', extensions); // ← AJOUTER
+          console.error('Full Error:', { message, locations, path, extensions });
 
           if (extensions?.code === 'UNAUTHENTICATED') {
             console.error('🔐 Authentication required!');

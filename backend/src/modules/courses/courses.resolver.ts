@@ -146,13 +146,19 @@ export class CoursesResolver {
   @Mutation(() => Boolean)
   @UseGuards(ClerkGqlGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
-  async deleteCourse(@Args('id') id: string, @CurrentUser() user: User) {
+  async deleteCourse(
+    @Args('courseId') courseId: string,
+    @CurrentUser() user: User,
+  ) {
+    console.log('🗑️ RESOLVER - deleteCourse called!');
+    console.log('courseId:', courseId);
+    console.log('user:', user);
     if (!user.role) {
       throw new UnauthorizedException(
         'User role is required to perform this action',
       );
     }
-    return this.coursesService.deleteCourse(id, user.id, user.role);
+    return this.coursesService.deleteCourse(courseId, user.id, user.role);
   }
 
   /**

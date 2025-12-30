@@ -14,6 +14,8 @@ export class RolesGuard implements CanActivate {
       [context.getHandler(), context.getClass()],
     );
 
+    console.log('🔐 RolesGuard - Required roles:', requiredRoles);
+
     if (!requiredRoles) {
       return true;
     }
@@ -21,10 +23,20 @@ export class RolesGuard implements CanActivate {
     const ctx = GqlExecutionContext.create(context);
     const { user } = ctx.getContext().req;
 
+    console.log('👤 RolesGuard - User:', user);
+    console.log('👤 RolesGuard - User role:', user?.role);
+
     if (!user) {
+      console.log('❌ RolesGuard - No user!');
       return false;
     }
 
-    return requiredRoles.some((role) => user.role === role);
+    // ✅ FIX : Convertir l'enum en string pour la comparaison
+    const hasRole = requiredRoles.some(
+      (role) => String(role) === String(user.role),
+    );
+    console.log('✅ RolesGuard - Has required role?', hasRole);
+
+    return hasRole;
   }
 }

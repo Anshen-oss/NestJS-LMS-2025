@@ -583,6 +583,11 @@ export class CoursesService {
    * - INSTRUCTOR : peut supprimer seulement ses propres cours
    */
   async deleteCourse(id: string, userId: string, userRole: UserRole) {
+    console.log('🗑️ DELETE COURSE - Start');
+    console.log('courseId:', id);
+    console.log('userId:', userId);
+    console.log('userRole:', userRole);
+
     // 1️⃣ Récupérer le cours
     const course = await this.prisma.course.findUnique({
       where: { id },
