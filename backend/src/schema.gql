@@ -48,6 +48,26 @@ type AdminStats {
   totalUsers: Int!
 }
 
+type AnalyticsOverview {
+  averageCompletionRate: Float!
+  averageWatchTime: Float!
+  comparisonPeriod: DateRangeType!
+  completionRateChange: PercentageChange!
+  currentPeriod: DateRangeType!
+  enrollmentsChange: PercentageChange!
+  revenueChange: PercentageChange!
+  studentsChange: PercentageChange!
+  totalEnrollments: Int!
+  totalRevenue: Float!
+  totalStudents: Int!
+}
+
+enum ChangeDirection {
+  DOWN
+  STABLE
+  UP
+}
+
 type Chapter {
   completedLessonsCount: Int
   course: Course!
@@ -112,6 +132,18 @@ enum CourseLevel {
 
   """Intermediate level course"""
   Intermediate
+}
+
+type CoursePerformance {
+  activeStudents: Int!
+  averageProgress: Float!
+  completionRate: Float!
+  courseId: String!
+  courseName: String!
+  enrollmentTrend: PercentageChange!
+  thumbnailUrl: String
+  totalEnrollments: Int!
+  totalRevenue: Float!
 }
 
 type CoursePerformanceOutput {
@@ -194,6 +226,16 @@ input CreateLessonInput {
   title: String!
   videoKey: String
   videoUrl: String
+}
+
+input DateRangeInput {
+  endDate: DateTime!
+  startDate: DateTime!
+}
+
+type DateRangeType {
+  endDate: DateTime!
+  startDate: DateTime!
 }
 
 """
@@ -345,6 +387,12 @@ type Mutation {
   updateUserRole(input: UpdateUserRoleInput!): User!
 }
 
+type PercentageChange {
+  direction: ChangeDirection!
+  isSignificant: Boolean!
+  value: Float!
+}
+
 input PromoteUserInput {
   userId: String!
 }
@@ -362,6 +410,7 @@ type Query {
 
   """Liste de tous les cours, publiés ou non (ADMIN uniquement)"""
   courses: [Course!]!
+  exportAnalytics(dateRange: DateRangeInput!, type: String!): String!
 
   """Get all users (ADMIN only)"""
   getAllUsers: [User!]!
@@ -379,9 +428,12 @@ type Query {
   """Get video progress for a specific lesson"""
   getVideoProgress(lessonId: String!): VideoProgress
   hello: String!
+  instructorAnalytics(dateRange: DateRangeInput!): AnalyticsOverview!
+  instructorCoursePerformance(dateRange: DateRangeInput!): [CoursePerformance!]!
 
   """Liste des cours de l'instructeur avec performances"""
   instructorCourses(status: CourseStatus): [CoursePerformanceOutput!]!
+  instructorRevenue(dateRange: DateRangeInput!): RevenueAnalytics!
 
   """Statistiques globales de l'instructeur (dashboard)"""
   instructorStats: InstructorStatsOutput!
@@ -428,6 +480,17 @@ input ReorderChaptersInput {
 input ReorderLessonsInput {
   chapterId: String!
   lessons: [LessonPositionInput!]!
+}
+
+type RevenueAnalytics {
+  dataPoints: [RevenueDataPoint!]!
+  totalRevenue: Float!
+}
+
+type RevenueDataPoint {
+  date: DateTime!
+  enrollments: Int!
+  revenue: Float!
 }
 
 input SaveVideoProgressInput {
