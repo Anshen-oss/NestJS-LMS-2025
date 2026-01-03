@@ -437,6 +437,9 @@ type Query {
 
   """Statistiques globales de l'instructeur (dashboard)"""
   instructorStats: InstructorStatsOutput!
+
+  """Liste paginée des étudiants de l'instructeur"""
+  instructorStudents(courseId: String, page: Int = 1, pageSize: Int = 10, search: String, sortBy: String = "enrolledAt"): StudentListResponse!
   isEnrolled(courseId: String!): Boolean!
   lesson(id: String!): Lesson!
   lessonAttachments(lessonId: String!): [LessonAttachment!]!
@@ -453,6 +456,12 @@ type Query {
 
   """Activités récentes de l'instructeur (enrollments, completions)"""
   recentActivity(limit: Int = 10): [RecentActivityOutput!]!
+
+  """Détails complets d'un étudiant"""
+  studentDetail(studentId: String!): StudentDetail!
+
+  """Étudiants inscrits à un cours spécifique"""
+  studentsByCourse(courseId: String!, page: Int = 1, pageSize: Int = 10, search: String, sortBy: String = "enrolledAt"): StudentListResponse!
 
   """Liste de tous les utilisateurs (ADMIN uniquement)"""
   users: [User!]!
@@ -497,6 +506,70 @@ input SaveVideoProgressInput {
   currentTime: Float!
   duration: Float!
   lessonId: String!
+}
+
+type StudentAchievement {
+  description: String!
+  icon: String
+  id: String!
+  title: String!
+  unlockedAt: DateTime!
+}
+
+type StudentCourseProgress {
+  courseId: String!
+  courseImage: String
+  courseSlug: String!
+  courseTitle: String!
+  enrollment: StudentEnrollment!
+  price: Float!
+}
+
+type StudentDetail {
+  achievements: [StudentAchievement!]!
+  averageTimePerLesson: Int!
+  courses: [StudentCourseProgress!]!
+  email: String
+  enrolledAt: DateTime!
+  id: String!
+  image: String
+  joinedAt: DateTime!
+  lastActivityAt: DateTime
+  name: String!
+  overallCompletionRate: Float!
+  totalCoursesCompleted: Int!
+  totalCoursesEnrolled: Int!
+  totalTimeSpent: Int!
+}
+
+type StudentEnrollment {
+  completionRate: Int!
+  enrolledAt: DateTime!
+  id: String!
+  lastActivityAt: DateTime
+  lessonsCompleted: Int!
+  status: String!
+  totalLessons: Int!
+}
+
+type StudentListItem {
+  courses: [StudentCourseProgress!]!
+  email: String
+  enrolledAt: DateTime!
+  id: String!
+  image: String
+  lastActivityAt: DateTime
+  name: String!
+  overallCompletionRate: Float!
+  totalCoursesCompleted: Int!
+  totalCoursesEnrolled: Int!
+}
+
+type StudentListResponse {
+  page: Int!
+  pageSize: Int!
+  students: [StudentListItem!]!
+  total: Int!
 }
 
 input UpdateChapterInput {
