@@ -1,0 +1,76 @@
+query InstructorAnalytics($dateRange: DateRangeInput!) {
+  instructorAnalytics(dateRange: $dateRange) {
+    totalRevenue
+    totalEnrollments
+    averageCompletionRate
+    totalStudents
+    averageWatchTime
+
+    revenueChange {
+      value
+      direction
+      isSignificant
+    }
+
+    enrollmentsChange {
+      value
+      direction
+      isSignificant
+    }
+
+    completionRateChange {
+      value
+      direction
+      isSignificant
+    }
+
+    studentsChange {
+      value
+      direction
+      isSignificant
+    }
+
+    currentPeriod {
+      startDate
+      endDate
+    }
+
+    comparisonPeriod {
+      startDate
+      endDate
+    }
+  }
+}
+
+query InstructorRevenue($dateRange: DateRangeInput!) {
+  instructorRevenue(dateRange: $dateRange) {
+    totalRevenue
+    dataPoints {
+      date
+      revenue
+      enrollments
+    }
+  }
+}
+
+query InstructorCoursePerformance($dateRange: DateRangeInput!) {
+  instructorCoursePerformance(dateRange: $dateRange) {
+    courseId
+    courseName
+    thumbnailUrl
+    totalEnrollments
+    activeStudents
+    completionRate
+    totalRevenue
+    averageProgress
+    enrollmentTrend {
+      value
+      direction
+      isSignificant
+    }
+  }
+}
+
+query ExportAnalytics($dateRange: DateRangeInput!, $type: String!) {
+  exportAnalytics(dateRange: $dateRange, type: $type)
+}

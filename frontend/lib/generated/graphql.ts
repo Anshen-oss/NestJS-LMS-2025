@@ -63,6 +63,27 @@ export type AdminStats = {
   totalUsers: Scalars['Int']['output'];
 };
 
+export type AnalyticsOverview = {
+  __typename?: 'AnalyticsOverview';
+  averageCompletionRate: Scalars['Float']['output'];
+  averageWatchTime: Scalars['Float']['output'];
+  comparisonPeriod: DateRangeType;
+  completionRateChange: PercentageChange;
+  currentPeriod: DateRangeType;
+  enrollmentsChange: PercentageChange;
+  revenueChange: PercentageChange;
+  studentsChange: PercentageChange;
+  totalEnrollments: Scalars['Int']['output'];
+  totalRevenue: Scalars['Float']['output'];
+  totalStudents: Scalars['Int']['output'];
+};
+
+export enum ChangeDirection {
+  Down = 'DOWN',
+  Stable = 'STABLE',
+  Up = 'UP'
+}
+
 export type Chapter = {
   __typename?: 'Chapter';
   completedLessonsCount?: Maybe<Scalars['Int']['output']>;
@@ -130,6 +151,19 @@ export enum CourseLevel {
   /** Intermediate level course */
   Intermediate = 'Intermediate'
 }
+
+export type CoursePerformance = {
+  __typename?: 'CoursePerformance';
+  activeStudents: Scalars['Int']['output'];
+  averageProgress: Scalars['Float']['output'];
+  completionRate: Scalars['Float']['output'];
+  courseId: Scalars['String']['output'];
+  courseName: Scalars['String']['output'];
+  enrollmentTrend: PercentageChange;
+  thumbnailUrl?: Maybe<Scalars['String']['output']>;
+  totalEnrollments: Scalars['Int']['output'];
+  totalRevenue: Scalars['Float']['output'];
+};
 
 export type CoursePerformanceOutput = {
   __typename?: 'CoursePerformanceOutput';
@@ -211,6 +245,17 @@ export type CreateLessonInput = {
   title: Scalars['String']['input'];
   videoKey?: InputMaybe<Scalars['String']['input']>;
   videoUrl?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type DateRangeInput = {
+  endDate: Scalars['DateTime']['input'];
+  startDate: Scalars['DateTime']['input'];
+};
+
+export type DateRangeType = {
+  __typename?: 'DateRangeType';
+  endDate: Scalars['DateTime']['output'];
+  startDate: Scalars['DateTime']['output'];
 };
 
 export type EnrollInCourseInput = {
@@ -531,6 +576,13 @@ export type MutationUpdateUserRoleArgs = {
   input: UpdateUserRoleInput;
 };
 
+export type PercentageChange = {
+  __typename?: 'PercentageChange';
+  direction: ChangeDirection;
+  isSignificant: Scalars['Boolean']['output'];
+  value: Scalars['Float']['output'];
+};
+
 export type PromoteUserInput = {
   userId: Scalars['String']['input'];
 };
@@ -547,6 +599,7 @@ export type Query = {
   courseProgress: CourseProgressOutput;
   /** Liste de tous les cours, publiés ou non (ADMIN uniquement) */
   courses: Array<Course>;
+  exportAnalytics: Scalars['String']['output'];
   /** Get all users (ADMIN only) */
   getAllUsers: Array<User>;
   getCourseForEdit: Course;
@@ -559,8 +612,11 @@ export type Query = {
   /** Get video progress for a specific lesson */
   getVideoProgress?: Maybe<VideoProgress>;
   hello: Scalars['String']['output'];
+  instructorAnalytics: AnalyticsOverview;
+  instructorCoursePerformance: Array<CoursePerformance>;
   /** Liste des cours de l'instructeur avec performances */
   instructorCourses: Array<CoursePerformanceOutput>;
+  instructorRevenue: RevenueAnalytics;
   /** Statistiques globales de l'instructeur (dashboard) */
   instructorStats: InstructorStatsOutput;
   isEnrolled: Scalars['Boolean']['output'];
@@ -609,6 +665,12 @@ export type QueryCourseProgressArgs = {
 };
 
 
+export type QueryExportAnalyticsArgs = {
+  dateRange: DateRangeInput;
+  type: Scalars['String']['input'];
+};
+
+
 export type QueryGetCourseForEditArgs = {
   id: Scalars['String']['input'];
 };
@@ -624,8 +686,23 @@ export type QueryGetVideoProgressArgs = {
 };
 
 
+export type QueryInstructorAnalyticsArgs = {
+  dateRange: DateRangeInput;
+};
+
+
+export type QueryInstructorCoursePerformanceArgs = {
+  dateRange: DateRangeInput;
+};
+
+
 export type QueryInstructorCoursesArgs = {
   status?: InputMaybe<CourseStatus>;
+};
+
+
+export type QueryInstructorRevenueArgs = {
+  dateRange: DateRangeInput;
 };
 
 
@@ -683,6 +760,19 @@ export type ReorderChaptersInput = {
 export type ReorderLessonsInput = {
   chapterId: Scalars['String']['input'];
   lessons: Array<LessonPositionInput>;
+};
+
+export type RevenueAnalytics = {
+  __typename?: 'RevenueAnalytics';
+  dataPoints: Array<RevenueDataPoint>;
+  totalRevenue: Scalars['Float']['output'];
+};
+
+export type RevenueDataPoint = {
+  __typename?: 'RevenueDataPoint';
+  date: Scalars['DateTime']['output'];
+  enrollments: Scalars['Int']['output'];
+  revenue: Scalars['Float']['output'];
 };
 
 export type SaveVideoProgressInput = {
@@ -948,6 +1038,35 @@ export type UpdateLessonContentMutationVariables = Exact<{
 
 
 export type UpdateLessonContentMutation = { __typename?: 'Mutation', updateLessonContent: { __typename?: 'Lesson', id: string, title: string, content?: string | null, isPublished: boolean, updatedAt: any } };
+
+export type InstructorAnalyticsQueryVariables = Exact<{
+  dateRange: DateRangeInput;
+}>;
+
+
+export type InstructorAnalyticsQuery = { __typename?: 'Query', instructorAnalytics: { __typename?: 'AnalyticsOverview', totalRevenue: number, totalEnrollments: number, averageCompletionRate: number, totalStudents: number, averageWatchTime: number, revenueChange: { __typename?: 'PercentageChange', value: number, direction: ChangeDirection, isSignificant: boolean }, enrollmentsChange: { __typename?: 'PercentageChange', value: number, direction: ChangeDirection, isSignificant: boolean }, completionRateChange: { __typename?: 'PercentageChange', value: number, direction: ChangeDirection, isSignificant: boolean }, studentsChange: { __typename?: 'PercentageChange', value: number, direction: ChangeDirection, isSignificant: boolean }, currentPeriod: { __typename?: 'DateRangeType', startDate: any, endDate: any }, comparisonPeriod: { __typename?: 'DateRangeType', startDate: any, endDate: any } } };
+
+export type InstructorRevenueQueryVariables = Exact<{
+  dateRange: DateRangeInput;
+}>;
+
+
+export type InstructorRevenueQuery = { __typename?: 'Query', instructorRevenue: { __typename?: 'RevenueAnalytics', totalRevenue: number, dataPoints: Array<{ __typename?: 'RevenueDataPoint', date: any, revenue: number, enrollments: number }> } };
+
+export type InstructorCoursePerformanceQueryVariables = Exact<{
+  dateRange: DateRangeInput;
+}>;
+
+
+export type InstructorCoursePerformanceQuery = { __typename?: 'Query', instructorCoursePerformance: Array<{ __typename?: 'CoursePerformance', courseId: string, courseName: string, thumbnailUrl?: string | null, totalEnrollments: number, activeStudents: number, completionRate: number, totalRevenue: number, averageProgress: number, enrollmentTrend: { __typename?: 'PercentageChange', value: number, direction: ChangeDirection, isSignificant: boolean } }> };
+
+export type ExportAnalyticsQueryVariables = Exact<{
+  dateRange: DateRangeInput;
+  type: Scalars['String']['input'];
+}>;
+
+
+export type ExportAnalyticsQuery = { __typename?: 'Query', exportAnalytics: string };
 
 export type GetChaptersByCourseQueryVariables = Exact<{
   courseId: Scalars['String']['input'];
@@ -1910,6 +2029,214 @@ export function useUpdateLessonContentMutation(baseOptions?: Apollo.MutationHook
 export type UpdateLessonContentMutationHookResult = ReturnType<typeof useUpdateLessonContentMutation>;
 export type UpdateLessonContentMutationResult = Apollo.MutationResult<UpdateLessonContentMutation>;
 export type UpdateLessonContentMutationOptions = Apollo.BaseMutationOptions<UpdateLessonContentMutation, UpdateLessonContentMutationVariables>;
+export const InstructorAnalyticsDocument = gql`
+    query InstructorAnalytics($dateRange: DateRangeInput!) {
+  instructorAnalytics(dateRange: $dateRange) {
+    totalRevenue
+    totalEnrollments
+    averageCompletionRate
+    totalStudents
+    averageWatchTime
+    revenueChange {
+      value
+      direction
+      isSignificant
+    }
+    enrollmentsChange {
+      value
+      direction
+      isSignificant
+    }
+    completionRateChange {
+      value
+      direction
+      isSignificant
+    }
+    studentsChange {
+      value
+      direction
+      isSignificant
+    }
+    currentPeriod {
+      startDate
+      endDate
+    }
+    comparisonPeriod {
+      startDate
+      endDate
+    }
+  }
+}
+    `;
+
+/**
+ * __useInstructorAnalyticsQuery__
+ *
+ * To run a query within a React component, call `useInstructorAnalyticsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useInstructorAnalyticsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useInstructorAnalyticsQuery({
+ *   variables: {
+ *      dateRange: // value for 'dateRange'
+ *   },
+ * });
+ */
+export function useInstructorAnalyticsQuery(baseOptions: Apollo.QueryHookOptions<InstructorAnalyticsQuery, InstructorAnalyticsQueryVariables> & ({ variables: InstructorAnalyticsQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<InstructorAnalyticsQuery, InstructorAnalyticsQueryVariables>(InstructorAnalyticsDocument, options);
+      }
+export function useInstructorAnalyticsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<InstructorAnalyticsQuery, InstructorAnalyticsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<InstructorAnalyticsQuery, InstructorAnalyticsQueryVariables>(InstructorAnalyticsDocument, options);
+        }
+export function useInstructorAnalyticsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<InstructorAnalyticsQuery, InstructorAnalyticsQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<InstructorAnalyticsQuery, InstructorAnalyticsQueryVariables>(InstructorAnalyticsDocument, options);
+        }
+export type InstructorAnalyticsQueryHookResult = ReturnType<typeof useInstructorAnalyticsQuery>;
+export type InstructorAnalyticsLazyQueryHookResult = ReturnType<typeof useInstructorAnalyticsLazyQuery>;
+export type InstructorAnalyticsSuspenseQueryHookResult = ReturnType<typeof useInstructorAnalyticsSuspenseQuery>;
+export type InstructorAnalyticsQueryResult = Apollo.QueryResult<InstructorAnalyticsQuery, InstructorAnalyticsQueryVariables>;
+export const InstructorRevenueDocument = gql`
+    query InstructorRevenue($dateRange: DateRangeInput!) {
+  instructorRevenue(dateRange: $dateRange) {
+    totalRevenue
+    dataPoints {
+      date
+      revenue
+      enrollments
+    }
+  }
+}
+    `;
+
+/**
+ * __useInstructorRevenueQuery__
+ *
+ * To run a query within a React component, call `useInstructorRevenueQuery` and pass it any options that fit your needs.
+ * When your component renders, `useInstructorRevenueQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useInstructorRevenueQuery({
+ *   variables: {
+ *      dateRange: // value for 'dateRange'
+ *   },
+ * });
+ */
+export function useInstructorRevenueQuery(baseOptions: Apollo.QueryHookOptions<InstructorRevenueQuery, InstructorRevenueQueryVariables> & ({ variables: InstructorRevenueQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<InstructorRevenueQuery, InstructorRevenueQueryVariables>(InstructorRevenueDocument, options);
+      }
+export function useInstructorRevenueLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<InstructorRevenueQuery, InstructorRevenueQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<InstructorRevenueQuery, InstructorRevenueQueryVariables>(InstructorRevenueDocument, options);
+        }
+export function useInstructorRevenueSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<InstructorRevenueQuery, InstructorRevenueQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<InstructorRevenueQuery, InstructorRevenueQueryVariables>(InstructorRevenueDocument, options);
+        }
+export type InstructorRevenueQueryHookResult = ReturnType<typeof useInstructorRevenueQuery>;
+export type InstructorRevenueLazyQueryHookResult = ReturnType<typeof useInstructorRevenueLazyQuery>;
+export type InstructorRevenueSuspenseQueryHookResult = ReturnType<typeof useInstructorRevenueSuspenseQuery>;
+export type InstructorRevenueQueryResult = Apollo.QueryResult<InstructorRevenueQuery, InstructorRevenueQueryVariables>;
+export const InstructorCoursePerformanceDocument = gql`
+    query InstructorCoursePerformance($dateRange: DateRangeInput!) {
+  instructorCoursePerformance(dateRange: $dateRange) {
+    courseId
+    courseName
+    thumbnailUrl
+    totalEnrollments
+    activeStudents
+    completionRate
+    totalRevenue
+    averageProgress
+    enrollmentTrend {
+      value
+      direction
+      isSignificant
+    }
+  }
+}
+    `;
+
+/**
+ * __useInstructorCoursePerformanceQuery__
+ *
+ * To run a query within a React component, call `useInstructorCoursePerformanceQuery` and pass it any options that fit your needs.
+ * When your component renders, `useInstructorCoursePerformanceQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useInstructorCoursePerformanceQuery({
+ *   variables: {
+ *      dateRange: // value for 'dateRange'
+ *   },
+ * });
+ */
+export function useInstructorCoursePerformanceQuery(baseOptions: Apollo.QueryHookOptions<InstructorCoursePerformanceQuery, InstructorCoursePerformanceQueryVariables> & ({ variables: InstructorCoursePerformanceQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<InstructorCoursePerformanceQuery, InstructorCoursePerformanceQueryVariables>(InstructorCoursePerformanceDocument, options);
+      }
+export function useInstructorCoursePerformanceLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<InstructorCoursePerformanceQuery, InstructorCoursePerformanceQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<InstructorCoursePerformanceQuery, InstructorCoursePerformanceQueryVariables>(InstructorCoursePerformanceDocument, options);
+        }
+export function useInstructorCoursePerformanceSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<InstructorCoursePerformanceQuery, InstructorCoursePerformanceQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<InstructorCoursePerformanceQuery, InstructorCoursePerformanceQueryVariables>(InstructorCoursePerformanceDocument, options);
+        }
+export type InstructorCoursePerformanceQueryHookResult = ReturnType<typeof useInstructorCoursePerformanceQuery>;
+export type InstructorCoursePerformanceLazyQueryHookResult = ReturnType<typeof useInstructorCoursePerformanceLazyQuery>;
+export type InstructorCoursePerformanceSuspenseQueryHookResult = ReturnType<typeof useInstructorCoursePerformanceSuspenseQuery>;
+export type InstructorCoursePerformanceQueryResult = Apollo.QueryResult<InstructorCoursePerformanceQuery, InstructorCoursePerformanceQueryVariables>;
+export const ExportAnalyticsDocument = gql`
+    query ExportAnalytics($dateRange: DateRangeInput!, $type: String!) {
+  exportAnalytics(dateRange: $dateRange, type: $type)
+}
+    `;
+
+/**
+ * __useExportAnalyticsQuery__
+ *
+ * To run a query within a React component, call `useExportAnalyticsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useExportAnalyticsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useExportAnalyticsQuery({
+ *   variables: {
+ *      dateRange: // value for 'dateRange'
+ *      type: // value for 'type'
+ *   },
+ * });
+ */
+export function useExportAnalyticsQuery(baseOptions: Apollo.QueryHookOptions<ExportAnalyticsQuery, ExportAnalyticsQueryVariables> & ({ variables: ExportAnalyticsQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<ExportAnalyticsQuery, ExportAnalyticsQueryVariables>(ExportAnalyticsDocument, options);
+      }
+export function useExportAnalyticsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ExportAnalyticsQuery, ExportAnalyticsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<ExportAnalyticsQuery, ExportAnalyticsQueryVariables>(ExportAnalyticsDocument, options);
+        }
+export function useExportAnalyticsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ExportAnalyticsQuery, ExportAnalyticsQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<ExportAnalyticsQuery, ExportAnalyticsQueryVariables>(ExportAnalyticsDocument, options);
+        }
+export type ExportAnalyticsQueryHookResult = ReturnType<typeof useExportAnalyticsQuery>;
+export type ExportAnalyticsLazyQueryHookResult = ReturnType<typeof useExportAnalyticsLazyQuery>;
+export type ExportAnalyticsSuspenseQueryHookResult = ReturnType<typeof useExportAnalyticsSuspenseQuery>;
+export type ExportAnalyticsQueryResult = Apollo.QueryResult<ExportAnalyticsQuery, ExportAnalyticsQueryVariables>;
 export const GetChaptersByCourseDocument = gql`
     query GetChaptersByCourse($courseId: String!) {
   chaptersByCourse(courseId: $courseId) {

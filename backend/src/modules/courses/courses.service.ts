@@ -135,9 +135,9 @@ export class CoursesService {
       },
     });
 
-    console.log('📚 Course loaded:', course?.title); // ← LOG 2
-    console.log('📚 Has chapters:', !!course?.chapters); // ← LOG 3
-    console.log('📚 userId for transformation:', userId); // ← LOG 4
+    // console.log('📚 Course loaded:', course?.title); // ← LOG 2
+    // console.log('📚 Has chapters:', !!course?.chapters); // ← LOG 3
+    // console.log('📚 userId for transformation:', userId); // ← LOG 4
 
     if (!course) return null;
 
