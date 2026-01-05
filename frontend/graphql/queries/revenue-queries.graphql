@@ -1,0 +1,57 @@
+# Revenue Page Queries
+# Pour les instructeurs: récupérer les données de revenus
+
+query GetInstructorRevenue($period: RevenueInstructorPeriod!) {
+  getInstructorRevenue(period: $period) {
+    # Overview
+    totalRevenue
+    previousPeriodRevenue
+    changePercentage
+    changeDirection
+    averageDailyRevenue
+
+    # Chart Data
+    dataPoints {
+      date
+      revenue
+      transactionCount
+    }
+
+    # Transactions
+    transactions {
+      id
+      date
+      studentName
+      courseName
+      amount
+      status
+      courseId
+    }
+    transactionCount
+
+    # Payouts
+    availableBalance
+    nextPayoutDate
+    payoutHistory {
+      id
+      date
+      amount
+      status
+      bankAccount
+    }
+
+    # Metadata
+    periodStart
+    periodEnd
+    currency
+  }
+}
+
+# Export Revenue to CSV
+query ExportRevenue($period: RevenueInstructorPeriod!) {
+  exportRevenue(period: $period) {
+    success
+    downloadUrl
+    filename
+  }
+}

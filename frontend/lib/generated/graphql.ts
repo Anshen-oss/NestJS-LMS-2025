@@ -283,6 +283,31 @@ export type EnrollmentResponse = {
   success: Scalars['Boolean']['output'];
 };
 
+export type ExportRevenueResponse = {
+  __typename?: 'ExportRevenueResponse';
+  downloadUrl: Scalars['String']['output'];
+  filename: Scalars['String']['output'];
+  success: Scalars['Boolean']['output'];
+};
+
+export type InstructorRevenueResponse = {
+  __typename?: 'InstructorRevenueResponse';
+  availableBalance: Scalars['Float']['output'];
+  averageDailyRevenue: Scalars['Float']['output'];
+  changeDirection: RevenueInstructorChangeDirection;
+  changePercentage: Scalars['Float']['output'];
+  currency: Scalars['String']['output'];
+  dataPoints: Array<RevenueChartDataPoint>;
+  nextPayoutDate: Scalars['DateTime']['output'];
+  payoutHistory: Array<RevenueInstructorPayout>;
+  periodEnd: Scalars['DateTime']['output'];
+  periodStart: Scalars['DateTime']['output'];
+  previousPeriodRevenue: Scalars['Float']['output'];
+  totalRevenue: Scalars['Float']['output'];
+  transactionCount: Scalars['Int']['output'];
+  transactions: Array<RevenueInstructorTransaction>;
+};
+
 export type InstructorStatsOutput = {
   __typename?: 'InstructorStatsOutput';
   activeStudents: Scalars['Int']['output'];
@@ -600,9 +625,13 @@ export type Query = {
   /** Liste de tous les cours, publiés ou non (ADMIN uniquement) */
   courses: Array<Course>;
   exportAnalytics: Scalars['String']['output'];
+  /** Exporte les revenus en CSV */
+  exportRevenue: ExportRevenueResponse;
   /** Get all users (ADMIN only) */
   getAllUsers: Array<User>;
   getCourseForEdit: Course;
+  /** Données complètes des revenus de l'instructeur */
+  getInstructorRevenue: InstructorRevenueResponse;
   /** Get user by ID */
   getUserById: User;
   /** Get user statistics */
@@ -619,6 +648,8 @@ export type Query = {
   instructorRevenue: RevenueAnalytics;
   /** Statistiques globales de l'instructeur (dashboard) */
   instructorStats: InstructorStatsOutput;
+  /** Liste paginée des étudiants de l'instructeur */
+  instructorStudents: StudentListResponse;
   isEnrolled: Scalars['Boolean']['output'];
   lesson: Lesson;
   lessonAttachments: Array<LessonAttachment>;
@@ -633,6 +664,10 @@ export type Query = {
   publicCourses: Array<Course>;
   /** Activités récentes de l'instructeur (enrollments, completions) */
   recentActivity: Array<RecentActivityOutput>;
+  /** Détails complets d'un étudiant */
+  studentDetail: StudentDetail;
+  /** Étudiants inscrits à un cours spécifique */
+  studentsByCourse: StudentListResponse;
   /** Liste de tous les utilisateurs (ADMIN uniquement) */
   users: Array<User>;
   /** API version */
@@ -671,8 +706,18 @@ export type QueryExportAnalyticsArgs = {
 };
 
 
+export type QueryExportRevenueArgs = {
+  period: RevenueInstructorPeriod;
+};
+
+
 export type QueryGetCourseForEditArgs = {
   id: Scalars['String']['input'];
+};
+
+
+export type QueryGetInstructorRevenueArgs = {
+  period?: RevenueInstructorPeriod;
 };
 
 
@@ -703,6 +748,15 @@ export type QueryInstructorCoursesArgs = {
 
 export type QueryInstructorRevenueArgs = {
   dateRange: DateRangeInput;
+};
+
+
+export type QueryInstructorStudentsArgs = {
+  courseId?: InputMaybe<Scalars['String']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+  pageSize?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -740,6 +794,20 @@ export type QueryRecentActivityArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
+
+export type QueryStudentDetailArgs = {
+  studentId: Scalars['String']['input'];
+};
+
+
+export type QueryStudentsByCourseArgs = {
+  courseId: Scalars['String']['input'];
+  page?: InputMaybe<Scalars['Int']['input']>;
+  pageSize?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type RecentActivityOutput = {
   __typename?: 'RecentActivityOutput';
   course: ActivityCourse;
@@ -768,6 +836,13 @@ export type RevenueAnalytics = {
   totalRevenue: Scalars['Float']['output'];
 };
 
+export type RevenueChartDataPoint = {
+  __typename?: 'RevenueChartDataPoint';
+  date: Scalars['String']['output'];
+  revenue: Scalars['Float']['output'];
+  transactionCount: Scalars['Int']['output'];
+};
+
 export type RevenueDataPoint = {
   __typename?: 'RevenueDataPoint';
   date: Scalars['DateTime']['output'];
@@ -775,10 +850,125 @@ export type RevenueDataPoint = {
   revenue: Scalars['Float']['output'];
 };
 
+export enum RevenueInstructorChangeDirection {
+  Down = 'DOWN',
+  Stable = 'STABLE',
+  Up = 'UP'
+}
+
+export type RevenueInstructorPayout = {
+  __typename?: 'RevenueInstructorPayout';
+  amount: Scalars['Float']['output'];
+  bankAccount: Scalars['String']['output'];
+  date: Scalars['DateTime']['output'];
+  id: Scalars['String']['output'];
+  status: RevenueInstructorPayoutStatus;
+};
+
+export enum RevenueInstructorPayoutStatus {
+  Completed = 'COMPLETED',
+  Failed = 'FAILED',
+  Pending = 'PENDING'
+}
+
+export enum RevenueInstructorPeriod {
+  Last_7Days = 'LAST_7_DAYS',
+  Last_30Days = 'LAST_30_DAYS',
+  Last_90Days = 'LAST_90_DAYS',
+  Year = 'YEAR'
+}
+
+export type RevenueInstructorTransaction = {
+  __typename?: 'RevenueInstructorTransaction';
+  amount: Scalars['Float']['output'];
+  courseId: Scalars['String']['output'];
+  courseName: Scalars['String']['output'];
+  date: Scalars['DateTime']['output'];
+  id: Scalars['String']['output'];
+  status: RevenueInstructorTransactionStatus;
+  studentName: Scalars['String']['output'];
+};
+
+export enum RevenueInstructorTransactionStatus {
+  Paid = 'PAID',
+  Pending = 'PENDING',
+  Refunded = 'REFUNDED'
+}
+
 export type SaveVideoProgressInput = {
   currentTime: Scalars['Float']['input'];
   duration: Scalars['Float']['input'];
   lessonId: Scalars['String']['input'];
+};
+
+export type StudentAchievement = {
+  __typename?: 'StudentAchievement';
+  description: Scalars['String']['output'];
+  icon?: Maybe<Scalars['String']['output']>;
+  id: Scalars['String']['output'];
+  title: Scalars['String']['output'];
+  unlockedAt: Scalars['DateTime']['output'];
+};
+
+export type StudentCourseProgress = {
+  __typename?: 'StudentCourseProgress';
+  courseId: Scalars['String']['output'];
+  courseImage?: Maybe<Scalars['String']['output']>;
+  courseSlug: Scalars['String']['output'];
+  courseTitle: Scalars['String']['output'];
+  enrollment: StudentEnrollment;
+  price: Scalars['Float']['output'];
+};
+
+export type StudentDetail = {
+  __typename?: 'StudentDetail';
+  achievements: Array<StudentAchievement>;
+  averageTimePerLesson: Scalars['Int']['output'];
+  courses: Array<StudentCourseProgress>;
+  email?: Maybe<Scalars['String']['output']>;
+  enrolledAt: Scalars['DateTime']['output'];
+  id: Scalars['String']['output'];
+  image?: Maybe<Scalars['String']['output']>;
+  joinedAt: Scalars['DateTime']['output'];
+  lastActivityAt?: Maybe<Scalars['DateTime']['output']>;
+  name: Scalars['String']['output'];
+  overallCompletionRate: Scalars['Float']['output'];
+  totalCoursesCompleted: Scalars['Int']['output'];
+  totalCoursesEnrolled: Scalars['Int']['output'];
+  totalTimeSpent: Scalars['Int']['output'];
+};
+
+export type StudentEnrollment = {
+  __typename?: 'StudentEnrollment';
+  completionRate: Scalars['Int']['output'];
+  enrolledAt: Scalars['DateTime']['output'];
+  id: Scalars['String']['output'];
+  lastActivityAt?: Maybe<Scalars['DateTime']['output']>;
+  lessonsCompleted: Scalars['Int']['output'];
+  status: Scalars['String']['output'];
+  totalLessons: Scalars['Int']['output'];
+};
+
+export type StudentListItem = {
+  __typename?: 'StudentListItem';
+  courses: Array<StudentCourseProgress>;
+  email?: Maybe<Scalars['String']['output']>;
+  enrolledAt: Scalars['DateTime']['output'];
+  id: Scalars['String']['output'];
+  image?: Maybe<Scalars['String']['output']>;
+  lastActivityAt?: Maybe<Scalars['DateTime']['output']>;
+  name: Scalars['String']['output'];
+  overallCompletionRate: Scalars['Float']['output'];
+  totalCoursesCompleted: Scalars['Int']['output'];
+  totalCoursesEnrolled: Scalars['Int']['output'];
+};
+
+export type StudentListResponse = {
+  __typename?: 'StudentListResponse';
+  page: Scalars['Int']['output'];
+  pageSize: Scalars['Int']['output'];
+  students: Array<StudentListItem>;
+  total: Scalars['Int']['output'];
 };
 
 export type UpdateChapterInput = {
@@ -1195,6 +1385,20 @@ export type GetPublicCoursesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type GetPublicCoursesQuery = { __typename?: 'Query', publicCourses: Array<{ __typename?: 'Course', id: string, title: string, slug: string, smallDescription: string, price: number, duration?: number | null, level: CourseLevel, category: string, imageUrl?: string | null }> };
+
+export type GetInstructorRevenueQueryVariables = Exact<{
+  period: RevenueInstructorPeriod;
+}>;
+
+
+export type GetInstructorRevenueQuery = { __typename?: 'Query', getInstructorRevenue: { __typename?: 'InstructorRevenueResponse', totalRevenue: number, previousPeriodRevenue: number, changePercentage: number, changeDirection: RevenueInstructorChangeDirection, averageDailyRevenue: number, transactionCount: number, availableBalance: number, nextPayoutDate: any, periodStart: any, periodEnd: any, currency: string, dataPoints: Array<{ __typename?: 'RevenueChartDataPoint', date: string, revenue: number, transactionCount: number }>, transactions: Array<{ __typename?: 'RevenueInstructorTransaction', id: string, date: any, studentName: string, courseName: string, amount: number, status: RevenueInstructorTransactionStatus, courseId: string }>, payoutHistory: Array<{ __typename?: 'RevenueInstructorPayout', id: string, date: any, amount: number, status: RevenueInstructorPayoutStatus, bankAccount: string }> } };
+
+export type ExportRevenueQueryVariables = Exact<{
+  period: RevenueInstructorPeriod;
+}>;
+
+
+export type ExportRevenueQuery = { __typename?: 'Query', exportRevenue: { __typename?: 'ExportRevenueResponse', success: boolean, downloadUrl: string, filename: string } };
 
 export type GetMyEnrolledCoursesQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -3275,6 +3479,119 @@ export type GetPublicCoursesQueryHookResult = ReturnType<typeof useGetPublicCour
 export type GetPublicCoursesLazyQueryHookResult = ReturnType<typeof useGetPublicCoursesLazyQuery>;
 export type GetPublicCoursesSuspenseQueryHookResult = ReturnType<typeof useGetPublicCoursesSuspenseQuery>;
 export type GetPublicCoursesQueryResult = Apollo.QueryResult<GetPublicCoursesQuery, GetPublicCoursesQueryVariables>;
+export const GetInstructorRevenueDocument = gql`
+    query GetInstructorRevenue($period: RevenueInstructorPeriod!) {
+  getInstructorRevenue(period: $period) {
+    totalRevenue
+    previousPeriodRevenue
+    changePercentage
+    changeDirection
+    averageDailyRevenue
+    dataPoints {
+      date
+      revenue
+      transactionCount
+    }
+    transactions {
+      id
+      date
+      studentName
+      courseName
+      amount
+      status
+      courseId
+    }
+    transactionCount
+    availableBalance
+    nextPayoutDate
+    payoutHistory {
+      id
+      date
+      amount
+      status
+      bankAccount
+    }
+    periodStart
+    periodEnd
+    currency
+  }
+}
+    `;
+
+/**
+ * __useGetInstructorRevenueQuery__
+ *
+ * To run a query within a React component, call `useGetInstructorRevenueQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetInstructorRevenueQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetInstructorRevenueQuery({
+ *   variables: {
+ *      period: // value for 'period'
+ *   },
+ * });
+ */
+export function useGetInstructorRevenueQuery(baseOptions: Apollo.QueryHookOptions<GetInstructorRevenueQuery, GetInstructorRevenueQueryVariables> & ({ variables: GetInstructorRevenueQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetInstructorRevenueQuery, GetInstructorRevenueQueryVariables>(GetInstructorRevenueDocument, options);
+      }
+export function useGetInstructorRevenueLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetInstructorRevenueQuery, GetInstructorRevenueQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetInstructorRevenueQuery, GetInstructorRevenueQueryVariables>(GetInstructorRevenueDocument, options);
+        }
+export function useGetInstructorRevenueSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetInstructorRevenueQuery, GetInstructorRevenueQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetInstructorRevenueQuery, GetInstructorRevenueQueryVariables>(GetInstructorRevenueDocument, options);
+        }
+export type GetInstructorRevenueQueryHookResult = ReturnType<typeof useGetInstructorRevenueQuery>;
+export type GetInstructorRevenueLazyQueryHookResult = ReturnType<typeof useGetInstructorRevenueLazyQuery>;
+export type GetInstructorRevenueSuspenseQueryHookResult = ReturnType<typeof useGetInstructorRevenueSuspenseQuery>;
+export type GetInstructorRevenueQueryResult = Apollo.QueryResult<GetInstructorRevenueQuery, GetInstructorRevenueQueryVariables>;
+export const ExportRevenueDocument = gql`
+    query ExportRevenue($period: RevenueInstructorPeriod!) {
+  exportRevenue(period: $period) {
+    success
+    downloadUrl
+    filename
+  }
+}
+    `;
+
+/**
+ * __useExportRevenueQuery__
+ *
+ * To run a query within a React component, call `useExportRevenueQuery` and pass it any options that fit your needs.
+ * When your component renders, `useExportRevenueQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useExportRevenueQuery({
+ *   variables: {
+ *      period: // value for 'period'
+ *   },
+ * });
+ */
+export function useExportRevenueQuery(baseOptions: Apollo.QueryHookOptions<ExportRevenueQuery, ExportRevenueQueryVariables> & ({ variables: ExportRevenueQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<ExportRevenueQuery, ExportRevenueQueryVariables>(ExportRevenueDocument, options);
+      }
+export function useExportRevenueLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ExportRevenueQuery, ExportRevenueQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<ExportRevenueQuery, ExportRevenueQueryVariables>(ExportRevenueDocument, options);
+        }
+export function useExportRevenueSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ExportRevenueQuery, ExportRevenueQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<ExportRevenueQuery, ExportRevenueQueryVariables>(ExportRevenueDocument, options);
+        }
+export type ExportRevenueQueryHookResult = ReturnType<typeof useExportRevenueQuery>;
+export type ExportRevenueLazyQueryHookResult = ReturnType<typeof useExportRevenueLazyQuery>;
+export type ExportRevenueSuspenseQueryHookResult = ReturnType<typeof useExportRevenueSuspenseQuery>;
+export type ExportRevenueQueryResult = Apollo.QueryResult<ExportRevenueQuery, ExportRevenueQueryVariables>;
 export const GetMyEnrolledCoursesDocument = gql`
     query GetMyEnrolledCourses {
   myEnrolledCourses {
