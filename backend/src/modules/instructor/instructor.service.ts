@@ -8,6 +8,17 @@ import {
   RecentActivityOutput,
 } from './dto/recent-activity.output';
 
+import {
+  ExportRevenueResponse,
+  InstructorRevenueResponse,
+  RevenueChartDataPoint,
+  RevenueInstructorChangeDirection,
+  RevenueInstructorPayout,
+  RevenueInstructorPeriod,
+  RevenueInstructorTransaction,
+  RevenueInstructorTransactionStatus,
+} from './dto/revenue.dto';
+
 @Injectable()
 export class InstructorService {
   constructor(private prisma: PrismaService) {}
@@ -945,5 +956,230 @@ export class InstructorService {
       page,
       pageSize,
     };
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  //                      REVENUE
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * Récupère les données de revenus de l'instructeur pour une période donnée
+   * Inclut: total, comparaison, graphique, transactions, payouts
+   */
+  async getInstructorRevenue(
+    instructorId: string,
+    period: RevenueInstructorPeriod,
+  ): Promise<InstructorRevenueResponse> {
+    // 1️⃣ Déterminer les dates (période actuelle + période précédente)
+    const { startDate, endDate, prevStartDate, prevEndDate } =
+      this.getPeriodDates(period);
+
+    // 2️⃣ Récupérer enrollments ACTUELS (payés)
+    const currentEnrollments = await this.prisma.enrollment.findMany({
+      where: {
+        course: { userId: instructorId },
+        status: EnrollmentStatus.Active,
+        createdAt: { gte: startDate, lte: endDate },
+      },
+      include: {
+        user: {
+          select: { id: true, name: true },
+        },
+        course: {
+          select: { id: true, title: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // 3️⃣ Récupérer enrollments PRÉCÉDENTS (pour comparaison)
+    const previousEnrollments = await this.prisma.enrollment.findMany({
+      where: {
+        course: { userId: instructorId },
+        status: EnrollmentStatus.Active,
+        createdAt: { gte: prevStartDate, lte: prevEndDate },
+      },
+    });
+
+    // 4️⃣ Calculer les totaux
+    const currentTotal = currentEnrollments.reduce(
+      (sum, e) => sum + e.amount,
+      0,
+    );
+    const previousTotal = previousEnrollments.reduce(
+      (sum, e) => sum + e.amount,
+      0,
+    );
+
+    // 5️⃣ Calculer le changement en %
+    const changePercentage =
+      previousTotal === 0
+        ? 0
+        : ((currentTotal - previousTotal) / previousTotal) * 100;
+
+    const changeDirection: RevenueInstructorChangeDirection =
+      changePercentage > 0
+        ? RevenueInstructorChangeDirection.UP
+        : changePercentage < 0
+          ? RevenueInstructorChangeDirection.DOWN
+          : RevenueInstructorChangeDirection.STABLE;
+
+    // 6️⃣ Créer les data points (grouper par date)
+    const dataPointsMap = new Map<string, RevenueChartDataPoint>();
+
+    currentEnrollments.forEach((enrollment) => {
+      const dateStr = enrollment.createdAt.toISOString().split('T')[0];
+      const existing = dataPointsMap.get(dateStr);
+
+      if (existing) {
+        existing.revenue += enrollment.amount;
+        existing.transactionCount += 1;
+      } else {
+        dataPointsMap.set(dateStr, {
+          date: dateStr,
+          revenue: enrollment.amount,
+          transactionCount: 1,
+        });
+      }
+    });
+
+    const dataPoints = Array.from(dataPointsMap.values()).sort((a, b) =>
+      a.date.localeCompare(b.date),
+    );
+
+    // 7️⃣ Créer les transactions DTO
+    const transactions: RevenueInstructorTransaction[] = currentEnrollments.map(
+      (e) => ({
+        id: e.id,
+        date: e.createdAt,
+        studentName: e.user.name,
+        courseName: e.course.title,
+        amount: e.amount,
+        status: RevenueInstructorTransactionStatus.PAID,
+        courseId: e.course.id,
+      }),
+    );
+
+    // 8️⃣ Calculer revenu moyen journalier
+    const daysBetween = this.getDaysBetween(startDate, endDate);
+    const averageDailyRevenue =
+      daysBetween > 0 ? currentTotal / daysBetween : 0;
+
+    // 9️⃣ TODO: Récupérer info payouts depuis Stripe (futur)
+    const payoutInfo = {
+      availableBalance: 0,
+      nextPayoutDate: new Date(),
+      payoutHistory: [] as RevenueInstructorPayout[],
+    };
+
+    // 🔟 Retourner la réponse complète
+    return {
+      totalRevenue: currentTotal,
+      previousPeriodRevenue: previousTotal,
+      changePercentage,
+      changeDirection,
+      averageDailyRevenue,
+      dataPoints,
+      transactions,
+      transactionCount: currentEnrollments.length,
+      availableBalance: payoutInfo.availableBalance,
+      nextPayoutDate: payoutInfo.nextPayoutDate,
+      payoutHistory: payoutInfo.payoutHistory,
+      periodStart: startDate,
+      periodEnd: endDate,
+      currency: 'EUR',
+    };
+  }
+
+  /**
+   * Exporte les données de revenus en CSV
+   */
+  async exportInstructorRevenue(
+    instructorId: string,
+    period: RevenueInstructorPeriod,
+  ): Promise<ExportRevenueResponse> {
+    // Récupérer les données
+    const revenueData = await this.getInstructorRevenue(instructorId, period);
+
+    // Générer CSV
+    const csvContent = this.generateRevenueCSV(revenueData.transactions);
+
+    // TODO: Upload à S3 et générer presigned URL
+    const filename = `revenue_export_${new Date().toISOString().split('T')[0]}.csv`;
+
+    return {
+      success: true,
+      downloadUrl: `https://s3.example.com/${filename}`,
+      filename,
+    };
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  //                   HELPER METHODS (Revenue)
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * Calcule les dates de début/fin pour une période donnée
+   */
+  private getPeriodDates(period: RevenueInstructorPeriod) {
+    const today = new Date();
+    const endDate = today;
+    let startDate: Date;
+
+    switch (period) {
+      case RevenueInstructorPeriod.LAST_7_DAYS:
+        startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case RevenueInstructorPeriod.LAST_30_DAYS:
+        startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case RevenueInstructorPeriod.LAST_90_DAYS:
+        startDate = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      case RevenueInstructorPeriod.YEAR:
+        startDate = new Date(today.getFullYear(), 0, 1);
+        break;
+      default:
+        startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+    }
+
+    // Créer dates précédentes pour comparaison
+    const daysDiff = this.getDaysBetween(startDate, endDate);
+    const prevEndDate = new Date(startDate);
+    const prevStartDate = new Date(
+      prevEndDate.getTime() - daysDiff * 24 * 60 * 60 * 1000,
+    );
+
+    return { startDate, endDate, prevStartDate, prevEndDate };
+  }
+
+  /**
+   * Calcule le nombre de jours entre deux dates
+   */
+  private getDaysBetween(start: Date, end: Date): number {
+    return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+  }
+
+  /**
+   * Génère un CSV à partir des transactions
+   */
+  private generateRevenueCSV(
+    transactions: RevenueInstructorTransaction[],
+  ): string {
+    const headers = ['Date', 'Étudiant', 'Cours', 'Montant', 'Statut'];
+    const rows = transactions.map((t) => [
+      t.date.toISOString().split('T')[0],
+      t.studentName,
+      t.courseName,
+      t.amount.toFixed(2),
+      t.status,
+    ]);
+
+    const csv = [
+      headers.join(','),
+      ...rows.map((r) => r.map((cell) => `"${cell}"`).join(',')),
+    ].join('\n');
+
+    return csv;
   }
 }

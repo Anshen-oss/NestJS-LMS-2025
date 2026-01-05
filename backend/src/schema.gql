@@ -266,6 +266,29 @@ type EnrollmentResponse {
   success: Boolean!
 }
 
+type ExportRevenueResponse {
+  downloadUrl: String!
+  filename: String!
+  success: Boolean!
+}
+
+type InstructorRevenueResponse {
+  availableBalance: Float!
+  averageDailyRevenue: Float!
+  changeDirection: RevenueInstructorChangeDirection!
+  changePercentage: Float!
+  currency: String!
+  dataPoints: [RevenueChartDataPoint!]!
+  nextPayoutDate: DateTime!
+  payoutHistory: [RevenueInstructorPayout!]!
+  periodEnd: DateTime!
+  periodStart: DateTime!
+  previousPeriodRevenue: Float!
+  totalRevenue: Float!
+  transactionCount: Int!
+  transactions: [RevenueInstructorTransaction!]!
+}
+
 type InstructorStatsOutput {
   activeStudents: Int!
   archivedCourses: Int!
@@ -412,9 +435,15 @@ type Query {
   courses: [Course!]!
   exportAnalytics(dateRange: DateRangeInput!, type: String!): String!
 
+  """Exporte les revenus en CSV"""
+  exportRevenue(period: RevenueInstructorPeriod!): ExportRevenueResponse!
+
   """Get all users (ADMIN only)"""
   getAllUsers: [User!]!
   getCourseForEdit(id: String!): Course!
+
+  """Données complètes des revenus de l'instructeur"""
+  getInstructorRevenue(period: RevenueInstructorPeriod! = LAST_30_DAYS): InstructorRevenueResponse!
 
   """Get user by ID"""
   getUserById(userId: String!): User!
@@ -496,10 +525,59 @@ type RevenueAnalytics {
   totalRevenue: Float!
 }
 
+type RevenueChartDataPoint {
+  date: String!
+  revenue: Float!
+  transactionCount: Int!
+}
+
 type RevenueDataPoint {
   date: DateTime!
   enrollments: Int!
   revenue: Float!
+}
+
+enum RevenueInstructorChangeDirection {
+  DOWN
+  STABLE
+  UP
+}
+
+type RevenueInstructorPayout {
+  amount: Float!
+  bankAccount: String!
+  date: DateTime!
+  id: String!
+  status: RevenueInstructorPayoutStatus!
+}
+
+enum RevenueInstructorPayoutStatus {
+  COMPLETED
+  FAILED
+  PENDING
+}
+
+enum RevenueInstructorPeriod {
+  LAST_7_DAYS
+  LAST_30_DAYS
+  LAST_90_DAYS
+  YEAR
+}
+
+type RevenueInstructorTransaction {
+  amount: Float!
+  courseId: String!
+  courseName: String!
+  date: DateTime!
+  id: String!
+  status: RevenueInstructorTransactionStatus!
+  studentName: String!
+}
+
+enum RevenueInstructorTransactionStatus {
+  PAID
+  PENDING
+  REFUNDED
 }
 
 input SaveVideoProgressInput {
