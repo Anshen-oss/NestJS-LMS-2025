@@ -1104,12 +1104,17 @@ export class InstructorService {
     // Générer CSV
     const csvContent = this.generateRevenueCSV(revenueData.transactions);
 
-    // TODO: Upload à S3 et générer presigned URL
+    // Convertir en base64
+    const base64Content = Buffer.from(csvContent).toString('base64');
+
+    // Créer une data URL
+    const dataUrl = `data:text/csv;base64,${base64Content}`;
+
     const filename = `revenue_export_${new Date().toISOString().split('T')[0]}.csv`;
 
     return {
       success: true,
-      downloadUrl: `https://s3.example.com/${filename}`,
+      downloadUrl: dataUrl,
       filename,
     };
   }

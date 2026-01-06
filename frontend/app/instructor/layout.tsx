@@ -105,7 +105,7 @@ export default function InstructorLayout({ children }: { children: ReactNode }) 
     {
       title: 'Revenus',
       icon: DollarSign,
-      href: '/instructor/earnings',
+      href: '/instructor/revenue',
       description: 'Finances',
     },
     {

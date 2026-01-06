@@ -1,4 +1,4 @@
-import { gql, useMutation, useQuery } from '@apollo/client'
+import { gql, useLazyQuery, useQuery } from '@apollo/client'
 import { useCallback, useMemo } from 'react'
 
 // ================================================================
@@ -101,9 +101,8 @@ const GET_INSTRUCTOR_REVENUE = gql`
     }
   }
 `
-
 const EXPORT_REVENUE = gql`
-  mutation ExportRevenue($period: RevenueInstructorPeriod!) {
+  query ExportRevenue($period: RevenueInstructorPeriod!) {
     exportRevenue(period: $period) {
       success
       downloadUrl
@@ -147,20 +146,19 @@ export const useInstructorRevenuePage = (
 
 
   // Mutation pour exporter CSV
-  const [exportRevenue, { loading: exporting }] = useMutation<
-    { exportRevenue: ExportRevenueResponse },
-    { period: string }
-  >(
-    EXPORT_REVENUE,
-    {
-      onCompleted: (response) => {
-        // Trigger le téléchargement
-        if (response?.exportRevenue?.downloadUrl) {
-          window.location.href = response.exportRevenue.downloadUrl
-        }
+const [executeExport, { loading: exporting, data: exportData }] = useLazyQuery<
+  { exportRevenue: ExportRevenueResponse },
+  { period: string }
+>(
+  EXPORT_REVENUE,
+  {
+    onCompleted: (data) => {
+      if (data?.exportRevenue?.downloadUrl) {
+        window.location.href = data.exportRevenue.downloadUrl
       }
     }
-  )
+  }
+)
 
   // Fonction pour actualiser les données
   const refresh = useCallback(async () => {
@@ -168,16 +166,16 @@ export const useInstructorRevenuePage = (
   }, [period, refetch])
 
   // Fonction pour exporter en CSV
-  const exportAsCSV = useCallback(async () => {
-    try {
-      await exportRevenue({
-        variables: { period }
-      })
-    } catch (err) {
-      console.error('Export failed:', err)
-      throw err
-    }
-  }, [period, exportRevenue])
+const exportAsCSV = useCallback(async () => {
+  try {
+    await executeExport({
+      variables: { period }
+    })
+  } catch (err) {
+    console.error('Export failed:', err)
+    throw err
+  }
+}, [period, executeExport])
 
   // Retourner l'interface publique du hook
   return useMemo(() => ({
@@ -199,5 +197,5 @@ export const useInstructorRevenuePage = (
     // Actions
     refresh,
     exportAsCSV
-  }), [data, loading, error, exporting, refresh, exportAsCSV])
+ }), [data, loading, error, exporting, refresh, executeExport])
 }
