@@ -14,7 +14,7 @@ export interface RevenueStats {
   pendingAmount: number; // Montant en attente de paiement
 }
 
-export interface TransactionStatus = 'COMPLETED' | 'PENDING' | 'FAILED' | 'REFUNDED' | 'DISPUTED';
+export type TransactionStatus = 'COMPLETED' | 'PENDING' | 'FAILED' | 'REFUNDED' | 'DISPUTED';
 
 export interface Transaction {
   id: string;

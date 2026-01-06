@@ -10,6 +10,11 @@ import { CoursePerformanceOutput } from './dto/course-performance.output';
 import { InstructorStatsOutput } from './dto/instructor-stats.output';
 import { RecentActivityOutput } from './dto/recent-activity.output';
 import {
+  ExportRevenueResponse,
+  InstructorRevenueResponse,
+  RevenueInstructorPeriod,
+} from './dto/revenue.dto';
+import {
   StudentDetailOutput,
   StudentListResponseOutput,
 } from './dto/student.output';
@@ -197,5 +202,48 @@ export class InstructorResolver {
       search,
       sortBy,
     );
+  }
+
+  /**
+   * Récupère les données de revenus de l'instructeur
+   *
+   * Accès: INSTRUCTOR, ADMIN
+   *
+   * @param period - Période à analyser (LAST_7_DAYS, LAST_30_DAYS, LAST_90_DAYS, YEAR)
+   */
+  @Query(() => InstructorRevenueResponse, {
+    name: 'getInstructorRevenue',
+    description: "Données complètes des revenus de l'instructeur",
+  })
+  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  async getInstructorRevenue(
+    @CurrentUser() user: User,
+    @Args('period', {
+      type: () => RevenueInstructorPeriod,
+      defaultValue: RevenueInstructorPeriod.LAST_30_DAYS,
+    })
+    period: RevenueInstructorPeriod = RevenueInstructorPeriod.LAST_30_DAYS,
+  ): Promise<InstructorRevenueResponse> {
+    return this.instructorService.getInstructorRevenue(user.id, period);
+  }
+
+  /**
+   * Exporte les données de revenus en CSV
+   *
+   * Accès: INSTRUCTOR, ADMIN
+   *
+   * @param period - Période à exporter
+   */
+  @Query(() => ExportRevenueResponse, {
+    name: 'exportRevenue',
+    description: 'Exporte les revenus en CSV',
+  })
+  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  async exportInstructorRevenue(
+    @CurrentUser() user: User,
+    @Args('period', { type: () => RevenueInstructorPeriod })
+    period: RevenueInstructorPeriod,
+  ): Promise<ExportRevenueResponse> {
+    return this.instructorService.exportInstructorRevenue(user.id, period);
   }
 }
