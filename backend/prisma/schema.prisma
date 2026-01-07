@@ -1,5 +1,5 @@
 // Schema Prisma - LMS 2025
-// Clerk Authentication + Video Progress Tracking
+// Clerk Authentication + Video Progress Tracking + Messages (Phase 15)
 
 generator client {
   provider = "prisma-client-js"
@@ -36,11 +36,16 @@ model User {
   banExpires       DateTime?
   stripeCustomerId String?  @unique
 
-  // Relations
+  // Relations - Courses & Enrollments
   coursesCreated Course[]         @relation("CourseCreator")
   enrollments    Enrollment[]
   lessonProgress LessonProgress[]
-  videoProgress  VideoProgress[]  // 🆕 Nouvelle relation
+  videoProgress  VideoProgress[]
+
+  // Relations - Messages (Phase 15)
+  conversationsAsInstructor Conversation[] @relation("ConversationAsInstructor")
+  conversationsAsStudent    Conversation[] @relation("ConversationAsStudent")
+  sentMessages              Message[]
 
   @@map("user")
 }
@@ -98,6 +103,7 @@ model Course {
   lessonProgress LessonProgress[]
   chapters       Chapter[]
   enrollments    Enrollment[]
+  conversations  Conversation[]  // Phase 15: Messages optionnel par cours
 
   @@index([slug])
   @@index([status])
@@ -146,7 +152,7 @@ model Lesson {
 
   attachments    LessonAttachment[]
   lessonProgress LessonProgress[]
-  videoProgress  VideoProgress[]      // 🆕 Nouvelle relation
+  videoProgress  VideoProgress[]
 
   @@index([chapterId])
 }
@@ -251,4 +257,83 @@ model VideoProgress {
   @@index([lessonId])
   @@index([lastWatchedAt])      // Pour trier par "récemment regardé"
   @@map("video_progress")
+}
+
+// ========================================
+// MESSAGES & CONVERSATIONS (NEW - Phase 15)
+// ========================================
+
+enum MessageStatus {
+  SENT      // Message envoyé
+  DELIVERED // Message reçu (pour futur implémentation)
+  READ      // Message lu par le destinataire
+}
+
+model Conversation {
+  id              String   @id @default(uuid())
+
+  // Participants (1-to-1: Instructor ↔ Student)
+  instructorId    String
+  instructor      User     @relation("ConversationAsInstructor", fields: [instructorId], references: [id], onDelete: Cascade)
+
+  studentId       String
+  student         User     @relation("ConversationAsStudent", fields: [studentId], references: [id], onDelete: Cascade)
+
+  // Optional Course Context
+  // Si courseId = NULL → Conversation générale (pas liée à un cours)
+  // Si courseId = UUID → Conversation spécifique à ce cours
+  courseId        String?
+  course          Course?  @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  // Metadata pour optimisation
+  lastMessageAt   DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  messages        Message[]
+
+  // Constraints:
+  // ✅ Une et UNE SEULE conversation par triplet (instructor, student, course)
+  // ✅ Si courseId = NULL, c'est une conversation générale
+ @@unique([instructorId, studentId])  // ✅ Enlever courseId
+
+  // Indexes pour requêtes fréquentes
+  @@index([instructorId])
+  @@index([studentId])
+  @@index([courseId])
+  @@index([lastMessageAt])  // Pour trier "discussions récentes d'abord"
+
+  @@map("conversation")
+}
+
+model Message {
+  id              String   @id @default(cuid())
+
+  // Content
+  content         String   @db.Text  // Texte du message (max 5000 chars côté service)
+
+  // Sender
+  senderId        String
+  sender          User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  // Conversation
+  conversationId  String
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  // Read Status: SENT → DELIVERED → READ
+  status          MessageStatus @default(SENT)
+  readAt          DateTime?  // NULL = non lu, DateTime = timestamp de lecture
+
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Indexes pour requêtes fréquentes
+  @@index([conversationId])    // Charger tous les messages d'une conversation
+  @@index([senderId])          // Trouvez les messages d'un utilisateur
+  @@index([createdAt])         // Trier les messages chronologiquement
+  @@index([status])            // Compter les messages non-lus rapidement
+
+  @@map("message")
 }

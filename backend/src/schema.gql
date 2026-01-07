@@ -89,6 +89,39 @@ type CheckoutSessionResponse {
   url: String!
 }
 
+type ConversationDetailOutput {
+  courseId: String
+  courseTitle: String
+  createdAt: DateTime!
+  id: String!
+  messages: [MessageOutput!]!
+  participantEmail: String
+  participantId: String!
+  participantImage: String
+  participantName: String!
+  totalMessages: Int!
+}
+
+type ConversationListResponseOutput {
+  conversations: [ConversationPreviewOutput!]!
+  page: Int!
+  pageSize: Int!
+  total: Int!
+}
+
+type ConversationPreviewOutput {
+  courseId: String
+  courseTitle: String
+  id: String!
+  lastMessage: String
+  lastMessageAt: DateTime
+  participantEmail: String
+  participantId: String!
+  participantImage: String
+  participantName: String!
+  unreadCount: Int!
+}
+
 type Course {
   category: String!
   chapters: [Chapter!]
@@ -352,6 +385,30 @@ type LessonProgress {
   userId: String!
 }
 
+type MessageOutput {
+  content: String!
+  createdAt: DateTime!
+  id: String!
+  readAt: DateTime
+  senderId: String!
+  senderImage: String
+  senderName: String!
+  status: MessageStatus!
+}
+
+enum MessageStatus {
+  DELIVERED
+  READ
+  SENT
+}
+
+type MessagesStatsOutput {
+  lastMessageReceivedAt: DateTime
+  totalConversations: Int!
+  totalUnreadMessages: Int!
+  unreadConversations: Int!
+}
+
 type Mutation {
   adminUpdateUserRole(input: UpdateUserRoleInput!): AdminActionResponse!
   archiveCourse(id: String!): Course!
@@ -382,6 +439,9 @@ type Mutation {
   enrollInCourse(input: EnrollInCourseInput!): EnrollmentResponse!
   getUploadUrl(contentType: String!, fileName: String!): UploadUrlResponse!
   getUploadUrlForVideo(fileName: String!, fileSize: Float!, fileType: String!): UploadUrlResponse!
+
+  """Marque tous les messages d'une conversation comme lus"""
+  markConversationAsRead(conversationId: String!): Boolean!
   markLessonAsCompleted(lessonId: String!): LessonProgress!
 
   """Manually mark a lesson as completed"""
@@ -395,6 +455,9 @@ type Mutation {
 
   """Save video progress (auto-save every 5 seconds)"""
   saveVideoProgress(input: SaveVideoProgressInput!): VideoProgress!
+
+  """Envoie un message à un étudiant"""
+  sendMessage(content: String!, courseId: String, studentId: String!): SendMessageOutput!
   setupUserRole(clerkUserId: String!, role: String!): User!
   toggleLessonCompletion(lessonId: String!): LessonProgress!
 
@@ -424,6 +487,9 @@ type Query {
   """Statistiques globales de la plateforme (ADMIN uniquement)"""
   adminStats: AdminStats!
   chaptersByCourse(courseId: String!): [Chapter!]!
+
+  """Détails complets d'une conversation avec tous les messages"""
+  conversationDetail(conversationId: String!, limit: Int = 50): ConversationDetailOutput!
   course(id: String!): Course!
   courseBySlug(slug: String!): Course!
 
@@ -458,6 +524,9 @@ type Query {
   getVideoProgress(lessonId: String!): VideoProgress
   hello: String!
   instructorAnalytics(dateRange: DateRangeInput!): AnalyticsOverview!
+
+  """Liste paginée des conversations de l'instructeur"""
+  instructorConversations(page: Int = 1, pageSize: Int = 10, search: String): ConversationListResponseOutput!
   instructorCoursePerformance(dateRange: DateRangeInput!): [CoursePerformance!]!
 
   """Liste des cours de l'instructeur avec performances"""
@@ -476,6 +545,9 @@ type Query {
   lessonProgress(lessonId: String!): LessonProgress
   lessonsByChapter(chapterId: String!): [Lesson!]!
   me: User!
+
+  """Statistiques des messages (conversations, unread count)"""
+  messagesStats: MessagesStatsOutput!
   myCourses: [Course!]!
   myEnrolledCourses: [Course!]!
   myEnrollments: [Enrollment!]!
@@ -584,6 +656,12 @@ input SaveVideoProgressInput {
   currentTime: Float!
   duration: Float!
   lessonId: String!
+}
+
+type SendMessageOutput {
+  error: String
+  message: MessageOutput
+  success: Boolean!
 }
 
 type StudentAchievement {

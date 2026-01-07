@@ -9,6 +9,11 @@ import {
 } from './dto/recent-activity.output';
 
 import {
+  ConversationListResponseOutput,
+  MessageStatusEnum,
+  SendMessageOutput,
+} from './dto/messages.dto';
+import {
   ExportRevenueResponse,
   InstructorRevenueResponse,
   RevenueChartDataPoint,
@@ -18,6 +23,12 @@ import {
   RevenueInstructorTransaction,
   RevenueInstructorTransactionStatus,
 } from './dto/revenue.dto';
+
+import {
+  ConversationDetailOutput,
+  MessageOutput,
+  MessagesStatsOutput,
+} from './dto/messages.dto';
 
 @Injectable()
 export class InstructorService {
@@ -1168,6 +1179,7 @@ export class InstructorService {
   /**
    * Génère un CSV à partir des transactions
    */
+
   private generateRevenueCSV(
     transactions: RevenueInstructorTransaction[],
   ): string {
@@ -1186,5 +1198,432 @@ export class InstructorService {
     ].join('\n');
 
     return csv;
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  //                    MESSAGES & CONVERSATIONS
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * 🔍 Récupère la liste paginée des conversations de l'instructeur
+   * ✅ Tri par lastMessageAt DESC (discussions récentes d'abord)
+   * ✅ Recherche par participant name/email
+   * ✅ Unread count calculé pour chaque conversation
+   *
+   * @param instructorId - ID de l'instructeur
+   * @param page - Page number (défaut: 1)
+   * @param pageSize - Taille page (défaut: 10)
+   * @param search - Recherche (participant name ou email)
+   */
+  async getInstructorConversations(
+    instructorId: string,
+    page: number = 1,
+    pageSize: number = 10,
+    search?: string,
+  ): Promise<ConversationListResponseOutput> {
+    // Validation
+    const safePage = Math.max(1, page);
+    const safePageSize = Math.max(1, Math.min(50, pageSize)); // Min 1, Max 50
+    const skip = (safePage - 1) * safePageSize;
+
+    // 1️⃣ Construire le filtre WHERE
+    const where: any = {
+      instructorId, // L'instructeur doit être celui connecté
+    };
+
+    if (search && search.trim()) {
+      const searchTerm = search.trim().toLowerCase();
+      where.student = {
+        OR: [
+          { name: { contains: searchTerm, mode: 'insensitive' } },
+          { email: { contains: searchTerm, mode: 'insensitive' } },
+        ],
+      };
+    }
+
+    // 2️⃣ Récupérer le total
+    const total = await this.prisma.conversation.count({ where });
+
+    // 3️⃣ Récupérer les conversations paginées
+    const conversations = await this.prisma.conversation.findMany({
+      where,
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            email: true,
+          },
+        },
+        course: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+        messages: {
+          orderBy: { createdAt: 'desc' },
+          take: 1, // Dernier message seulement
+          select: {
+            id: true,
+            content: true,
+            createdAt: true,
+            status: true,
+            senderId: true,
+          },
+        },
+      },
+      orderBy: {
+        lastMessageAt: 'desc', // Discussions récentes d'abord
+      },
+      skip,
+      take: safePageSize,
+    });
+
+    // 4️⃣ Calculer unread count pour chaque conversation
+    const conversationPreviews = await Promise.all(
+      conversations.map(async (conv) => {
+        // Compter les messages non lus (status !== READ)
+        // Qui sont envoyés par le student (pas l'instructor)
+        const unreadCount = await this.prisma.message.count({
+          where: {
+            conversationId: conv.id,
+            senderId: conv.studentId, // Messages du student
+            status: { not: 'READ' }, // Pas encore lus
+          },
+        });
+
+        const lastMsg = conv.messages[0];
+
+        return {
+          id: conv.id,
+          participantId: conv.studentId,
+          participantName: conv.student.name,
+          participantImage: conv.student.image,
+          participantEmail: conv.student.email,
+          lastMessage: lastMsg?.content?.substring(0, 50) || null, // Préview (50 chars)
+          lastMessageAt: conv.lastMessageAt,
+          unreadCount,
+          courseId: conv.courseId,
+          courseTitle: conv.course?.title || null,
+        };
+      }),
+    );
+
+    return {
+      conversations: conversationPreviews,
+      total,
+      page: safePage,
+      pageSize: safePageSize,
+    };
+  }
+
+  /**
+   * 📩 Récupère le fil complet d'une conversation
+   * ✅ Marque tous les messages comme READ (pour l'instructor)
+   * ✅ Retourne les messages en ordre chronologique
+   *
+   * @param instructorId - ID de l'instructeur (vérification ownership)
+   * @param conversationId - ID de la conversation
+   * @param limit - Nombre max de messages (défaut: 50, max: 100)
+   */
+  async getConversationDetail(
+    instructorId: string,
+    conversationId: string,
+    limit: number = 50,
+  ): Promise<ConversationDetailOutput> {
+    const safeLimit = Math.min(Math.max(1, limit), 100);
+
+    // 1️⃣ Vérifier que la conversation appartient à cet instructeur
+    const conversation = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            email: true,
+          },
+        },
+        course: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+      },
+    });
+
+    if (!conversation) {
+      throw new Error(`Conversation not found: ${conversationId}`);
+    }
+
+    if (conversation.instructorId !== instructorId) {
+      throw new Error('Unauthorized: Not your conversation');
+    }
+
+    // 2️⃣ Récupérer les messages (derniers N messages)
+    const messages = await this.prisma.message.findMany({
+      where: { conversationId },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'asc' }, // Ordre chronologique (ancien → récent)
+      take: safeLimit,
+    });
+
+    // 3️⃣ Marquer les messages du student comme READ
+    // (Si l'instructor les lit, ils sont lus pour l'instructor)
+    const studentMessages = messages.filter(
+      (m) => m.senderId === conversation.studentId,
+    );
+    const unreadMessages = studentMessages.filter((m) => m.status !== 'READ');
+
+    if (unreadMessages.length > 0) {
+      await this.prisma.message.updateMany({
+        where: {
+          conversationId,
+          senderId: conversation.studentId,
+          status: { not: 'READ' },
+        },
+        data: {
+          status: 'READ',
+          readAt: new Date(),
+        },
+      });
+    }
+
+    // 4️⃣ Mapper les messages au DTO
+    // ✅ FIX: Caster status en MessageStatusEnum
+    const messageOutputs: MessageOutput[] = messages.map((msg) => ({
+      id: msg.id,
+      content: msg.content,
+      senderId: msg.senderId,
+      senderName: msg.sender.name,
+      senderImage: msg.sender.image,
+      status: msg.status as MessageStatusEnum, // ✅ Cast du status
+      readAt: msg.readAt,
+      createdAt: msg.createdAt,
+    }));
+
+    const totalMessages = await this.prisma.message.count({
+      where: { conversationId },
+    });
+
+    return {
+      id: conversation.id,
+      participantId: conversation.studentId,
+      participantName: conversation.student.name,
+      participantImage: conversation.student.image,
+      participantEmail: conversation.student.email,
+      courseId: conversation.courseId,
+      courseTitle: conversation.course?.title || null,
+      messages: messageOutputs,
+      totalMessages,
+      createdAt: conversation.createdAt,
+    };
+  }
+
+  /**
+   * ✉️ Envoie un message dans une conversation
+   * ✅ Crée la conversation si elle n'existe pas
+   * ✅ Met à jour lastMessageAt
+   * ✅ Status = SENT par défaut
+   *
+   * @param instructorId - ID de l'instructeur (sender)
+   * @param studentId - ID du student (recipient)
+   * @param content - Contenu du message
+   * @param courseId - Course context (optionnel)
+   */
+  async sendMessage(
+    instructorId: string,
+    studentId: string,
+    content: string,
+    courseId?: string,
+  ): Promise<SendMessageOutput> {
+    try {
+      // Validation
+      if (!content || content.trim().length === 0) {
+        return {
+          success: false,
+          message: null,
+          error: 'Message content cannot be empty',
+        };
+      }
+
+      if (content.length > 5000) {
+        return {
+          success: false,
+          message: null,
+          error: 'Message is too long (max 5000 characters)',
+        };
+      }
+
+      // 1️⃣ Créer ou récupérer la conversation
+      // ✅ FIX: Utiliser undefined (pas null) pour le where clause
+      const conversation = await this.prisma.conversation.upsert({
+        where: {
+          instructorId_studentId: {
+            instructorId,
+            studentId,
+          },
+        },
+        update: {
+          lastMessageAt: new Date(),
+          courseId,
+        },
+        create: {
+          instructorId,
+          studentId,
+          courseId,
+          lastMessageAt: new Date(),
+        },
+      });
+
+      // 2️⃣ Créer le message
+      const message = await this.prisma.message.create({
+        data: {
+          content: content.trim(),
+          senderId: instructorId,
+          conversationId: conversation.id,
+          status: 'SENT',
+        },
+        include: {
+          sender: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
+        },
+      });
+
+      // 3️⃣ Mapper au DTO
+      // ✅ FIX: Caster status en MessageStatusEnum
+      const messageOutput: MessageOutput = {
+        id: message.id,
+        content: message.content,
+        senderId: message.senderId,
+        senderName: message.sender.name,
+        senderImage: message.sender.image,
+        status: message.status as MessageStatusEnum, // ✅ Cast du status
+        readAt: message.readAt,
+        createdAt: message.createdAt,
+      };
+
+      return {
+        success: true,
+        message: messageOutput,
+        error: null,
+      };
+    } catch (error) {
+      console.error('❌ Error sending message:', error);
+      return {
+        success: false,
+        message: null,
+        error: 'Failed to send message',
+      };
+    }
+  }
+
+  /**
+   * 🔔 Récupère les statistiques de messages pour le dashboard
+   * ✅ Nombre total de conversations
+   * ✅ Nombre de conversations avec au moins 1 message non lu
+   * ✅ Total de messages non lus
+   * ✅ Dernière date de message reçu
+   *
+   * @param instructorId - ID de l'instructeur
+   */
+  async getMessagesStats(instructorId: string): Promise<MessagesStatsOutput> {
+    // 1️⃣ Total conversations
+    const totalConversations = await this.prisma.conversation.count({
+      where: { instructorId },
+    });
+
+    // 2️⃣ Conversations avec messages non lus (envoyés par student)
+    const conversationsWithUnread = await this.prisma.conversation.findMany({
+      where: {
+        instructorId,
+        messages: {
+          some: {
+            senderId: { not: instructorId }, // Messages du student
+            status: { not: 'READ' },
+          },
+        },
+      },
+      select: { id: true },
+    });
+
+    // 3️⃣ Total de messages non lus
+    const totalUnreadMessages = await this.prisma.message.count({
+      where: {
+        conversation: { instructorId },
+        senderId: { not: instructorId }, // Messages du student
+        status: { not: 'READ' },
+      },
+    });
+
+    // 4️⃣ Dernier message reçu (du student)
+    const lastMessageReceived = await this.prisma.message.findFirst({
+      where: {
+        conversation: { instructorId },
+        senderId: { not: instructorId },
+      },
+      orderBy: { createdAt: 'desc' },
+      select: { createdAt: true },
+    });
+
+    return {
+      totalConversations,
+      unreadConversations: conversationsWithUnread.length,
+      totalUnreadMessages,
+      lastMessageReceivedAt: lastMessageReceived?.createdAt || null,
+    };
+  }
+
+  /**
+   * 📌 Marque tous les messages d'une conversation comme READ
+   * Utile si l'instructor veut marquer une conv comme lue sans l'ouvrir
+   *
+   * @param instructorId - ID instructeur (vérification)
+   * @param conversationId - ID conversation
+   */
+  async markConversationAsRead(
+    instructorId: string,
+    conversationId: string,
+  ): Promise<boolean> {
+    // Vérifier l'ownership
+    const conversation = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+    });
+
+    if (!conversation || conversation.instructorId !== instructorId) {
+      throw new Error('Unauthorized');
+    }
+
+    // Marquer les messages du student comme READ
+    await this.prisma.message.updateMany({
+      where: {
+        conversationId,
+        senderId: conversation.studentId,
+        status: { not: 'READ' },
+      },
+      data: {
+        status: 'READ',
+        readAt: new Date(),
+      },
+    });
+
+    return true;
   }
 }

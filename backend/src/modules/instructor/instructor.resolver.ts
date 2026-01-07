@@ -1,5 +1,5 @@
 import { UseGuards } from '@nestjs/common';
-import { Args, Int, Query, Resolver } from '@nestjs/graphql';
+import { Args, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CourseStatus, UserRole } from '@prisma/client';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -8,6 +8,12 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { User } from '../users/entities/user.entity';
 import { CoursePerformanceOutput } from './dto/course-performance.output';
 import { InstructorStatsOutput } from './dto/instructor-stats.output';
+import {
+  ConversationDetailOutput,
+  ConversationListResponseOutput,
+  MessagesStatsOutput,
+  SendMessageOutput,
+} from './dto/messages.dto';
 import { RecentActivityOutput } from './dto/recent-activity.output';
 import {
   ExportRevenueResponse,
@@ -245,5 +251,136 @@ export class InstructorResolver {
     period: RevenueInstructorPeriod,
   ): Promise<ExportRevenueResponse> {
     return this.instructorService.exportInstructorRevenue(user.id, period);
+  }
+
+  /**
+   * 📋 Récupère la liste des conversations paginée
+   *
+   * Accès: INSTRUCTOR, ADMIN
+   *
+   * @param page - Numéro de page (défaut: 1)
+   * @param pageSize - Résultats par page (défaut: 10)
+   * @param search - Recherche par nom ou email du participant
+   */
+  @Query(() => ConversationListResponseOutput, {
+    name: 'instructorConversations',
+    description: "Liste paginée des conversations de l'instructeur",
+  })
+  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  async getInstructorConversations(
+    @CurrentUser() user: User,
+    @Args('page', { type: () => Int, defaultValue: 1, nullable: true })
+    page: number = 1,
+    @Args('pageSize', { type: () => Int, defaultValue: 10, nullable: true })
+    pageSize: number = 10,
+    @Args('search', { nullable: true })
+    search?: string,
+  ): Promise<ConversationListResponseOutput> {
+    return this.instructorService.getInstructorConversations(
+      user.id,
+      page,
+      pageSize,
+      search,
+    );
+  }
+
+  /**
+   * 📩 Récupère le fil complet d'une conversation
+   * ✅ Marque auto les messages comme READ
+   *
+   * Accès: INSTRUCTOR (si c'est sa conversation), ADMIN
+   *
+   * @param conversationId - ID de la conversation
+   * @param limit - Nombre max de messages (défaut: 50, max: 100)
+   */
+  @Query(() => ConversationDetailOutput, {
+    name: 'conversationDetail',
+    description: "Détails complets d'une conversation avec tous les messages",
+  })
+  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  async getConversationDetail(
+    @CurrentUser() user: User,
+    @Args('conversationId') conversationId: string,
+    @Args('limit', { type: () => Int, defaultValue: 50, nullable: true })
+    limit: number = 50,
+  ): Promise<ConversationDetailOutput> {
+    return this.instructorService.getConversationDetail(
+      user.id,
+      conversationId,
+      limit,
+    );
+  }
+
+  /**
+   * 🔔 Récupère les stats des messages pour le dashboard
+   *
+   * Accès: INSTRUCTOR, ADMIN
+   *
+   * @returns Stats: total conversations, unread count, etc.
+   */
+  @Query(() => MessagesStatsOutput, {
+    name: 'messagesStats',
+    description: 'Statistiques des messages (conversations, unread count)',
+  })
+  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  async getMessagesStats(
+    @CurrentUser() user: User,
+  ): Promise<MessagesStatsOutput> {
+    return this.instructorService.getMessagesStats(user.id);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  //                      MUTATIONS
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * ✉️ Envoie un message
+   *
+   * Accès: INSTRUCTOR, ADMIN (seulement instructors peuvent envoyer)
+   *
+   * @param studentId - ID du student (recipient)
+   * @param content - Contenu du message
+   * @param courseId - Contexte optionnel (cours)
+   */
+  @Mutation(() => SendMessageOutput, {
+    name: 'sendMessage',
+    description: 'Envoie un message à un étudiant',
+  })
+  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  async sendMessage(
+    @CurrentUser() user: User,
+    @Args('studentId') studentId: string,
+    @Args('content') content: string,
+    @Args('courseId', { nullable: true }) courseId?: string,
+  ): Promise<SendMessageOutput> {
+    return this.instructorService.sendMessage(
+      user.id,
+      studentId,
+      content,
+      courseId,
+    );
+  }
+
+  /**
+   * 📌 Marque une conversation comme lue
+   *
+   * Accès: INSTRUCTOR (sa conversation), ADMIN
+   *
+   * @param conversationId - ID de la conversation
+   * @returns success: true/false
+   */
+  @Mutation(() => Boolean, {
+    name: 'markConversationAsRead',
+    description: "Marque tous les messages d'une conversation comme lus",
+  })
+  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  async markConversationAsRead(
+    @CurrentUser() user: User,
+    @Args('conversationId') conversationId: string,
+  ): Promise<boolean> {
+    return this.instructorService.markConversationAsRead(
+      user.id,
+      conversationId,
+    );
   }
 }
