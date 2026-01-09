@@ -17,9 +17,10 @@ async function main() {
     console.log('💬 Créer conversation...');
     const conversation = await prisma.conversation.upsert({
       where: {
-        instructorId_studentId: {
+        instructorId_studentId_courseId: {
           instructorId,
           studentId,
+          courseId: '',
         },
       },
       update: {

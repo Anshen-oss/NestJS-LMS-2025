@@ -59,6 +59,9 @@ export class Course {
   @Field(() => Date, { nullable: true })
   publishedAt?: Date | null;
 
+  @Field() // 🆕 AJOUTER CE CHAMP
+  userId: string;
+
   // ═══════════════════════════════════════════
   //              RELATIONS
   // ═══════════════════════════════════════════

@@ -1,10 +1,11 @@
 'use client';
 
+import { MessagesTab } from '@/app/student/messages/_components/MessagesTab';
 import { RenderDescription } from '@/components/rich-text-editor/RenderDescription';
 import { Button } from '@/components/ui/button';
 import { VideoPlayer } from '@/components/video/VideoPlayer';
 import { useLessonAttachmentsQuery, useToggleLessonCompletionMutation } from '@/lib/generated/graphql';
-import { CheckCircle2, Download, FileIcon, FileText, Loader2 } from 'lucide-react';
+import { CheckCircle2, Download, FileIcon, FileText, Loader2, MessageCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -18,7 +19,7 @@ interface LessonContentProps {
 export function LessonContent({ courseId, lessonId, course, onProgressUpdate }: LessonContentProps) {
   const [toggleCompletion, { loading: toggleLoading }] = useToggleLessonCompletionMutation();
   const [isCompleted, setIsCompleted] = useState(false);
-  const [activeTab, setActiveTab] = useState<'notes' | 'downloads'>('notes');
+const [activeTab, setActiveTab] = useState<'notes' | 'downloads' | 'messages'>('notes');
 
   // Query pour récupérer les pièces jointes
   const { data: attachmentsData, loading: attachmentsLoading } = useLessonAttachmentsQuery({
@@ -31,12 +32,22 @@ export function LessonContent({ courseId, lessonId, course, onProgressUpdate }: 
     ?.flatMap((chapter: any) => chapter.lessons)
     .find((lesson: any) => lesson.id === lessonId);
 
+      // 🆕 LOG TEMPORAIRE - AVANT LE RETURN
+  useEffect(() => {
+    console.log('COURSE DATA FOR MESSAGES:');
+    console.log('courseId:', courseId);
+    console.log('course.userId:', course?.userId);
+    console.log('course.createdBy?.id:', course?.createdBy?.id);
+  }, [course, courseId]);
+
   // Sync avec les props du cours (si la progression est déjà chargée)
   useEffect(() => {
+    console.log('📚 Course data:', course);
+    console.log('👨‍🏫 Instructor ID (userId):', course?.userId);
     if (currentLesson?.completed !== undefined) {
       setIsCompleted(currentLesson.completed);
     }
-  }, [currentLesson]);
+  }, [currentLesson, course]);
 
   const handleToggleCompletion = async () => {
     try {
@@ -191,6 +202,18 @@ export function LessonContent({ courseId, lessonId, course, onProgressUpdate }: 
                   </span>
                 )}
               </button>
+              {/* BOUTON MESSAGES 🆕 */}
+              <button
+                onClick={() => setActiveTab('messages')}
+                className={`flex items-center gap-2 px-6 py-3 rounded-md transition-all font-medium ${
+                  activeTab === 'messages'
+                    ? 'bg-green-500 text-white shadow-md'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>Messages</span>
+              </button>
             </div>
 
             {/* ONGLET NOTES */}
@@ -265,6 +288,15 @@ export function LessonContent({ courseId, lessonId, course, onProgressUpdate }: 
                 </div>
               )}
             </div>
+            )}
+
+            {/* ONGLET MESSAGES 🆕 */}
+            {activeTab === 'messages' && (
+              <MessagesTab
+                courseId={courseId}
+                instructorId={course.userId}
+                conversationId={undefined} // Sera rempli automatiquement
+              />
             )}
           </div>
 

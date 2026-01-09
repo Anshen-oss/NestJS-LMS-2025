@@ -29,7 +29,6 @@ import {
   MessageOutput,
   MessagesStatsOutput,
 } from './dto/messages.dto';
-
 @Injectable()
 export class InstructorService {
   constructor(private prisma: PrismaService) {}
@@ -1221,15 +1220,11 @@ export class InstructorService {
     pageSize: number = 10,
     search?: string,
   ): Promise<ConversationListResponseOutput> {
-    // Validation
     const safePage = Math.max(1, page);
-    const safePageSize = Math.max(1, Math.min(50, pageSize)); // Min 1, Max 50
+    const safePageSize = Math.max(1, Math.min(50, pageSize));
     const skip = (safePage - 1) * safePageSize;
 
-    // 1️⃣ Construire le filtre WHERE
-    const where: any = {
-      instructorId, // L'instructeur doit être celui connecté
-    };
+    const where: any = { instructorId };
 
     if (search && search.trim()) {
       const searchTerm = search.trim().toLowerCase();
@@ -1241,30 +1236,17 @@ export class InstructorService {
       };
     }
 
-    // 2️⃣ Récupérer le total
     const total = await this.prisma.conversation.count({ where });
+    console.log('📊 Total conversations:', total);
 
-    // 3️⃣ Récupérer les conversations paginées
     const conversations = await this.prisma.conversation.findMany({
       where,
       include: {
-        student: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-            email: true,
-          },
-        },
-        course: {
-          select: {
-            id: true,
-            title: true,
-          },
-        },
+        student: { select: { id: true, name: true, image: true, email: true } },
+        course: { select: { id: true, title: true } },
         messages: {
           orderBy: { createdAt: 'desc' },
-          take: 1, // Dernier message seulement
+          take: 1,
           select: {
             id: true,
             content: true,
@@ -1274,27 +1256,51 @@ export class InstructorService {
           },
         },
       },
-      orderBy: {
-        lastMessageAt: 'desc', // Discussions récentes d'abord
-      },
+      orderBy: { lastMessageAt: 'desc' },
       skip,
       take: safePageSize,
     });
 
-    // 4️⃣ Calculer unread count pour chaque conversation
+    console.log('🔍 Found conversations:', conversations.length);
+
     const conversationPreviews = await Promise.all(
       conversations.map(async (conv) => {
-        // Compter les messages non lus (status !== READ)
-        // Qui sont envoyés par le student (pas l'instructor)
         const unreadCount = await this.prisma.message.count({
           where: {
             conversationId: conv.id,
-            senderId: conv.studentId, // Messages du student
-            status: { not: 'READ' }, // Pas encore lus
+            senderId: conv.studentId,
+            status: { not: 'READ' },
           },
         });
 
         const lastMsg = conv.messages[0];
+
+        // 🆕 Extraire le texte du JSON si c'est un message d'accueil
+        let lastMessagePreview: string | null = null;
+        if (lastMsg?.content) {
+          if (lastMsg.content.startsWith('{')) {
+            try {
+              const json = JSON.parse(lastMsg.content);
+              // Extraire le premier texte du JSON Tiptap
+              const firstParagraph = json.content?.[0];
+              if (firstParagraph?.content?.[0]?.text) {
+                lastMessagePreview = firstParagraph.content[0].text.substring(
+                  0,
+                  50,
+                );
+              } else {
+                // Fallback si structure différente
+                lastMessagePreview = 'Message formaté';
+              }
+            } catch (e) {
+              console.error('Error parsing JSON message:', e);
+              lastMessagePreview = lastMsg.content.substring(0, 50);
+            }
+          } else {
+            // Plain text normal
+            lastMessagePreview = lastMsg.content.substring(0, 50);
+          }
+        }
 
         return {
           id: conv.id,
@@ -1302,7 +1308,7 @@ export class InstructorService {
           participantName: conv.student.name,
           participantImage: conv.student.image,
           participantEmail: conv.student.email,
-          lastMessage: lastMsg?.content?.substring(0, 50) || null, // Préview (50 chars)
+          lastMessage: lastMessagePreview, // ✅ Texte, pas JSON
           lastMessageAt: conv.lastMessageAt,
           unreadCount,
           courseId: conv.courseId,
@@ -1323,16 +1329,13 @@ export class InstructorService {
    * 📩 Récupère le fil complet d'une conversation
    * ✅ Marque tous les messages comme READ (pour l'instructor)
    * ✅ Retourne les messages en ordre chronologique
-   *
-   * @param instructorId - ID de l'instructeur (vérification ownership)
-   * @param conversationId - ID de la conversation
-   * @param limit - Nombre max de messages (défaut: 50, max: 100)
    */
   async getConversationDetail(
     instructorId: string,
     conversationId: string,
     limit: number = 50,
   ): Promise<ConversationDetailOutput> {
+    console.log('🔍 REQUESTED conversationId:', conversationId);
     const safeLimit = Math.min(Math.max(1, limit), 100);
 
     // 1️⃣ Vérifier que la conversation appartient à cet instructeur
@@ -1376,12 +1379,23 @@ export class InstructorService {
           },
         },
       },
-      orderBy: { createdAt: 'asc' }, // Ordre chronologique (ancien → récent)
+      orderBy: { createdAt: 'desc' },
       take: safeLimit,
     });
 
+    // console.log('🔍 DEBUG getConversationDetail:');
+    // console.log('conversationId:', conversationId);
+    // console.log('messages count:', messages.length);
+    // console.log(
+    //   'messages:',
+    //   messages.map((m) => ({
+    //     id: m.id,
+    //     content: m.content.substring(0, 30),
+    //     senderId: m.senderId,
+    //   })),
+    // );
+
     // 3️⃣ Marquer les messages du student comme READ
-    // (Si l'instructor les lit, ils sont lus pour l'instructor)
     const studentMessages = messages.filter(
       (m) => m.senderId === conversation.studentId,
     );
@@ -1402,14 +1416,13 @@ export class InstructorService {
     }
 
     // 4️⃣ Mapper les messages au DTO
-    // ✅ FIX: Caster status en MessageStatusEnum
     const messageOutputs: MessageOutput[] = messages.map((msg) => ({
       id: msg.id,
       content: msg.content,
       senderId: msg.senderId,
       senderName: msg.sender.name,
       senderImage: msg.sender.image,
-      status: msg.status as MessageStatusEnum, // ✅ Cast du status
+      status: msg.status as MessageStatusEnum,
       readAt: msg.readAt,
       createdAt: msg.createdAt,
     }));
@@ -1471,19 +1484,20 @@ export class InstructorService {
       // ✅ FIX: Utiliser undefined (pas null) pour le where clause
       const conversation = await this.prisma.conversation.upsert({
         where: {
-          instructorId_studentId: {
+          instructorId_studentId_courseId: {
             instructorId,
             studentId,
+            courseId: courseId || '',
           },
         },
         update: {
           lastMessageAt: new Date(),
-          courseId,
+          courseId: courseId || null,
         },
         create: {
           instructorId,
           studentId,
-          courseId,
+          courseId: courseId || null,
           lastMessageAt: new Date(),
         },
       });

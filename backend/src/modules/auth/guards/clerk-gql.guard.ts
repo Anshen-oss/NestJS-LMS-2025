@@ -108,8 +108,8 @@ export class ClerkGqlGuard {
         secretKey: process.env.CLERK_SECRET_KEY,
       });
 
-      console.log('✅ Token verified successfully');
-      console.log('👤 Clerk User ID (session.sub):', session.sub);
+      //console.log('✅ Token verified successfully');
+      //console.log('👤 Clerk User ID (session.sub):', session.sub);
 
       if (!session || !session.sub) {
         console.error('❌ Invalid session or missing sub');
@@ -117,7 +117,7 @@ export class ClerkGqlGuard {
       }
 
       // Récupérer l'utilisateur depuis la DB via clerkId
-      console.log('🔍 Looking for user with clerkId:', session.sub);
+      //console.log('🔍 Looking for user with clerkId:', session.sub);
 
       const user = await this.prisma.user.findUnique({
         where: { clerkId: session.sub },
@@ -134,10 +134,10 @@ export class ClerkGqlGuard {
         },
       });
 
-      console.log(
-        '👤 User found in DB:',
-        user ? `${user.email} (${user.role})` : 'NOT FOUND',
-      );
+      // console.log(
+      //   '👤 User found in DB:',
+      //   user ? `${user.email} (${user.role})` : 'NOT FOUND',
+      // );
 
       if (!user) {
         console.error(
@@ -155,11 +155,11 @@ export class ClerkGqlGuard {
       return true;
     } catch (error) {
       console.error('❌ Clerk auth error:', error);
-      console.error('Error details:', {
-        message: error.message,
-        name: error.name,
-        stack: error.stack?.split('\n')?.[0],
-      });
+      // console.error('Error details:', {
+      //   message: error.message,
+      //   name: error.name,
+      //   stack: error.stack?.split('\n')?.[0],
+      // });
       throw new UnauthorizedException('Invalid or expired token');
     }
   }
