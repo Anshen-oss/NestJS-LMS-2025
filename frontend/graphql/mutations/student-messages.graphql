@@ -1,0 +1,25 @@
+# Student Send Message Mutation
+mutation StudentSendMessage(
+  $instructorId: String!
+  $content: String!
+  $courseId: String
+) {
+  studentSendMessage(
+    instructorId: $instructorId
+    content: $content
+    courseId: $courseId
+  ) {
+    success
+    message {
+      id
+      content
+      senderId
+      senderName
+      senderImage
+      status
+      readAt
+      createdAt
+    }
+    error
+  }
+}

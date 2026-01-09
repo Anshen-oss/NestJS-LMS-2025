@@ -107,6 +107,42 @@ export type CheckoutSessionResponse = {
   url: Scalars['String']['output'];
 };
 
+export type ConversationDetailOutput = {
+  __typename?: 'ConversationDetailOutput';
+  courseId?: Maybe<Scalars['String']['output']>;
+  courseTitle?: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['String']['output'];
+  messages: Array<MessageOutput>;
+  participantEmail?: Maybe<Scalars['String']['output']>;
+  participantId: Scalars['String']['output'];
+  participantImage?: Maybe<Scalars['String']['output']>;
+  participantName: Scalars['String']['output'];
+  totalMessages: Scalars['Int']['output'];
+};
+
+export type ConversationListResponseOutput = {
+  __typename?: 'ConversationListResponseOutput';
+  conversations: Array<ConversationPreviewOutput>;
+  page: Scalars['Int']['output'];
+  pageSize: Scalars['Int']['output'];
+  total: Scalars['Int']['output'];
+};
+
+export type ConversationPreviewOutput = {
+  __typename?: 'ConversationPreviewOutput';
+  courseId?: Maybe<Scalars['String']['output']>;
+  courseTitle?: Maybe<Scalars['String']['output']>;
+  id: Scalars['String']['output'];
+  lastMessage?: Maybe<Scalars['String']['output']>;
+  lastMessageAt?: Maybe<Scalars['DateTime']['output']>;
+  participantEmail?: Maybe<Scalars['String']['output']>;
+  participantId: Scalars['String']['output'];
+  participantImage?: Maybe<Scalars['String']['output']>;
+  participantName: Scalars['String']['output'];
+  unreadCount: Scalars['Int']['output'];
+};
+
 export type Course = {
   __typename?: 'Course';
   category: Scalars['String']['output'];
@@ -132,6 +168,7 @@ export type Course = {
   stripePriceId?: Maybe<Scalars['String']['output']>;
   title: Scalars['String']['output'];
   updatedAt: Scalars['DateTime']['output'];
+  userId: Scalars['String']['output'];
 };
 
 export type CourseCreator = {
@@ -375,6 +412,32 @@ export type LessonProgress = {
   userId: Scalars['String']['output'];
 };
 
+export type MessageOutput = {
+  __typename?: 'MessageOutput';
+  content: Scalars['String']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['String']['output'];
+  readAt?: Maybe<Scalars['DateTime']['output']>;
+  senderId: Scalars['String']['output'];
+  senderImage?: Maybe<Scalars['String']['output']>;
+  senderName: Scalars['String']['output'];
+  status: MessageStatus;
+};
+
+export enum MessageStatus {
+  Delivered = 'DELIVERED',
+  Read = 'READ',
+  Sent = 'SENT'
+}
+
+export type MessagesStatsOutput = {
+  __typename?: 'MessagesStatsOutput';
+  lastMessageReceivedAt?: Maybe<Scalars['DateTime']['output']>;
+  totalConversations: Scalars['Int']['output'];
+  totalUnreadMessages: Scalars['Int']['output'];
+  unreadConversations: Scalars['Int']['output'];
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
   adminUpdateUserRole: AdminActionResponse;
@@ -399,6 +462,8 @@ export type Mutation = {
   enrollInCourse: EnrollmentResponse;
   getUploadUrl: UploadUrlResponse;
   getUploadUrlForVideo: UploadUrlResponse;
+  /** Marque tous les messages d'une conversation comme lus */
+  markConversationAsRead: Scalars['Boolean']['output'];
   markLessonAsCompleted: LessonProgress;
   /** Manually mark a lesson as completed */
   markLessonCompleted: VideoProgress;
@@ -409,7 +474,11 @@ export type Mutation = {
   reorderLessons: Array<Lesson>;
   /** Save video progress (auto-save every 5 seconds) */
   saveVideoProgress: VideoProgress;
+  /** Envoie un message à un étudiant */
+  sendMessage: SendMessageOutput;
   setupUserRole: User;
+  /** Envoie un message à l'instructor du cours */
+  studentSendMessage: SendMessageOutput;
   toggleLessonCompletion: LessonProgress;
   /** Unban user (ADMIN only) */
   unbanUser: User;
@@ -519,6 +588,11 @@ export type MutationGetUploadUrlForVideoArgs = {
 };
 
 
+export type MutationMarkConversationAsReadArgs = {
+  conversationId: Scalars['String']['input'];
+};
+
+
 export type MutationMarkLessonAsCompletedArgs = {
   lessonId: Scalars['String']['input'];
 };
@@ -554,9 +628,23 @@ export type MutationSaveVideoProgressArgs = {
 };
 
 
+export type MutationSendMessageArgs = {
+  content: Scalars['String']['input'];
+  courseId?: InputMaybe<Scalars['String']['input']>;
+  studentId: Scalars['String']['input'];
+};
+
+
 export type MutationSetupUserRoleArgs = {
   clerkUserId: Scalars['String']['input'];
   role: Scalars['String']['input'];
+};
+
+
+export type MutationStudentSendMessageArgs = {
+  content: Scalars['String']['input'];
+  courseId?: InputMaybe<Scalars['String']['input']>;
+  instructorId: Scalars['String']['input'];
 };
 
 
@@ -617,6 +705,8 @@ export type Query = {
   /** Statistiques globales de la plateforme (ADMIN uniquement) */
   adminStats: AdminStats;
   chaptersByCourse: Array<Chapter>;
+  /** Détails complets d'une conversation avec tous les messages */
+  conversationDetail: ConversationDetailOutput;
   course: Course;
   courseBySlug: Course;
   /** Performances détaillées d'un cours */
@@ -642,6 +732,8 @@ export type Query = {
   getVideoProgress?: Maybe<VideoProgress>;
   hello: Scalars['String']['output'];
   instructorAnalytics: AnalyticsOverview;
+  /** Liste paginée des conversations de l'instructeur */
+  instructorConversations: ConversationListResponseOutput;
   instructorCoursePerformance: Array<CoursePerformance>;
   /** Liste des cours de l'instructeur avec performances */
   instructorCourses: Array<CoursePerformanceOutput>;
@@ -657,6 +749,8 @@ export type Query = {
   lessonProgress?: Maybe<LessonProgress>;
   lessonsByChapter: Array<Lesson>;
   me: User;
+  /** Statistiques des messages (conversations, unread count) */
+  messagesStats: MessagesStatsOutput;
   myCourses: Array<Course>;
   myEnrolledCourses: Array<Course>;
   myEnrollments: Array<Enrollment>;
@@ -664,6 +758,10 @@ export type Query = {
   publicCourses: Array<Course>;
   /** Activités récentes de l'instructeur (enrollments, completions) */
   recentActivity: Array<RecentActivityOutput>;
+  /** Détails complets d'une conversation avec tous les messages */
+  studentConversationDetail: ConversationDetailOutput;
+  /** Liste des conversations de l'étudiant connecté */
+  studentConversations: ConversationListResponseOutput;
   /** Détails complets d'un étudiant */
   studentDetail: StudentDetail;
   /** Étudiants inscrits à un cours spécifique */
@@ -677,6 +775,12 @@ export type Query = {
 
 export type QueryChaptersByCourseArgs = {
   courseId: Scalars['String']['input'];
+};
+
+
+export type QueryConversationDetailArgs = {
+  conversationId: Scalars['String']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 
@@ -736,6 +840,13 @@ export type QueryInstructorAnalyticsArgs = {
 };
 
 
+export type QueryInstructorConversationsArgs = {
+  page?: InputMaybe<Scalars['Int']['input']>;
+  pageSize?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+};
+
+
 export type QueryInstructorCoursePerformanceArgs = {
   dateRange: DateRangeInput;
 };
@@ -792,6 +903,20 @@ export type QueryLessonsByChapterArgs = {
 
 export type QueryRecentActivityArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+export type QueryStudentConversationDetailArgs = {
+  conversationId: Scalars['String']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+export type QueryStudentConversationsArgs = {
+  courseId?: InputMaybe<Scalars['String']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+  pageSize?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -899,6 +1024,13 @@ export type SaveVideoProgressInput = {
   currentTime: Scalars['Float']['input'];
   duration: Scalars['Float']['input'];
   lessonId: Scalars['String']['input'];
+};
+
+export type SendMessageOutput = {
+  __typename?: 'SendMessageOutput';
+  error?: Maybe<Scalars['String']['output']>;
+  message?: Maybe<MessageOutput>;
+  success: Scalars['Boolean']['output'];
 };
 
 export type StudentAchievement = {
@@ -1222,6 +1354,15 @@ export type SetupUserRoleMutationVariables = Exact<{
 
 export type SetupUserRoleMutation = { __typename?: 'Mutation', setupUserRole: { __typename?: 'User', id: string, clerkId?: string | null, role?: UserRole | null, name?: string | null, email?: string | null } };
 
+export type StudentSendMessageMutationVariables = Exact<{
+  instructorId: Scalars['String']['input'];
+  content: Scalars['String']['input'];
+  courseId?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type StudentSendMessageMutation = { __typename?: 'Mutation', studentSendMessage: { __typename?: 'SendMessageOutput', success: boolean, error?: string | null, message?: { __typename?: 'MessageOutput', id: string, content: string, senderId: string, senderName: string, senderImage?: string | null, status: MessageStatus, readAt?: any | null, createdAt: any } | null } };
+
 export type UpdateLessonContentMutationVariables = Exact<{
   input: UpdateLessonContentInput;
 }>;
@@ -1320,7 +1461,7 @@ export type GetCourseWithLessonsQueryVariables = Exact<{
 }>;
 
 
-export type GetCourseWithLessonsQuery = { __typename?: 'Query', course: { __typename?: 'Course', id: string, title: string, slug: string, description: string, imageUrl?: string | null, chapters?: Array<{ __typename?: 'Chapter', id: string, title: string, position: number, lessons?: Array<{ __typename?: 'Lesson', id: string, title: string, order: number, duration?: number | null, videoUrl?: string | null, externalVideoUrl?: string | null, content?: string | null, description?: string | null, completed?: boolean | null }> | null }> | null } };
+export type GetCourseWithLessonsQuery = { __typename?: 'Query', course: { __typename?: 'Course', id: string, title: string, slug: string, description: string, imageUrl?: string | null, userId: string, chapters?: Array<{ __typename?: 'Chapter', id: string, title: string, position: number, lessons?: Array<{ __typename?: 'Lesson', id: string, title: string, order: number, duration?: number | null, videoUrl?: string | null, externalVideoUrl?: string | null, content?: string | null, description?: string | null, completed?: boolean | null }> | null }> | null } };
 
 export type GetInstructorStatsQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1399,6 +1540,24 @@ export type ExportRevenueQueryVariables = Exact<{
 
 
 export type ExportRevenueQuery = { __typename?: 'Query', exportRevenue: { __typename?: 'ExportRevenueResponse', success: boolean, downloadUrl: string, filename: string } };
+
+export type StudentConversationsQueryVariables = Exact<{
+  page?: InputMaybe<Scalars['Int']['input']>;
+  pageSize?: InputMaybe<Scalars['Int']['input']>;
+  courseId?: InputMaybe<Scalars['String']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type StudentConversationsQuery = { __typename?: 'Query', studentConversations: { __typename?: 'ConversationListResponseOutput', total: number, page: number, pageSize: number, conversations: Array<{ __typename?: 'ConversationPreviewOutput', id: string, participantId: string, participantName: string, participantImage?: string | null, participantEmail?: string | null, lastMessage?: string | null, lastMessageAt?: any | null, unreadCount: number, courseId?: string | null, courseTitle?: string | null }> } };
+
+export type StudentConversationDetailQueryVariables = Exact<{
+  conversationId: Scalars['String']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type StudentConversationDetailQuery = { __typename?: 'Query', studentConversationDetail: { __typename?: 'ConversationDetailOutput', id: string, participantId: string, participantName: string, participantImage?: string | null, participantEmail?: string | null, courseId?: string | null, courseTitle?: string | null, totalMessages: number, createdAt: any, messages: Array<{ __typename?: 'MessageOutput', id: string, content: string, senderId: string, senderName: string, senderImage?: string | null, status: MessageStatus, readAt?: any | null, createdAt: any }> } };
 
 export type GetMyEnrolledCoursesQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -2196,6 +2355,56 @@ export function useSetupUserRoleMutation(baseOptions?: Apollo.MutationHookOption
 export type SetupUserRoleMutationHookResult = ReturnType<typeof useSetupUserRoleMutation>;
 export type SetupUserRoleMutationResult = Apollo.MutationResult<SetupUserRoleMutation>;
 export type SetupUserRoleMutationOptions = Apollo.BaseMutationOptions<SetupUserRoleMutation, SetupUserRoleMutationVariables>;
+export const StudentSendMessageDocument = gql`
+    mutation StudentSendMessage($instructorId: String!, $content: String!, $courseId: String) {
+  studentSendMessage(
+    instructorId: $instructorId
+    content: $content
+    courseId: $courseId
+  ) {
+    success
+    message {
+      id
+      content
+      senderId
+      senderName
+      senderImage
+      status
+      readAt
+      createdAt
+    }
+    error
+  }
+}
+    `;
+export type StudentSendMessageMutationFn = Apollo.MutationFunction<StudentSendMessageMutation, StudentSendMessageMutationVariables>;
+
+/**
+ * __useStudentSendMessageMutation__
+ *
+ * To run a mutation, you first call `useStudentSendMessageMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useStudentSendMessageMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [studentSendMessageMutation, { data, loading, error }] = useStudentSendMessageMutation({
+ *   variables: {
+ *      instructorId: // value for 'instructorId'
+ *      content: // value for 'content'
+ *      courseId: // value for 'courseId'
+ *   },
+ * });
+ */
+export function useStudentSendMessageMutation(baseOptions?: Apollo.MutationHookOptions<StudentSendMessageMutation, StudentSendMessageMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<StudentSendMessageMutation, StudentSendMessageMutationVariables>(StudentSendMessageDocument, options);
+      }
+export type StudentSendMessageMutationHookResult = ReturnType<typeof useStudentSendMessageMutation>;
+export type StudentSendMessageMutationResult = Apollo.MutationResult<StudentSendMessageMutation>;
+export type StudentSendMessageMutationOptions = Apollo.BaseMutationOptions<StudentSendMessageMutation, StudentSendMessageMutationVariables>;
 export const UpdateLessonContentDocument = gql`
     mutation UpdateLessonContent($input: UpdateLessonContentInput!) {
   updateLessonContent(input: $input) {
@@ -2929,6 +3138,7 @@ export const GetCourseWithLessonsDocument = gql`
     slug
     description
     imageUrl
+    userId
     chapters {
       id
       title
@@ -3592,6 +3802,127 @@ export type ExportRevenueQueryHookResult = ReturnType<typeof useExportRevenueQue
 export type ExportRevenueLazyQueryHookResult = ReturnType<typeof useExportRevenueLazyQuery>;
 export type ExportRevenueSuspenseQueryHookResult = ReturnType<typeof useExportRevenueSuspenseQuery>;
 export type ExportRevenueQueryResult = Apollo.QueryResult<ExportRevenueQuery, ExportRevenueQueryVariables>;
+export const StudentConversationsDocument = gql`
+    query StudentConversations($page: Int, $pageSize: Int, $courseId: String, $search: String) {
+  studentConversations(
+    page: $page
+    pageSize: $pageSize
+    courseId: $courseId
+    search: $search
+  ) {
+    conversations {
+      id
+      participantId
+      participantName
+      participantImage
+      participantEmail
+      lastMessage
+      lastMessageAt
+      unreadCount
+      courseId
+      courseTitle
+    }
+    total
+    page
+    pageSize
+  }
+}
+    `;
+
+/**
+ * __useStudentConversationsQuery__
+ *
+ * To run a query within a React component, call `useStudentConversationsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useStudentConversationsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useStudentConversationsQuery({
+ *   variables: {
+ *      page: // value for 'page'
+ *      pageSize: // value for 'pageSize'
+ *      courseId: // value for 'courseId'
+ *      search: // value for 'search'
+ *   },
+ * });
+ */
+export function useStudentConversationsQuery(baseOptions?: Apollo.QueryHookOptions<StudentConversationsQuery, StudentConversationsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<StudentConversationsQuery, StudentConversationsQueryVariables>(StudentConversationsDocument, options);
+      }
+export function useStudentConversationsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<StudentConversationsQuery, StudentConversationsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<StudentConversationsQuery, StudentConversationsQueryVariables>(StudentConversationsDocument, options);
+        }
+export function useStudentConversationsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<StudentConversationsQuery, StudentConversationsQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<StudentConversationsQuery, StudentConversationsQueryVariables>(StudentConversationsDocument, options);
+        }
+export type StudentConversationsQueryHookResult = ReturnType<typeof useStudentConversationsQuery>;
+export type StudentConversationsLazyQueryHookResult = ReturnType<typeof useStudentConversationsLazyQuery>;
+export type StudentConversationsSuspenseQueryHookResult = ReturnType<typeof useStudentConversationsSuspenseQuery>;
+export type StudentConversationsQueryResult = Apollo.QueryResult<StudentConversationsQuery, StudentConversationsQueryVariables>;
+export const StudentConversationDetailDocument = gql`
+    query StudentConversationDetail($conversationId: String!, $limit: Int) {
+  studentConversationDetail(conversationId: $conversationId, limit: $limit) {
+    id
+    participantId
+    participantName
+    participantImage
+    participantEmail
+    courseId
+    courseTitle
+    messages {
+      id
+      content
+      senderId
+      senderName
+      senderImage
+      status
+      readAt
+      createdAt
+    }
+    totalMessages
+    createdAt
+  }
+}
+    `;
+
+/**
+ * __useStudentConversationDetailQuery__
+ *
+ * To run a query within a React component, call `useStudentConversationDetailQuery` and pass it any options that fit your needs.
+ * When your component renders, `useStudentConversationDetailQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useStudentConversationDetailQuery({
+ *   variables: {
+ *      conversationId: // value for 'conversationId'
+ *      limit: // value for 'limit'
+ *   },
+ * });
+ */
+export function useStudentConversationDetailQuery(baseOptions: Apollo.QueryHookOptions<StudentConversationDetailQuery, StudentConversationDetailQueryVariables> & ({ variables: StudentConversationDetailQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<StudentConversationDetailQuery, StudentConversationDetailQueryVariables>(StudentConversationDetailDocument, options);
+      }
+export function useStudentConversationDetailLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<StudentConversationDetailQuery, StudentConversationDetailQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<StudentConversationDetailQuery, StudentConversationDetailQueryVariables>(StudentConversationDetailDocument, options);
+        }
+export function useStudentConversationDetailSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<StudentConversationDetailQuery, StudentConversationDetailQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<StudentConversationDetailQuery, StudentConversationDetailQueryVariables>(StudentConversationDetailDocument, options);
+        }
+export type StudentConversationDetailQueryHookResult = ReturnType<typeof useStudentConversationDetailQuery>;
+export type StudentConversationDetailLazyQueryHookResult = ReturnType<typeof useStudentConversationDetailLazyQuery>;
+export type StudentConversationDetailSuspenseQueryHookResult = ReturnType<typeof useStudentConversationDetailSuspenseQuery>;
+export type StudentConversationDetailQueryResult = Apollo.QueryResult<StudentConversationDetailQuery, StudentConversationDetailQueryVariables>;
 export const GetMyEnrolledCoursesDocument = gql`
     query GetMyEnrolledCourses {
   myEnrolledCourses {

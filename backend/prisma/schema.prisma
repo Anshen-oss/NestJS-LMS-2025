@@ -270,41 +270,23 @@ enum MessageStatus {
 }
 
 model Conversation {
-  id              String   @id @default(uuid())
+  id String @id @default(cuid())
+  instructorId String
+  studentId String
+  courseId String?
 
-  // Participants (1-to-1: Instructor ↔ Student)
-  instructorId    String
-  instructor      User     @relation("ConversationAsInstructor", fields: [instructorId], references: [id], onDelete: Cascade)
+  // 🆕 Corriger les noms des relations pour correspondre à User
+  instructor User @relation("ConversationAsInstructor", fields: [instructorId], references: [id], onDelete: Cascade)
+  student User @relation("ConversationAsStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  course Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
 
-  studentId       String
-  student         User     @relation("ConversationAsStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  messages Message[]
 
-  // Optional Course Context
-  // Si courseId = NULL → Conversation générale (pas liée à un cours)
-  // Si courseId = UUID → Conversation spécifique à ce cours
-  courseId        String?
-  course          Course?  @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  lastMessageAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  // Metadata pour optimisation
-  lastMessageAt   DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // Relations
-  messages        Message[]
-
-  // Constraints:
-  // ✅ Une et UNE SEULE conversation par triplet (instructor, student, course)
-  // ✅ Si courseId = NULL, c'est une conversation générale
- @@unique([instructorId, studentId])  // ✅ Enlever courseId
-
-  // Indexes pour requêtes fréquentes
-  @@index([instructorId])
-  @@index([studentId])
-  @@index([courseId])
-  @@index([lastMessageAt])  // Pour trier "discussions récentes d'abord"
-
-  @@map("conversation")
+  @@unique([instructorId, studentId, courseId])
 }
 
 model Message {

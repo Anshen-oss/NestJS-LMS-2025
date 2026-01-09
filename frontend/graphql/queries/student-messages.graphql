@@ -1,0 +1,62 @@
+
+# Student Conversations Query
+query StudentConversations(
+  $page: Int
+  $pageSize: Int
+  $courseId: String
+  $search: String
+) {
+  studentConversations(
+    page: $page
+    pageSize: $pageSize
+    courseId: $courseId
+    search: $search
+  ) {
+    conversations {
+      id
+      participantId
+      participantName
+      participantImage
+      participantEmail
+      lastMessage
+      lastMessageAt
+      unreadCount
+      courseId
+      courseTitle
+    }
+    total
+    page
+    pageSize
+  }
+}
+
+# Student Conversation Detail Query
+query StudentConversationDetail(
+  $conversationId: String!
+  $limit: Int
+) {
+  studentConversationDetail(
+    conversationId: $conversationId
+    limit: $limit
+  ) {
+    id
+    participantId
+    participantName
+    participantImage
+    participantEmail
+    courseId
+    courseTitle
+    messages {
+      id
+      content
+      senderId
+      senderName
+      senderImage
+      status
+      readAt
+      createdAt
+    }
+    totalMessages
+    createdAt
+  }
+}

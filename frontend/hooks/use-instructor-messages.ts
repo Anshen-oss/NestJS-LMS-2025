@@ -193,14 +193,15 @@ export function useInstructorConversations(
   pageSize: number = 10,
   search?: string,
 ) {
-  const { data, loading, error, refetch, fetchMore } = useQuery<
-    { instructorConversations: ConversationListResponse },
-    { page: number; pageSize: number; search?: string }
-  >(GET_INSTRUCTOR_CONVERSATIONS, {
-    variables: { page, pageSize, search },
-    fetchPolicy: 'cache-and-network',
-    errorPolicy: 'all',
-  })
+const { data, loading, error, refetch, fetchMore } = useQuery<
+  { instructorConversations: ConversationListResponse },
+  { page: number; pageSize: number; search?: string }
+>(GET_INSTRUCTOR_CONVERSATIONS, {
+  variables: { page, pageSize, search },
+  fetchPolicy: 'network-only', // 🔑 Force le refetch depuis le serveur
+  errorPolicy: 'all',
+  pollInterval: 5000, // 🔑 Auto-refresh chaque 5 secondes
+})
 
   const conversations = data?.instructorConversations.conversations || []
   const total = data?.instructorConversations.total || 0
@@ -253,8 +254,10 @@ export function useConversationDetail(conversationId: string, limit?: number) {
     { conversationId: string; limit?: number }
   >(GET_CONVERSATION_DETAIL, {
     variables: { conversationId, limit },
-    fetchPolicy: 'network-only', // Toujours fresh
+    fetchPolicy: 'network-only',
     errorPolicy: 'all',
+    pollInterval: 3000,
+    skip: !conversationId, // 🆕 NE PAS EXÉCUTER si conversationId est vide!
   })
 
   const conversation = data?.conversationDetail

@@ -5,6 +5,7 @@ query GetCourseWithLessons($id: String!) {
     slug
     description
     imageUrl
+    userId  # 🆕 AJOUTER CE CHAMP!
     chapters {
       id
       title

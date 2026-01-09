@@ -1,15 +1,37 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import * as bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
+import * as express from 'express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
-    rawBody: true, // ✅ Activer rawBody pour les webhooks
-  });
+  const app = await NestFactory.create(AppModule);
 
-  //Enable CORS
+  // 🔑 CLÉE: Middleware qui injecte rawBody pour les webhooks
+  app.use(
+    '/webhooks/stripe',
+    express.raw({ type: 'application/json' }),
+    (req: any, res, next) => {
+      // Stocker le raw body
+      req.rawBody = req.body;
+      // Parser en JSON après
+      express.json()(req, res, next);
+    },
+  );
+
+  app.use(
+    '/webhooks/clerk',
+    express.raw({ type: 'application/json' }),
+    (req: any, res, next) => {
+      req.rawBody = req.body;
+      express.json()(req, res, next);
+    },
+  );
+
+  // JSON normal pour le reste
+  app.use(express.json());
+
+  // CORS
   app.enableCors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,
@@ -17,10 +39,8 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  // Cookie parser
   app.use(cookieParser());
 
-  // Global validation pipe
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -29,23 +49,9 @@ async function bootstrap() {
     }),
   );
 
-  // ✅ RAW body pour les webhooks Clerk (Svix)
-  app.use('/webhooks/clerk', bodyParser.raw({ type: 'application/json' }));
-
-  // ✅ RAW body pour les webhooks Stripe
-  app.use('/webhooks/stripe', bodyParser.raw({ type: 'application/json' }));
-
-  // ✅ JSON normal pour le reste de l'API
-  app.use(bodyParser.json());
-
   const port = process.env.PORT || 4000;
   await app.listen(port);
-  // console.log('🚀 Backend GraphQL running on http://localhost:4000/graphql');
-  // console.log(
-  //   '🪝 Webhook Clerk endpoint: http://localhost:4000/webhooks/clerk',
-  // );
-  // console.log(
-  //   '🪝 Webhook Stripe endpoint: http://localhost:4000/webhooks/stripe',
-  // );
+  console.log(`✅ Server running on http://localhost:${port}`);
 }
+
 bootstrap();

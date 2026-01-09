@@ -3,6 +3,7 @@
 import { useGetCourseWithLessonsQuery } from '@/lib/generated/graphql';
 import { Loader2 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function StudentCoursePage() {
   const params = useParams();
@@ -12,6 +13,29 @@ export default function StudentCoursePage() {
   const { data, loading, error } = useGetCourseWithLessonsQuery({
     variables: { id: courseId },
   });
+
+  // 🔑 UTILISER useEffect pour la navigation
+  useEffect(() => {
+    if (loading) return; // Ne rien faire tant que c'est en cours de chargement
+
+    if (error) {
+      console.error('Erreur:', error);
+      return; // Afficher l'erreur au lieu de rediriger
+    }
+
+    const course = data?.course;
+    const firstChapter = course?.chapters?.find(
+      (ch: any) => ch.lessons.length > 0
+    );
+    const firstLesson = firstChapter?.lessons?.[0];
+
+    // Si on a trouvé la première leçon, rediriger
+    if (firstLesson) {
+      router.push(
+        `/student/courses/${courseId}/lessons/${firstLesson.id}`
+      );
+    }
+  }, [data, loading, error, courseId, router]); // Dépendances
 
   if (loading) {
     return (
@@ -26,7 +50,10 @@ export default function StudentCoursePage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 mb-4">Erreur : {error.message}</p>
-          <button onClick={() => router.push('/student')}>
+          <button
+            onClick={() => router.push('/student')}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
             Retour à mes cours
           </button>
         </div>
@@ -35,9 +62,9 @@ export default function StudentCoursePage() {
   }
 
   const course = data?.course;
-
-  // Trouver la première leçon
-  const firstChapter = course?.chapters?.find(ch => ch.lessons.length > 0);
+  const firstChapter = course?.chapters?.find(
+    (ch: any) => ch.lessons.length > 0
+  );
   const firstLesson = firstChapter?.lessons?.[0];
 
   if (!firstLesson) {
@@ -45,7 +72,10 @@ export default function StudentCoursePage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-600 mb-4">Ce cours n'a pas encore de leçons</p>
-          <button onClick={() => router.push('/student')}>
+          <button
+            onClick={() => router.push('/student')}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
             Retour à mes cours
           </button>
         </div>
@@ -53,9 +83,7 @@ export default function StudentCoursePage() {
     );
   }
 
-  // Rediriger automatiquement vers la première leçon
-  router.push(`/student/courses/${courseId}/lessons/${firstLesson.id}`);
-
+  // Pendant qu'on redirige
   return (
     <div className="min-h-screen flex items-center justify-center">
       <Loader2 className="w-12 h-12 animate-spin text-blue-600" />

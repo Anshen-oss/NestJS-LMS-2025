@@ -1,10 +1,12 @@
 'use client'
 
+import { RenderDescription } from '@/components/rich-text-editor/RenderDescription'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Textarea } from '@/components/ui/textarea'
+
 import {
   useConversationDetail,
   useInstructorConversations,
@@ -267,7 +269,7 @@ export default function MessagesPage() {
                   </div>
                 </CardHeader>
 
-                {/* Messages */}
+        {/* Messages */}
                 <ScrollArea className="flex-1">
                   <div className="p-4 space-y-4">
                     {conversation.messages.length === 0 ? (
@@ -275,39 +277,60 @@ export default function MessagesPage() {
                         Aucun message pour le moment
                       </div>
                     ) : (
-                      conversation.messages.map((msg) => (
-                        <div
-                          key={msg.id}
-                          className={`flex gap-2 ${
-                            msg.senderId === conversation.participantId
-                              ? 'justify-start'
-                              : 'justify-end'
-                          }`}
-                        >
+                      conversation.messages.map((msg) => {
+                        // 🆕 Fonction pour parser le contenu
+                        const renderMessageContent = (content: string) => {
+                          if (content && content.startsWith('{')) {
+                            try {
+                              const json = JSON.parse(content);
+                              return (
+                                <div className="prose prose-sm max-w-none">
+                                  <RenderDescription json={json} />
+                                </div>
+                              );
+                            } catch (e) {
+                              return <p className="text-sm whitespace-pre-wrap">{content}</p>;
+                            }
+                          }
+                          return <p className="text-sm whitespace-pre-wrap">{content}</p>;
+                        };
+
+                        return (
                           <div
-                            className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                            key={msg.id}
+                            className={`flex gap-2 ${
                               msg.senderId === conversation.participantId
-                                ? 'bg-gray-100 text-gray-900'
-                                : 'bg-blue-600 text-white'
+                                ? 'justify-start'
+                                : 'justify-end'
                             }`}
                           >
-                            <p className="text-sm">{msg.content}</p>
-                            <p
-                              className={`text-xs mt-1 ${
+                            <div
+                              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                                 msg.senderId === conversation.participantId
-                                  ? 'text-gray-500'
-                                  : 'text-blue-100'
+                                  ? 'bg-gray-100 text-gray-900'
+                                  : 'bg-blue-600 text-white'
                               }`}
                             >
-                              {new Date(msg.createdAt).toLocaleTimeString('fr-FR', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                              {msg.status === 'READ' && ' ✓✓'}
-                            </p>
+                              {/* 🆕 Rendu intelligent du contenu */}
+                              {renderMessageContent(msg.content)}
+
+                              <p
+                                className={`text-xs mt-1 ${
+                                  msg.senderId === conversation.participantId
+                                    ? 'text-gray-500'
+                                    : 'text-blue-100'
+                                }`}
+                              >
+                                {new Date(msg.createdAt).toLocaleTimeString('fr-FR', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                                {msg.status === 'READ' && ' ✓✓'}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 </ScrollArea>

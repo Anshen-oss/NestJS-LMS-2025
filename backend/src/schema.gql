@@ -146,6 +146,7 @@ type Course {
   stripePriceId: String
   title: String!
   updatedAt: DateTime!
+  userId: String!
 }
 
 type CourseCreator {
@@ -459,6 +460,9 @@ type Mutation {
   """Envoie un message à un étudiant"""
   sendMessage(content: String!, courseId: String, studentId: String!): SendMessageOutput!
   setupUserRole(clerkUserId: String!, role: String!): User!
+
+  """Envoie un message à l'instructor du cours"""
+  studentSendMessage(content: String!, courseId: String, instructorId: String!): SendMessageOutput!
   toggleLessonCompletion(lessonId: String!): LessonProgress!
 
   """Unban user (ADMIN only)"""
@@ -557,6 +561,12 @@ type Query {
 
   """Activités récentes de l'instructeur (enrollments, completions)"""
   recentActivity(limit: Int = 10): [RecentActivityOutput!]!
+
+  """Détails complets d'une conversation avec tous les messages"""
+  studentConversationDetail(conversationId: String!, limit: Int = 50): ConversationDetailOutput!
+
+  """Liste des conversations de l'étudiant connecté"""
+  studentConversations(courseId: String, page: Int = 1, pageSize: Int = 10, search: String): ConversationListResponseOutput!
 
   """Détails complets d'un étudiant"""
   studentDetail(studentId: String!): StudentDetail!
