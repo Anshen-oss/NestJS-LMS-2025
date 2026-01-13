@@ -1,0 +1,24 @@
+mutation UpdateUserProfile($input: UpdateUserProfileInput!) {
+  updateUserProfile(input: $input) {
+    id
+    name
+    email
+    bio
+    profession
+    dateOfBirth
+    image
+    preferences {
+      id
+      emailNotifications
+      courseUpdates
+      weeklyDigest
+      marketingEmails
+      videoQuality
+      autoplay
+      subtitles
+      language
+      timezone
+      theme
+    }
+  }
+}

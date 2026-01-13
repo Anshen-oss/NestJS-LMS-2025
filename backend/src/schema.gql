@@ -473,6 +473,12 @@ type Mutation {
   updateLessonContent(input: UpdateLessonContentInput!): Lesson!
   updateLessonProgress(input: UpdateProgressInput!, lessonId: String!): LessonProgress!
 
+  """Update user preferences"""
+  updateUserPreferences(input: UpdateUserPreferencesInput!): UserPreferences!
+
+  """Update user profile"""
+  updateUserProfile(input: UpdateUserProfileInput!): User!
+
   """Update user role (ADMIN only)"""
   updateUserRole(input: UpdateUserRoleInput!): User!
 }
@@ -511,6 +517,9 @@ type Query {
   """Get all users (ADMIN only)"""
   getAllUsers: [User!]!
   getCourseForEdit(id: String!): Course!
+
+  """Get current user profile"""
+  getCurrentUser: User!
 
   """Données complètes des revenus de l'instructeur"""
   getInstructorRevenue(period: RevenueInstructorPeriod! = LAST_30_DAYS): InstructorRevenueResponse!
@@ -784,6 +793,25 @@ input UpdateProgressInput {
   watchedDuration: Int!
 }
 
+input UpdateUserPreferencesInput {
+  autoplay: Boolean
+  courseUpdates: Boolean
+  emailNotifications: Boolean
+  language: String
+  marketingEmails: Boolean
+  subtitles: Boolean
+  theme: String
+  timezone: String
+  videoQuality: String
+  weeklyDigest: Boolean
+}
+
+input UpdateUserProfileInput {
+  bio: String
+  dateOfBirth: String
+  profession: String
+}
+
 input UpdateUserRoleInput {
   """Nouveau rôle à attribuer"""
   newRole: UserRole!
@@ -803,13 +831,18 @@ type User {
   banExpires: DateTime
   banReason: String
   banned: Boolean
+  bio: String
   clerkId: String
   createdAt: DateTime!
+  dateOfBirth: DateTime
   email: String
   emailVerified: Boolean
   id: ID!
   image: String
+  lastLoginAt: DateTime
   name: String
+  preferences: UserPreferences
+  profession: String
   role: UserRole
   stripeCustomerId: String
   updatedAt: DateTime
@@ -818,6 +851,23 @@ type User {
 type UserCounts {
   coursesCreated: Float!
   enrollments: Float!
+}
+
+type UserPreferences {
+  autoplay: Boolean!
+  courseUpdates: Boolean!
+  createdAt: DateTime!
+  emailNotifications: Boolean!
+  id: ID!
+  language: String!
+  marketingEmails: Boolean!
+  subtitles: Boolean!
+  theme: String!
+  timezone: String!
+  updatedAt: DateTime!
+  userId: ID!
+  videoQuality: String!
+  weeklyDigest: Boolean!
 }
 
 """The role of a user in the system"""
