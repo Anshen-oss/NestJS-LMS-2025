@@ -10,6 +10,12 @@ import {
   UpdateUserRoleInput,
 } from './dto/promote-user.input'; // ← Import local
 
+// Type pour les stats
+import { Field, Int, ObjectType } from '@nestjs/graphql';
+import { UpdateUserPreferencesInput } from './dto/update-user-preferences.input';
+import { UpdateUserProfileInput } from './dto/update-user-profile.input';
+import { UserPreferences } from './entities/user-preferences.entity';
+
 import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
 
@@ -43,6 +49,38 @@ export class UsersResolver {
   @Roles(UserRole.ADMIN)
   async getUserStats() {
     return this.usersService.getUserStats();
+  }
+
+  /**
+   * 📊 Query : Récupérer l'utilisateur connecté
+   */
+  @Query(() => User, { description: 'Get current user profile' })
+  async getCurrentUser(@CurrentUser() user: any): Promise<User> {
+    return this.usersService.getCurrentUser(user.id);
+  }
+
+  /**
+   * 📝 Mutation : Mettre à jour le profil
+   */
+  @Mutation(() => User, { description: 'Update user profile' })
+  async updateUserProfile(
+    @Args('input') input: UpdateUserProfileInput,
+    @CurrentUser() user: any,
+  ): Promise<User> {
+    console.log(`🖊️ User ${user.email} updating profile`);
+    return this.usersService.updateUserProfile(user.id, input);
+  }
+
+  /**
+   * ⚙️ Mutation : Mettre à jour les préférences
+   */
+  @Mutation(() => UserPreferences, { description: 'Update user preferences' })
+  async updateUserPreferences(
+    @Args('input') input: UpdateUserPreferencesInput,
+    @CurrentUser() user: any,
+  ): Promise<UserPreferences> {
+    console.log(`⚙️ User ${user.email} updating preferences`);
+    return this.usersService.updateUserPreferences(user.id, input);
   }
 
   /**
@@ -97,9 +135,6 @@ export class UsersResolver {
     return this.usersService.unbanUser(userId);
   }
 }
-
-// Type pour les stats
-import { Field, Int, ObjectType } from '@nestjs/graphql';
 
 @ObjectType()
 class UserStats {

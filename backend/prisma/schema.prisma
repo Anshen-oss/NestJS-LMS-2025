@@ -36,6 +36,12 @@ model User {
   banExpires       DateTime?
   stripeCustomerId String?  @unique
 
+  // 🆕 Profile enrichi (Phase 16)
+  bio              String?           @db.Text
+  profession       String?
+  dateOfBirth      DateTime?
+  lastLoginAt      DateTime?
+
   // Relations - Courses & Enrollments
   coursesCreated Course[]         @relation("CourseCreator")
   enrollments    Enrollment[]
@@ -47,7 +53,44 @@ model User {
   conversationsAsStudent    Conversation[] @relation("ConversationAsStudent")
   sentMessages              Message[]
 
+  // 🆕 Relations - Preferences (Phase 16)
+  preferences      UserPreferences?  @relation("UserPreferences")
+
   @@map("user")
+}
+
+// ========================================
+// USER PREFERENCES (NEW - Phase 16)
+// ========================================
+
+model UserPreferences {
+  id                    String    @id @default(uuid())
+  userId                String    @unique
+  user                  User      @relation("UserPreferences", fields: [userId], references: [id], onDelete: Cascade)
+
+  // Notifications
+  emailNotifications    Boolean   @default(true)
+  courseUpdates         Boolean   @default(true)
+  weeklyDigest          Boolean   @default(false)
+  marketingEmails       Boolean   @default(false)
+
+  // Video preferences
+  videoQuality          String    @default("auto")
+  autoplay              Boolean   @default(true)
+  subtitles             Boolean   @default(false)
+
+  // Localization
+  language              String    @default("fr")
+  timezone              String    @default("Europe/Paris")
+
+  // UI Preferences
+  theme                 String    @default("auto")
+
+  // Timestamps
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("user_preferences")
 }
 
 // ========================================

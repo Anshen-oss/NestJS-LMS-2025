@@ -1,5 +1,6 @@
 import { Field, ID, ObjectType, registerEnumType } from '@nestjs/graphql';
 import { UserRole } from '@prisma/client';
+import { UserPreferences } from './user-preferences.entity';
 
 registerEnumType(UserRole, {
   name: 'UserRole',
@@ -73,4 +74,20 @@ export class User {
 
   @Field(() => UserCounts, { nullable: true })
   _count?: UserCounts;
+
+  // AJOUTER ces champs à la classe User ObjectType :
+  @Field(() => String, { nullable: true })
+  bio?: string | null;
+
+  @Field(() => String, { nullable: true })
+  profession?: string | null;
+
+  @Field(() => Date, { nullable: true })
+  dateOfBirth?: Date | null;
+
+  @Field(() => Date, { nullable: true })
+  lastLoginAt?: Date | null;
+
+  @Field(() => UserPreferences, { nullable: true })
+  preferences?: UserPreferences | null;
 }

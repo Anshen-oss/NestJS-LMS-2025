@@ -1,0 +1,32 @@
+query GetCurrentUser {
+  getCurrentUser {
+    id
+    clerkId
+    name
+    email
+    image
+    role
+    bio
+    profession
+    dateOfBirth
+    emailVerified
+    banned
+    createdAt
+    updatedAt
+    preferences {
+      id
+      emailNotifications
+      courseUpdates
+      weeklyDigest
+      marketingEmails
+      videoQuality
+      autoplay
+      subtitles
+      language
+      timezone
+      theme
+      createdAt
+      updatedAt
+    }
+  }
+}

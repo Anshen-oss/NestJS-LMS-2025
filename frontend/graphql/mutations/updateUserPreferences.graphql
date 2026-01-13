@@ -1,0 +1,18 @@
+mutation UpdateUserPreferences($input: UpdateUserPreferencesInput!) {
+  updateUserPreferences(input: $input) {
+    id
+    userId
+    emailNotifications
+    courseUpdates
+    weeklyDigest
+    marketingEmails
+    videoQuality
+    autoplay
+    subtitles
+    language
+    timezone
+    theme
+    createdAt
+    updatedAt
+  }
+}

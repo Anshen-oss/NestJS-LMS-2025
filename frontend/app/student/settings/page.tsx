@@ -9,56 +9,115 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { useUser } from '@clerk/nextjs';
+import { useUserSettings } from '@/hooks/useUserProfile';
+
 import {
   Bell,
   Globe,
-  Lock,
-  Mail,
+  Loader2,
   Palette,
   Save,
   Shield,
   User,
-  Video,
+  Video
 } from 'lucide-react';
-import { useState } from 'react';
-import { toast } from 'sonner';
+import { useEffect, useState } from 'react';
 
-export default function SettingsPage() {
-  const { user, isLoaded } = useUser();
+export default function StudentSettingsPage() {
+  // 🎣 Hook combiné pour tout les settings
+  const { user, updateProfile, updatePreferences, loading, errors, refetch } = useUserSettings();
+
+  // États locaux pour le formulaire
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    bio: '',
+    profession: '',
+    dateOfBirth: '', // Format: YYYY-MM-DD
+  });
+
+  const [preferences, setPreferences] = useState({
+    emailNotifications: true,
+    courseUpdates: true,
+    weeklyDigest: false,
+    marketingEmails: false,
+    videoQuality: 'auto',
+    autoplay: true,
+    subtitles: false,
+    language: 'fr',
+    timezone: 'Europe/Paris',
+    theme: 'auto',
+  });
+
   const [isSaving, setIsSaving] = useState(false);
 
-  // États pour les préférences
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [courseUpdates, setCourseUpdates] = useState(true);
-  const [weeklyDigest, setWeeklyDigest] = useState(false);
-  const [marketingEmails, setMarketingEmails] = useState(false);
+  // 🔄 Charger les données du user quand elles arrivent
+  useEffect(() => {
+    if (user) {
+      // 🔧 FIX : Convertir la date ISO en format YYYY-MM-DD pour l'input date
+      const formattedDateOfBirth = user.dateOfBirth
+        ? new Date(user.dateOfBirth).toISOString().split('T')[0]
+        : '';
 
-  const [videoQuality, setVideoQuality] = useState('auto');
-  const [autoplay, setAutoplay] = useState(true);
-  const [subtitles, setSubtitles] = useState(false);
+      setFormData({
+        firstName: user.name?.split(' ')[0] || '',
+        lastName: user.name?.split(' ').slice(1).join(' ') || '',
+        bio: user.bio || '',
+        profession: user.profession || '',
+        dateOfBirth: formattedDateOfBirth, // ✅ Format correct
+      });
 
-  const [language, setLanguage] = useState('fr');
-  const [timezone, setTimezone] = useState('Europe/Paris');
+      // Charger les préférences si elles existent
+      if (user.preferences) {
+        setPreferences({
+          emailNotifications: user.preferences.emailNotifications ?? true,
+          courseUpdates: user.preferences.courseUpdates ?? true,
+          weeklyDigest: user.preferences.weeklyDigest ?? false,
+          marketingEmails: user.preferences.marketingEmails ?? false,
+          videoQuality: user.preferences.videoQuality ?? 'auto',
+          autoplay: user.preferences.autoplay ?? true,
+          subtitles: user.preferences.subtitles ?? false,
+          language: user.preferences.language ?? 'fr',
+          timezone: user.preferences.timezone ?? 'Europe/Paris',
+          theme: user.preferences.theme ?? 'auto',
+        });
+      }
+    }
+  }, [user]);
 
-  const handleSave = async () => {
+  // 💾 Sauvegarder le profil
+  const handleSaveProfile = async () => {
     setIsSaving(true);
-    // Simuler une sauvegarde
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsSaving(false);
-    toast.success('Paramètres enregistrés avec succès !');
+    try {
+      await updateProfile({
+        bio: formData.bio,
+        profession: formData.profession,
+        dateOfBirth: formData.dateOfBirth, // Format YYYY-MM-DD ✅
+      });
+      await refetch();
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  if (!isLoaded) {
+  // 💾 Sauvegarder les préférences
+  const handleSavePreferences = async () => {
+    setIsSaving(true);
+    try {
+      await updatePreferences(preferences);
+      await refetch();
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600"></div>
+        <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
       </div>
     );
   }
-
-  const userName = user?.fullName || user?.firstName || '';
-  const userEmail = user?.primaryEmailAddress?.emailAddress || '';
 
   return (
     <div className="py-8 px-6">
@@ -109,7 +168,7 @@ export default function SettingsPage() {
           </TabsTrigger>
         </TabsList>
 
-        {/* PROFIL */}
+        {/* PROFIL TAB */}
         <TabsContent value="profile" className="mt-6">
           <div className="max-w-2xl">
             <Card className="bg-white">
@@ -123,53 +182,19 @@ export default function SettingsPage() {
                 {/* Photo de profil */}
                 <div className="flex items-center gap-6">
                   <div className="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-3xl font-bold">
-                    {userName.charAt(0).toUpperCase() || 'U'}
+                    {formData.firstName.charAt(0).toUpperCase() || 'U'}
                   </div>
                   <div>
-                    <Button variant="outline" size="sm">
+                    <Button className='text-gray-900' variant="outline" size="sm" disabled>
                       Changer la photo
                     </Button>
-                    <p className="text-xs text-gray-500 mt-2">
-                      JPG, PNG ou GIF. Max 2MB.
+                    <p className="text-xs text-gray-600 mt-2">
+                      Disponible bientôt
                     </p>
                   </div>
                 </div>
 
                 <Separator />
-
-                {/* Nom */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">Prénom</Label>
-                    <Input
-                      id="firstName"
-                      defaultValue={user?.firstName || ''}
-                      placeholder="Votre prénom"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Nom</Label>
-                    <Input
-                      id="lastName"
-                      defaultValue={user?.lastName || ''}
-                      placeholder="Votre nom"
-                    />
-                  </div>
-                </div>
-
-                {/* Email */}
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    defaultValue={userEmail}
-                    disabled
-                  />
-                  <p className="text-xs text-gray-500">
-                    Votre email ne peut pas être modifié ici. Utilisez les paramètres Clerk.
-                  </p>
-                </div>
 
                 {/* Bio */}
                 <div className="space-y-2">
@@ -178,9 +203,13 @@ export default function SettingsPage() {
                     id="bio"
                     placeholder="Parlez un peu de vous..."
                     rows={4}
+                    value={formData.bio}
+                    onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                    maxLength={500}
+                    className='text-gray-600'
                   />
-                  <p className="text-xs text-gray-500">
-                    Maximum 500 caractères
+                  <p className="text-xs text-gray-800">
+                    {formData.bio.length}/500 caractères
                   </p>
                 </div>
 
@@ -190,19 +219,54 @@ export default function SettingsPage() {
                   <Input
                     id="profession"
                     placeholder="Ex: Développeur Web, Designer..."
+                    value={formData.profession}
+                    onChange={(e) => setFormData({ ...formData, profession: e.target.value })}
+                    maxLength={100}
+                    className='text-gray-600'
                   />
+                  <p className="text-xs text-gray-600">
+                    {formData.profession.length}/100 caractères
+                  </p>
                 </div>
 
-                <Button onClick={handleSave} disabled={isSaving}>
+                {/* Date de naissance */}
+                <div className="space-y-2">
+                  <Label htmlFor="dateOfBirth">Date de naissance (optionnel)</Label>
+                  <Input
+                    id="dateOfBirth"
+                    type="date"
+                    value={formData.dateOfBirth}
+                    onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                    className='text-gray-600'
+                  />
+                  {formData.dateOfBirth && (
+                    <p className="text-xs text-gray-500">
+                      Sélectionné : {new Date(formData.dateOfBirth).toLocaleDateString('fr-FR')}
+                    </p>
+                  )}
+                </div>
+
+                <Button
+                  onClick={handleSaveProfile}
+                  disabled={isSaving || loading}
+                  className="w-full"
+                >
                   <Save className="w-4 h-4 mr-2" />
                   {isSaving ? 'Enregistrement...' : 'Enregistrer les modifications'}
                 </Button>
+
+                {/* Afficher les erreurs */}
+                {errors.profile && (
+                  <div className="p-3 bg-red-50 text-red-700 rounded">
+                    ❌ {errors.profile}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-        {/* NOTIFICATIONS */}
+        {/* NOTIFICATIONS TAB */}
         <TabsContent value="notifications" className="mt-6">
           <div className="max-w-2xl space-y-6">
             <Card className="bg-white">
@@ -224,8 +288,10 @@ export default function SettingsPage() {
                   </div>
                   <Switch
                     id="email-notifications"
-                    checked={emailNotifications}
-                    onCheckedChange={setEmailNotifications}
+                    checked={preferences.emailNotifications}
+                    onCheckedChange={(checked) =>
+                      setPreferences({ ...preferences, emailNotifications: checked })
+                    }
                   />
                 </div>
 
@@ -242,8 +308,10 @@ export default function SettingsPage() {
                   </div>
                   <Switch
                     id="course-updates"
-                    checked={courseUpdates}
-                    onCheckedChange={setCourseUpdates}
+                    checked={preferences.courseUpdates}
+                    onCheckedChange={(checked) =>
+                      setPreferences({ ...preferences, courseUpdates: checked })
+                    }
                   />
                 </div>
 
@@ -260,8 +328,10 @@ export default function SettingsPage() {
                   </div>
                   <Switch
                     id="weekly-digest"
-                    checked={weeklyDigest}
-                    onCheckedChange={setWeeklyDigest}
+                    checked={preferences.weeklyDigest}
+                    onCheckedChange={(checked) =>
+                      setPreferences({ ...preferences, weeklyDigest: checked })
+                    }
                   />
                 </div>
 
@@ -278,21 +348,33 @@ export default function SettingsPage() {
                   </div>
                   <Switch
                     id="marketing"
-                    checked={marketingEmails}
-                    onCheckedChange={setMarketingEmails}
+                    checked={preferences.marketingEmails}
+                    onCheckedChange={(checked) =>
+                      setPreferences({ ...preferences, marketingEmails: checked })
+                    }
                   />
                 </div>
 
-                <Button onClick={handleSave} disabled={isSaving}>
+                <Button
+                  onClick={handleSavePreferences}
+                  disabled={isSaving || loading}
+                  className="w-full"
+                >
                   <Save className="w-4 h-4 mr-2" />
                   {isSaving ? 'Enregistrement...' : 'Enregistrer'}
                 </Button>
+
+                {errors.preferences && (
+                  <div className="p-3 bg-red-50 text-red-700 rounded">
+                    ❌ {errors.preferences}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-        {/* APPRENTISSAGE */}
+        {/* APPRENTISSAGE TAB */}
         <TabsContent value="learning" className="mt-6">
           <div className="max-w-2xl space-y-6">
             <Card className="bg-white">
@@ -305,7 +387,12 @@ export default function SettingsPage() {
               <CardContent className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="video-quality">Qualité vidéo</Label>
-                  <Select value={videoQuality} onValueChange={setVideoQuality}>
+                  <Select
+                    value={preferences.videoQuality}
+                    onValueChange={(value) =>
+                      setPreferences({ ...preferences, videoQuality: value })
+                    }
+                  >
                     <SelectTrigger id="video-quality">
                       <SelectValue placeholder="Sélectionner la qualité" />
                     </SelectTrigger>
@@ -335,8 +422,10 @@ export default function SettingsPage() {
                   </div>
                   <Switch
                     id="autoplay"
-                    checked={autoplay}
-                    onCheckedChange={setAutoplay}
+                    checked={preferences.autoplay}
+                    onCheckedChange={(checked) =>
+                      setPreferences({ ...preferences, autoplay: checked })
+                    }
                   />
                 </div>
 
@@ -353,46 +442,27 @@ export default function SettingsPage() {
                   </div>
                   <Switch
                     id="subtitles"
-                    checked={subtitles}
-                    onCheckedChange={setSubtitles}
+                    checked={preferences.subtitles}
+                    onCheckedChange={(checked) =>
+                      setPreferences({ ...preferences, subtitles: checked })
+                    }
                   />
                 </div>
 
-                <Button onClick={handleSave} disabled={isSaving}>
+                <Button
+                  onClick={handleSavePreferences}
+                  disabled={isSaving || loading}
+                  className="w-full"
+                >
                   <Save className="w-4 h-4 mr-2" />
                   {isSaving ? 'Enregistrement...' : 'Enregistrer'}
                 </Button>
               </CardContent>
             </Card>
-
-            <Card className="bg-white">
-              <CardHeader>
-                <CardTitle>Téléchargements</CardTitle>
-                <CardDescription>
-                  Gérez vos téléchargements de cours
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between py-3">
-                    <div>
-                      <p className="font-medium">Cours téléchargés</p>
-                      <p className="text-sm text-gray-500">0 cours (0 GB)</p>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      Gérer
-                    </Button>
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    Les téléchargements sont disponibles sur l'application mobile
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </TabsContent>
 
-        {/* PRÉFÉRENCES */}
+        {/* PRÉFÉRENCES TAB */}
         <TabsContent value="preferences" className="mt-6">
           <div className="max-w-2xl space-y-6">
             <Card className="bg-white">
@@ -408,7 +478,12 @@ export default function SettingsPage() {
                     <Globe className="w-4 h-4 inline mr-2" />
                     Langue de l'interface
                   </Label>
-                  <Select value={language} onValueChange={setLanguage}>
+                  <Select
+                    value={preferences.language}
+                    onValueChange={(value) =>
+                      setPreferences({ ...preferences, language: value })
+                    }
+                  >
                     <SelectTrigger id="language">
                       <SelectValue placeholder="Sélectionner la langue" />
                     </SelectTrigger>
@@ -425,66 +500,107 @@ export default function SettingsPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="timezone">Fuseau horaire</Label>
-                  <Select value={timezone} onValueChange={setTimezone}>
+                  <Select
+                    value={preferences.timezone}
+                    onValueChange={(value) =>
+                      setPreferences({ ...preferences, timezone: value })
+                    }
+                  >
                     <SelectTrigger id="timezone">
                       <SelectValue placeholder="Sélectionner le fuseau" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Europe/Paris">Paris (GMT+1)</SelectItem>
+                      <SelectItem value="Europe/London">Londres (GMT+0)</SelectItem>
                       <SelectItem value="America/New_York">New York (GMT-5)</SelectItem>
+                      <SelectItem value="America/Los_Angeles">Los Angeles (GMT-8)</SelectItem>
                       <SelectItem value="Asia/Tokyo">Tokyo (GMT+9)</SelectItem>
+                      <SelectItem value="Asia/Shanghai">Shanghai (GMT+8)</SelectItem>
                       <SelectItem value="Australia/Sydney">Sydney (GMT+11)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                <Button onClick={handleSave} disabled={isSaving}>
+                <Button
+                  onClick={handleSavePreferences}
+                  disabled={isSaving || loading}
+                  className="w-full"
+                >
                   <Save className="w-4 h-4 mr-2" />
                   {isSaving ? 'Enregistrement...' : 'Enregistrer'}
                 </Button>
               </CardContent>
             </Card>
 
-            <Card className="bg-white">
-              <CardHeader>
-                <CardTitle>Apparence</CardTitle>
-                <CardDescription className="text-gray-600">
-                  Personnalisez l'interface
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label>Thème</Label>
-                  <div className="grid grid-cols-3 gap-4">
-                    <Button
-                      variant="outline"
-                      className="h-20 flex flex-col items-center justify-center"
-                    >
-                      <div className="w-8 h-8 rounded-full bg-white border-2 mb-2"></div>
-                      Clair
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="h-20 flex flex-col items-center justify-center"
-                    >
-                      <div className="w-8 h-8 rounded-full bg-gray-900 mb-2"></div>
-                      Sombre
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="h-20 flex flex-col items-center justify-center border-blue-600"
-                    >
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-white to-gray-900 mb-2"></div>
-                      Auto
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+
+
+{/* APPARENCE - SECTION MISE À JOUR */}
+<Card className="bg-white">
+  <CardHeader>
+    <CardTitle>Apparence</CardTitle>
+    <CardDescription className="text-gray-600">
+      Personnalisez l'interface
+    </CardDescription>
+  </CardHeader>
+  <CardContent className="space-y-6">
+    <div className="space-y-2">
+      <Label>Thème</Label>
+      <div className="grid grid-cols-3 gap-4">
+        {/* BOUTON CLAIR */}
+        <Button
+          variant={preferences.theme === 'light' ? 'default' : 'outline'}
+          className="h-20 flex flex-col items-center justify-center"
+          onClick={async () => {
+            // 1️⃣ Changer localement
+            setPreferences({ ...preferences, theme: 'light' });
+            // 2️⃣ Appliquer immédiatement + sauvegarder en BD
+            await updatePreferences({ theme: 'light' });
+          }}
+        >
+          <div className="w-8 h-8 rounded-full bg-white border-2 mb-2"></div>
+          Clair
+        </Button>
+
+        {/* BOUTON SOMBRE */}
+        <Button
+          variant={preferences.theme === 'dark' ? 'default' : 'outline'}
+          className="h-20 flex flex-col items-center justify-center"
+          onClick={async () => {
+            // 1️⃣ Changer localement
+            setPreferences({ ...preferences, theme: 'dark' });
+            // 2️⃣ Appliquer immédiatement + sauvegarder en BD
+            await updatePreferences({ theme: 'dark' });
+          }}
+        >
+          <div className="w-8 h-8 rounded-full bg-gray-900 mb-2"></div>
+          Sombre
+        </Button>
+
+        {/* BOUTON AUTO */}
+        <Button
+          variant={preferences.theme === 'auto' ? 'default' : 'outline'}
+          className="h-20 flex flex-col items-center justify-center"
+          onClick={async () => {
+            // 1️⃣ Changer localement
+            setPreferences({ ...preferences, theme: 'auto' });
+            // 2️⃣ Appliquer immédiatement + sauvegarder en BD
+            await updatePreferences({ theme: 'auto' });
+          }}
+        >
+          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-white to-gray-900 mb-2"></div>
+          Auto
+        </Button>
+      </div>
+      <p className="text-xs text-gray-500 mt-2">
+        💡 Le changement s'applique immédiatement
+      </p>
+    </div>
+  </CardContent>
+</Card>
           </div>
         </TabsContent>
 
-        {/* SÉCURITÉ */}
+        {/* SECURITY TAB */}
         <TabsContent value="security" className="mt-6">
           <div className="max-w-2xl space-y-6">
             <Card className="bg-white">
@@ -495,76 +611,10 @@ export default function SettingsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between py-3">
-                  <div className="flex items-center gap-3">
-                    <Lock className="w-5 h-5 text-gray-400" />
-                    <div>
-                      <p className="font-medium text-gray-600">Mot de passe</p>
-                      <p className="text-sm text-gray-500">
-                        Dernière modification il y a 30 jours
-                      </p>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Modifier
-                  </Button>
-                </div>
-
-                <Separator />
-
-                <div className="flex items-center justify-between py-3">
-                  <div className="flex items-center gap-3">
-                    <Shield className="w-5 h-5 text-gray-400" />
-                    <div>
-                      <p className="font-medium text-gray-600">Authentification à deux facteurs</p>
-                      <p className="text-sm text-gray-500">
-                        Non activée
-                      </p>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Activer
-                  </Button>
-                </div>
-
-                <Separator />
-
-                <div className="flex items-center justify-between py-3">
-                  <div className="flex items-center gap-3">
-                    <Mail className="w-5 h-5 text-gray-400" />
-                    <div>
-                      <p className="font-medium text-gray-600">Email de récupération</p>
-                      <p className="text-sm text-gray-500">
-                        {userEmail}
-                      </p>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Modifier
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white border-red-200">
-              <CardHeader>
-                <CardTitle className="text-red-600">Zone de danger</CardTitle>
-                <CardDescription>
-                  Actions irréversibles sur votre compte
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between py-3">
-                  <div>
-                    <p className="font-medium text-gray-600">Supprimer le compte</p>
-                    <p className="text-sm text-gray-500">
-                      Supprimer définitivement votre compte et toutes vos données
-                    </p>
-                  </div>
-                  <Button variant="destructive" size="sm">
-                    Supprimer
-                  </Button>
-                </div>
+                <p className="text-sm text-gray-600">
+                  Les paramètres de sécurité comme le mot de passe et l'authentification à deux facteurs
+                  sont gérés via Clerk.
+                </p>
               </CardContent>
             </Card>
           </div>
