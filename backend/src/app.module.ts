@@ -29,7 +29,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
       playground: true,
       sortSchema: true,
-      context: ({ req }) => ({ req }), // ✅ CRUCIAL
+      context: ({ req }) => ({ req }),
     }),
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,

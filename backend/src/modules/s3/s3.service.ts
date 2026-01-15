@@ -204,4 +204,122 @@ export class S3Service {
       throw new BadRequestException('Impossible de supprimer la vidéo de S3');
     }
   }
+
+  /**
+   * Compresse et uploade un avatar utilisateur à S3
+   */
+  async uploadUserAvatar(
+    fileBuffer: Buffer,
+    fileName: string,
+    fileType: string,
+  ): Promise<{ uploadUrl: string; key: string; publicUrl: string }> {
+    // Validation
+    this.validateImageFile(fileName, fileType);
+    this.validateFileSize(fileBuffer.length, 5 * 1024 * 1024); // 5MB max
+
+    // Compression avec SHARP
+    console.log("🖼️ Compression de l'avatar...");
+    const sharp = (await import('sharp')).default;
+
+    const compressedBuffer = await sharp(fileBuffer)
+      .resize(200, 200, {
+        fit: 'cover',
+        position: 'center',
+      })
+      .webp({ quality: 80 })
+      .toBuffer();
+
+    console.log(
+      `📉 Taille originale: ${(fileBuffer.length / 1024).toFixed(2)}KB → Compressée: ${(compressedBuffer.length / 1024).toFixed(2)}KB`,
+    );
+
+    // Générer une clé unique
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(7);
+    const key = `avatars/${timestamp}-${randomString}.webp`;
+
+    // Upload à S3
+    console.log(`📤 Upload à S3 avec clé: ${key}`);
+    const command = new PutObjectCommand({
+      Bucket: this.bucketName,
+      Key: key,
+      Body: compressedBuffer,
+      ContentType: 'image/webp',
+      CacheControl: 'public, max-age=31536000',
+    });
+
+    await this.s3Client.send(command);
+    console.log('✅ Avatar uploadé avec succès à S3');
+
+    const publicUrl = `${this.publicUrl}/${key}`;
+
+    return {
+      uploadUrl: publicUrl,
+      key,
+      publicUrl,
+    };
+  }
+
+  /**
+   * Valide le type d'image
+   */
+  private validateImageFile(fileName: string, contentType: string): void {
+    const ALLOWED_IMAGE_TYPES = [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/gif',
+    ];
+    const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+
+    if (!ALLOWED_IMAGE_TYPES.includes(contentType)) {
+      throw new BadRequestException(
+        `Type d'image non supporté. Formats acceptés: ${ALLOWED_IMAGE_TYPES.join(', ')}`,
+      );
+    }
+
+    const hasValidExtension = ALLOWED_EXTENSIONS.some((ext) =>
+      fileName.toLowerCase().endsWith(ext),
+    );
+    if (!hasValidExtension) {
+      throw new BadRequestException(
+        `Extension non supportée. Extensions acceptées: ${ALLOWED_EXTENSIONS.join(', ')}`,
+      );
+    }
+  }
+
+  /**
+   * Valide la taille du fichier
+   */
+  private validateFileSize(fileSize: number, maxSize: number): void {
+    if (fileSize > maxSize) {
+      const maxSizeMB = maxSize / (1024 * 1024);
+      throw new BadRequestException(
+        `La taille du fichier dépasse la limite de ${maxSizeMB}MB`,
+      );
+    }
+  }
+
+  /**
+   * Supprime un avatar de S3
+   */
+  async deleteUserAvatar(key: string): Promise<void> {
+    if (!key) {
+      console.warn("⚠️ Tentative de suppression d'un avatar sans clé");
+      return;
+    }
+
+    try {
+      const command = new DeleteObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+      });
+
+      await this.s3Client.send(command);
+      console.log(`✅ Avatar supprimé de S3: ${key}`);
+    } catch (error) {
+      console.error("❌ Erreur lors de la suppression de l'avatar:", error);
+      throw new BadRequestException("Impossible de supprimer l'ancien avatar");
+    }
+  }
 }
