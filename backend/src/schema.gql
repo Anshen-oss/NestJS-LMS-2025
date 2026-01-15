@@ -473,6 +473,9 @@ type Mutation {
   updateLessonContent(input: UpdateLessonContentInput!): Lesson!
   updateLessonProgress(input: UpdateProgressInput!, lessonId: String!): LessonProgress!
 
+  """Met à jour l'avatar de l'utilisateur actuellement authentifié"""
+  updateUserAvatar(avatarKey: String!, avatarUrl: String!): UpdateUserAvatarResponse!
+
   """Update user preferences"""
   updateUserPreferences(input: UpdateUserPreferencesInput!): UserPreferences!
 
@@ -481,6 +484,11 @@ type Mutation {
 
   """Update user role (ADMIN only)"""
   updateUserRole(input: UpdateUserRoleInput!): User!
+
+  """
+  Upload un avatar utilisateur. Compresse automatiquement en WEBP 200x200.
+  """
+  uploadUserAvatar(file: Upload!): UploadAvatarResponse!
 }
 
 type PercentageChange {
@@ -793,6 +801,12 @@ input UpdateProgressInput {
   watchedDuration: Int!
 }
 
+type UpdateUserAvatarResponse {
+  message: String
+  success: Boolean!
+  user: User
+}
+
 input UpdateUserPreferencesInput {
   autoplay: Boolean
   courseUpdates: Boolean
@@ -818,6 +832,15 @@ input UpdateUserRoleInput {
 
   """ID de l'utilisateur"""
   userId: String!
+}
+
+"""The `Upload` scalar type represents a file upload."""
+scalar Upload
+
+type UploadAvatarResponse {
+  avatarUrl: String!
+  message: String
+  success: Boolean!
 }
 
 type UploadUrlResponse {

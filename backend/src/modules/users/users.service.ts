@@ -5,12 +5,16 @@ import {
 } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { S3Service } from '../s3/s3.service';
 import { UserPreferences } from './entities/user-preferences.entity';
 import { User } from './entities/user.entity';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private s3Service: S3Service,
+  ) {}
 
   /**
    * 📊 Récupérer tous les utilisateurs (pour admin)
@@ -325,5 +329,73 @@ export class UsersService {
       instructors,
       admins,
     };
+  }
+
+  /**
+   * 🆕 Met à jour l'avatar d'un utilisateur
+   *
+   * Processus:
+   * 1. Valide que l'utilisateur existe
+   * 2. Récupère l'ancien avatarKey (pour suppression)
+   * 3. Sauvegarde les nouvelles valeurs en BD
+   * 4. Supprime l'ancien avatar de S3
+   * 5. Retourne l'utilisateur mis à jour
+   *
+   * @param userId - ID de l'utilisateur
+   * @param avatarUrl - URL publique du nouvel avatar (S3)
+   * @param avatarKey - Clé S3 du nouvel avatar
+   * @returns User mis à jour avec le nouvel avatar
+   * @throws NotFoundException si utilisateur n'existe pas
+   */
+  async updateUserAvatar(
+    userId: string,
+    avatarUrl: string,
+    avatarKey: string,
+  ): Promise<User> {
+    console.log('🖼️ Mise à jour avatar pour user:', userId);
+
+    // ✅ ÉTAPE 1 : Vérifier que l'utilisateur existe
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`Utilisateur ${userId} non trouvé`);
+    }
+
+    // ✅ ÉTAPE 2 : Récupérer l'ancien avatarKey pour suppression
+    const oldAvatarKey = user.avatarKey;
+    console.log('🔍 Ancien avatarKey:', oldAvatarKey || 'aucun');
+
+    // ✅ ÉTAPE 3 : Sauvegarder les nouvelles valeurs en BD
+    console.log('💾 Sauvegarde en BD...');
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        avatarUrl,
+        avatarKey,
+      },
+      include: {
+        preferences: true,
+      },
+    });
+
+    console.log('✅ User sauvegardé en BD');
+
+    // ✅ ÉTAPE 4 : Supprimer l'ancien avatar de S3 (si existe)
+    if (oldAvatarKey) {
+      console.log('🗑️ Suppression ancien avatar de S3...');
+      try {
+        await this.s3Service.deleteUserAvatar(oldAvatarKey);
+        console.log('✅ Ancien avatar supprimé de S3');
+      } catch (error) {
+        // Ne pas bloquer si suppression échoue
+        console.warn('⚠️ Erreur suppression ancien avatar:', error);
+      }
+    }
+
+    // ✅ ÉTAPE 5 : Retourner l'utilisateur mis à jour
+    console.log('🎉 Avatar mis à jour avec succès');
+    return updatedUser;
   }
 }

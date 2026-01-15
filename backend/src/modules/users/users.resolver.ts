@@ -19,10 +19,28 @@ import { UserPreferences } from './entities/user-preferences.entity';
 import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
 
+import { S3Service } from '../s3/s3.service';
+
+// 🆕 TYPE GRAPHQL POUR LA MUTATION
+@ObjectType('UpdateUserAvatarResponse')
+class UpdateUserAvatarResponse {
+  @Field()
+  success: boolean;
+
+  @Field(() => User, { nullable: true })
+  user?: User;
+
+  @Field({ nullable: true })
+  message?: string;
+}
+
 @Resolver(() => User)
 @UseGuards(ClerkGqlGuard, RolesGuard)
 export class UsersResolver {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private s3Service: S3Service,
+  ) {}
 
   /**
    * 📊 Query : Récupérer tous les utilisateurs (ADMIN uniquement)
@@ -133,6 +151,52 @@ export class UsersResolver {
   @Roles(UserRole.ADMIN)
   async unbanUser(@Args('userId') userId: string): Promise<User> {
     return this.usersService.unbanUser(userId);
+  }
+
+  /**
+   * 🆕 Met à jour l'avatar de l'utilisateur actuellement authentifié
+   *
+   * Processus:
+   * 1. Récupère l'utilisateur actuellement authentifié
+   * 2. Appelle users.service.updateUserAvatar()
+   * 3. Retourne l'utilisateur mis à jour
+   *
+   * @param currentUser - L'utilisateur authentifié (injecté par @CurrentUser)
+   * @param avatarUrl - URL publique du nouvel avatar (S3)
+   * @param avatarKey - Clé S3 du nouvel avatar
+   * @returns UpdateUserAvatarResponse avec user mis à jour
+   */
+  @Mutation(() => UpdateUserAvatarResponse, {
+    description:
+      "Met à jour l'avatar de l'utilisateur actuellement authentifié",
+  })
+  @UseGuards(ClerkGqlGuard)
+  async updateUserAvatar(
+    @CurrentUser() currentUser: User,
+    @Args('avatarUrl') avatarUrl: string,
+    @Args('avatarKey') avatarKey: string,
+  ): Promise<UpdateUserAvatarResponse> {
+    console.log('📤 Mutation updateUserAvatar pour user:', currentUser.id);
+
+    try {
+      const updatedUser = await this.usersService.updateUserAvatar(
+        currentUser.id,
+        avatarUrl,
+        avatarKey,
+      );
+
+      return {
+        success: true,
+        user: updatedUser,
+        message: 'Avatar mis à jour avec succès',
+      };
+    } catch (error) {
+      console.error('❌ Erreur mise à jour avatar:', error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Erreur',
+      };
+    }
   }
 }
 
