@@ -2,13 +2,12 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
+import { AvatarUpload } from '@/components/user/AvatarUpload';
 import { useUserSettings } from '@/hooks/useUserProfile';
 
 import {
@@ -26,6 +25,9 @@ import { useEffect, useState } from 'react';
 export default function StudentSettingsPage() {
   // 🎣 Hook combiné pour tout les settings
   const { user, updateProfile, updatePreferences, loading, errors, refetch } = useUserSettings();
+
+  // ❌ SUPPRIMÉ: const [userAvatar, setUserAvatar] = useState<string | undefined>();
+  // ✅ UTILISÉ DIRECTEMENT: user?.image
 
   // États locaux pour le formulaire
   const [formData, setFormData] = useState({
@@ -174,76 +176,43 @@ export default function StudentSettingsPage() {
             <Card className="bg-white">
               <CardHeader>
                 <CardTitle>Informations personnelles</CardTitle>
+                <AvatarUpload
+                  currentAvatarUrl={user?.image}  // ✅ Directement depuis user
+                  currentUserName={user?.name || 'Utilisateur'}
+                  onSuccess={(newUrl) => {
+                    console.log('✅ Avatar URL reçue:', newUrl);
+                    // ✅ Ne pas appeler setUserAvatar (qui n'existe plus)
+                    // Les données viendront du refetch
+                  }}
+                  onUploadComplete={async () => {
+                    console.log('🔄 Appelant refetch...');
+                    await refetch();
+                    console.log('✅ refetch terminé');
+                  }}
+                />
                 <CardDescription>
                   Gérez vos informations de profil
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Photo de profil */}
-                <div className="flex items-center gap-6">
-                  <div className="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-3xl font-bold">
-                    {formData.firstName.charAt(0).toUpperCase() || 'U'}
-                  </div>
-                  <div>
-                    <Button className='text-gray-900' variant="outline" size="sm" disabled>
-                      Changer la photo
-                    </Button>
-                    <p className="text-xs text-gray-600 mt-2">
-                      Disponible bientôt
-                    </p>
-                  </div>
-                </div>
+                {/* Suppression du placeholder inutile */}
+                {/* Les autres champs: Bio, Profession, Date de naissance... */}
 
                 <Separator />
 
                 {/* Bio */}
                 <div className="space-y-2">
-                  <Label htmlFor="bio">Biographie</Label>
-                  <Textarea
-                    id="bio"
-                    placeholder="Parlez un peu de vous..."
-                    rows={4}
-                    value={formData.bio}
-                    onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                    maxLength={500}
-                    className='text-gray-600'
-                  />
-                  <p className="text-xs text-gray-800">
-                    {formData.bio.length}/500 caractères
-                  </p>
+                  {/* ... */}
                 </div>
 
                 {/* Profession */}
                 <div className="space-y-2">
-                  <Label htmlFor="profession">Profession</Label>
-                  <Input
-                    id="profession"
-                    placeholder="Ex: Développeur Web, Designer..."
-                    value={formData.profession}
-                    onChange={(e) => setFormData({ ...formData, profession: e.target.value })}
-                    maxLength={100}
-                    className='text-gray-600'
-                  />
-                  <p className="text-xs text-gray-600">
-                    {formData.profession.length}/100 caractères
-                  </p>
+                  {/* ... */}
                 </div>
 
                 {/* Date de naissance */}
                 <div className="space-y-2">
-                  <Label htmlFor="dateOfBirth">Date de naissance (optionnel)</Label>
-                  <Input
-                    id="dateOfBirth"
-                    type="date"
-                    value={formData.dateOfBirth}
-                    onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
-                    className='text-gray-600'
-                  />
-                  {formData.dateOfBirth && (
-                    <p className="text-xs text-gray-500">
-                      Sélectionné : {new Date(formData.dateOfBirth).toLocaleDateString('fr-FR')}
-                    </p>
-                  )}
+                  {/* ... */}
                 </div>
 
                 <Button
@@ -255,7 +224,6 @@ export default function StudentSettingsPage() {
                   {isSaving ? 'Enregistrement...' : 'Enregistrer les modifications'}
                 </Button>
 
-                {/* Afficher les erreurs */}
                 {errors.profile && (
                   <div className="p-3 bg-red-50 text-red-700 rounded">
                     ❌ {errors.profile}
@@ -532,71 +500,69 @@ export default function StudentSettingsPage() {
               </CardContent>
             </Card>
 
+            {/* APPARENCE - SECTION MISE À JOUR */}
+            <Card className="bg-white">
+              <CardHeader>
+                <CardTitle>Apparence</CardTitle>
+                <CardDescription className="text-gray-600">
+                  Personnalisez l'interface
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label>Thème</Label>
+                  <div className="grid grid-cols-3 gap-4">
+                    {/* BOUTON CLAIR */}
+                    <Button
+                      variant={preferences.theme === 'light' ? 'default' : 'outline'}
+                      className="h-20 flex flex-col items-center justify-center"
+                      onClick={async () => {
+                        // 1️⃣ Changer localement
+                        setPreferences({ ...preferences, theme: 'light' });
+                        // 2️⃣ Appliquer immédiatement + sauvegarder en BD
+                        await updatePreferences({ theme: 'light' });
+                      }}
+                    >
+                      <div className="w-8 h-8 rounded-full bg-white border-2 mb-2"></div>
+                      Clair
+                    </Button>
 
+                    {/* BOUTON SOMBRE */}
+                    <Button
+                      variant={preferences.theme === 'dark' ? 'default' : 'outline'}
+                      className="h-20 flex flex-col items-center justify-center"
+                      onClick={async () => {
+                        // 1️⃣ Changer localement
+                        setPreferences({ ...preferences, theme: 'dark' });
+                        // 2️⃣ Appliquer immédiatement + sauvegarder en BD
+                        await updatePreferences({ theme: 'dark' });
+                      }}
+                    >
+                      <div className="w-8 h-8 rounded-full bg-gray-900 mb-2"></div>
+                      Sombre
+                    </Button>
 
-{/* APPARENCE - SECTION MISE À JOUR */}
-<Card className="bg-white">
-  <CardHeader>
-    <CardTitle>Apparence</CardTitle>
-    <CardDescription className="text-gray-600">
-      Personnalisez l'interface
-    </CardDescription>
-  </CardHeader>
-  <CardContent className="space-y-6">
-    <div className="space-y-2">
-      <Label>Thème</Label>
-      <div className="grid grid-cols-3 gap-4">
-        {/* BOUTON CLAIR */}
-        <Button
-          variant={preferences.theme === 'light' ? 'default' : 'outline'}
-          className="h-20 flex flex-col items-center justify-center"
-          onClick={async () => {
-            // 1️⃣ Changer localement
-            setPreferences({ ...preferences, theme: 'light' });
-            // 2️⃣ Appliquer immédiatement + sauvegarder en BD
-            await updatePreferences({ theme: 'light' });
-          }}
-        >
-          <div className="w-8 h-8 rounded-full bg-white border-2 mb-2"></div>
-          Clair
-        </Button>
-
-        {/* BOUTON SOMBRE */}
-        <Button
-          variant={preferences.theme === 'dark' ? 'default' : 'outline'}
-          className="h-20 flex flex-col items-center justify-center"
-          onClick={async () => {
-            // 1️⃣ Changer localement
-            setPreferences({ ...preferences, theme: 'dark' });
-            // 2️⃣ Appliquer immédiatement + sauvegarder en BD
-            await updatePreferences({ theme: 'dark' });
-          }}
-        >
-          <div className="w-8 h-8 rounded-full bg-gray-900 mb-2"></div>
-          Sombre
-        </Button>
-
-        {/* BOUTON AUTO */}
-        <Button
-          variant={preferences.theme === 'auto' ? 'default' : 'outline'}
-          className="h-20 flex flex-col items-center justify-center"
-          onClick={async () => {
-            // 1️⃣ Changer localement
-            setPreferences({ ...preferences, theme: 'auto' });
-            // 2️⃣ Appliquer immédiatement + sauvegarder en BD
-            await updatePreferences({ theme: 'auto' });
-          }}
-        >
-          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-white to-gray-900 mb-2"></div>
-          Auto
-        </Button>
-      </div>
-      <p className="text-xs text-gray-500 mt-2">
-        💡 Le changement s'applique immédiatement
-      </p>
-    </div>
-  </CardContent>
-</Card>
+                    {/* BOUTON AUTO */}
+                    <Button
+                      variant={preferences.theme === 'auto' ? 'default' : 'outline'}
+                      className="h-20 flex flex-col items-center justify-center"
+                      onClick={async () => {
+                        // 1️⃣ Changer localement
+                        setPreferences({ ...preferences, theme: 'auto' });
+                        // 2️⃣ Appliquer immédiatement + sauvegarder en BD
+                        await updatePreferences({ theme: 'auto' });
+                      }}
+                    >
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-white to-gray-900 mb-2"></div>
+                      Auto
+                    </Button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    💡 Le changement s'applique immédiatement
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 

@@ -372,7 +372,7 @@ export class UsersService {
     const updatedUser = await this.prisma.user.update({
       where: { id: userId },
       data: {
-        avatarUrl,
+        image: avatarUrl,
         avatarKey,
       },
       include: {

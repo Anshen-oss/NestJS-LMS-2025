@@ -7,21 +7,39 @@ import {
 } from '@/lib/generated/graphql';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
-import { useThemeManager } from './useTheme'; // ← AJOUTER CETTE IMPORT
+import { useThemeManager } from './useTheme';
 
 // ========================================
 // HOOK 1️⃣ : useGetCurrentUser (Query)
 // ========================================
 export function useGetCurrentUser() {
-  const { data, loading, error, refetch } = useGetCurrentUserQuery({
+  const { data, loading, error, refetch, networkStatus } = useGetCurrentUserQuery({
     fetchPolicy: 'cache-and-network',
+    notifyOnNetworkStatusChange: true,  // ✅ AJOUTER CETTE LIGNE
+  });
+
+  const enhancedRefetch = useCallback(async () => {
+    console.log('🔄 Refetching user from network...');
+    const result = await refetch();
+    console.log('✅ Refetch result - user.image:', result.data?.getCurrentUser?.image);
+    return result;
+  }, [refetch]);
+
+  // ✅ CORRECTION: Si on a les données, on n'est pas en loading
+  const isLoading = !data?.getCurrentUser && loading;
+
+  console.log('👤 useGetCurrentUser:', {
+    hasData: !!data?.getCurrentUser,
+    isLoading,
+    networkStatus,
+    error: error?.message,
   });
 
   return {
     user: data?.getCurrentUser,
-    loading,
+    loading: isLoading,  // ← CORRIGÉ: vérifier si on a les données
     error: error?.message,
-    refetch,
+    refetch: enhancedRefetch,
   };
 }
 
@@ -149,25 +167,19 @@ export function useUpdateUserPreferences() {
 // ========================================
 // HOOK COMBINÉ : useUserSettings
 // ========================================
-// Combine tout pour la page Settings
-// VERSION MISE À JOUR AVEC GESTION DU THÈME
 export function useUserSettings() {
   const { user, loading: loadingUser, refetch } = useGetCurrentUser();
   const { updateProfile, loading: loadingProfile, error: profileError } = useUpdateUserProfile();
   const { updatePreferences: updatePreferencesBase, loading: loadingPrefs, error: prefsError } = useUpdateUserPreferences();
-  const { changeTheme } = useThemeManager(); // ← AJOUTER
+  const { changeTheme } = useThemeManager();
 
-  // ✅ NOUVELLE FONCTION : Mettre à jour les préférences + appliquer le thème
   const updatePreferences = useCallback(
     async (prefs: any) => {
-      // 1️⃣ Si le thème change, l'appliquer IMMÉDIATEMENT
       if (prefs.theme) {
         changeTheme(prefs.theme as 'light' | 'dark' | 'auto');
       }
 
-      // 2️⃣ Sauvegarder en BD
       const result = await updatePreferencesBase(prefs);
-
       return result;
     },
     [updatePreferencesBase, changeTheme],
@@ -176,7 +188,7 @@ export function useUserSettings() {
   return {
     user,
     updateProfile,
-    updatePreferences, // ← Utiliser la nouvelle fonction avec thème
+    updatePreferences,
     loading: loadingUser || loadingProfile || loadingPrefs,
     errors: {
       profile: profileError,

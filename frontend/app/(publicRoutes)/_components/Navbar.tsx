@@ -1,102 +1,103 @@
-// "use client";
-// import { buttonVariants } from "@/components/ui/button";
-// import { ThemeToggle } from "@/components/ui/themeToggle";
-// import { useAuth } from "@/hooks/use-auth";
-// import Logo from "@/public/logo.png";
-// import Image from "next/image";
-// import Link from "next/link";
-// import { UserDropdown } from "./UserDropdown";
-
-// const navLinks = [
-//   { name: "Home", href: "/" },
-//   { name: "Courses", href: "/courses" },
-//   { name: "Dashboard", href: "/admin" },
-// ];
-
-// export function Navbar() {
-//   const { user, isAuthenticated, isLoading } = useAuth();
-
-//   return (
-//     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-[backdrop-filter]:bg-background/60">
-//       <div className="container flex min-h-16  items-center mx-auto px-4 md:px-6 lg:px-8">
-//         <Link href="/" className="flex items-center space-x-2 mr-4">
-//           <Image
-//             src={Logo}
-//             alt="Logo"
-//             className="size-9"
-//             width={32}
-//             height={32}
-//           />
-//           <span className="font-bold">Anshen LMS</span>
-//         </Link>
-
-//         {/** Desktop navigation */}
-//         <nav className="hidden md:flex md:flex-1 md:items-center md:justify-between">
-//           <div className="flex items-center space-x-2">
-//             {navLinks.map((link) => (
-//               <Link
-//                 key={link.name}
-//                 href={link.href}
-//                 className="text-sm font-medium transition-colors hover:text-primary"
-//               >
-//                 {link.name}
-//               </Link>
-//             ))}
-//           </div>
-
-//           <div className="flex items-center space-x-4">
-//             <ThemeToggle />
-//             {isLoading ? null : isAuthenticated && user ? (
-//               <UserDropdown
-//                 email={user.email}
-//                 name={user.name}
-//                 image=""
-//               />
-//             ) : (
-//               <>
-//                 <Link
-//                   href="/login"
-//                   className={buttonVariants({
-//                     variant: "secondary",
-//                   })}
-//                 >
-//                   Login
-//                 </Link>
-//                 <Link href="/login" className={buttonVariants()}>
-//                   Get Started
-//                 </Link>
-//               </>
-//             )}
-//           </div>
-//         </nav>
-//       </div>
-//     </header>
-//   );
-// }
-
-
 'use client';
 
-import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
+import { Avatar } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import { useGetCurrentUserQuery } from '@/lib/generated/graphql';
+import { SignedIn, SignedOut, useUser } from '@clerk/nextjs';
+import { LogOut, Settings, User } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export function Navbar() {
+  const router = useRouter();
+  const { user: clerkUser } = useUser();
+  const [isOpen, setIsOpen] = useState(false);
+
+  // ✅ Récupère le user AVEC avatarUrl depuis Apollo
+  const { data, loading } = useGetCurrentUserQuery();
+  const user = data?.getCurrentUser;
+
+  const handleSignOut = async () => {
+    // Clerk sign out logic here if needed
+    router.push('/');
+  };
+
   return (
     <header className="w-full border-b">
       <div className="container mx-auto px-4 md:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <Link href="/" className="font-bold">
+        <Link href="/" className="font-bold text-lg">
           Anshen LMS
         </Link>
 
         <nav className="flex items-center gap-4">
           <SignedOut>
-            <Link href="/sign-in">Se connecter</Link>
-            <Link href="/sign-up">Créer un compte</Link>
+            <Link href="/sign-in" className="hover:text-primary">
+              Se connecter
+            </Link>
+            <Link href="/sign-up" className="hover:text-primary">
+              Créer un compte
+            </Link>
           </SignedOut>
 
           <SignedIn>
-            {/* ✅ affiche avatar + menu (manage account, sign out…) */}
-            <UserButton afterSignOutUrl="/" />
+            {loading ? (
+              // Skeleton pendant le chargement
+              <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse" />
+            ) : user ? (
+              // ✅ Menu Dropdown avec Avatar Personnalisé
+              <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 rounded-full hover:bg-gray-100 p-1 transition-colors">
+                    {/* ✅ Avatar personnalisé avec URL de la BD */}
+                    <Avatar
+                      src={user.image || undefined}
+                      name={user.name || 'Utilisateur'}
+                      size="md"
+                    />
+                  </button>
+                </DropdownMenuTrigger>
+
+                <DropdownMenuContent align="end" className="w-56">
+                  {/* Affiche le nom de l'utilisateur */}
+                  <div className="px-2 py-1.5 text-sm font-medium">
+                    {user.name || 'Utilisateur'}
+                  </div>
+                  <div className="px-2 text-xs text-gray-500">
+                    {user.email}
+                  </div>
+
+                  <DropdownMenuSeparator />
+
+                  {/* Menu Items */}
+                  <DropdownMenuItem onClick={() => router.push('/dashboard/profile')}>
+                    <User className="w-4 h-4 mr-2" />
+                    Mon Profil
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem onClick={() => router.push('/dashboard/settings')}>
+                    <Settings className="w-4 h-4 mr-2" />
+                    Paramètres
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuItem
+                    onClick={handleSignOut}
+                    className="text-red-600 focus:bg-red-50"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Déconnexion
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
           </SignedIn>
         </nav>
       </div>

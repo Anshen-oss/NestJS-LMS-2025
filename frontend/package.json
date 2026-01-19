@@ -60,6 +60,7 @@
     "@tiptap/html": "^3.3.0",
     "@tiptap/react": "2.8.0",
     "@tiptap/starter-kit": "2.8.0",
+    "apollo-upload-client": "^19.0.0",
     "arcjet": "1.0.0-beta.10",
     "canvas-confetti": "^1.9.3",
     "class-variance-authority": "^0.7.1",

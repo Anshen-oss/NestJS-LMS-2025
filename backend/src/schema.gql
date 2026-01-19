@@ -851,6 +851,8 @@ type UploadUrlResponse {
 
 type User {
   _count: UserCounts
+  avatarKey: String
+  avatarUrl: String
   banExpires: DateTime
   banReason: String
   banned: Boolean
