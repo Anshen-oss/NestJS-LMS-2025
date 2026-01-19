@@ -20,6 +20,7 @@ import { StudentModule } from './modules/student/student.module';
 import { UsersModule } from './modules/users/users.module';
 import { VideoProgressModule } from './modules/video-progress/video-progress.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { UploadModule } from './upload/upload.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 
 @Module({
@@ -47,6 +48,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     InstructorModule,
     AnalyticsModule,
     StudentModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppResolver],

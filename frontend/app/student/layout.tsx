@@ -1,5 +1,6 @@
 'use client';
 
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
   Sidebar,
@@ -15,7 +16,9 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
-import { UserButton, useUser } from '@clerk/nextjs';
+import { UserMenuDropdown } from '@/components/UserMenuDropdown';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useUser } from '@clerk/nextjs';
 import {
   BookOpen,
   GraduationCap,
@@ -30,14 +33,17 @@ import { ReactNode } from 'react';
 
 export default function StudentLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { user, isLoaded } = useUser();
+  const { user: clerkUser, isLoaded: clerkLoaded } = useUser();
+
+  // ✅ IMPORTANT: Utiliser Apollo SEULEMENT après que Clerk soit chargé
+  const { user: apolloUser, loading: apolloLoading } = useCurrentUser();
 
   // Vérifier que l'utilisateur est STUDENT
-  const userRole = user?.publicMetadata?.role as string | undefined;
-  const isStudent = isLoaded && user && userRole === 'STUDENT';
+  const userRole = clerkUser?.publicMetadata?.role as string | undefined;
+  const isStudent = clerkLoaded && clerkUser && userRole === 'STUDENT';
 
-  // Pendant le chargement
-  if (!isLoaded) {
+  // Pendant le chargement de Clerk
+  if (!clerkLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -78,7 +84,7 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
     {
       title: 'Mes Cours',
       icon: BookOpen,
-      href: '/student/my-courses',  // ← Changé ici
+      href: '/student/my-courses',
       description: 'Cours inscrits',
     },
     {
@@ -95,10 +101,11 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
     },
   ];
 
-  // User info
-  const userName = user?.fullName || user?.firstName || 'Étudiant';
-  const userEmail = user?.primaryEmailAddress?.emailAddress || '';
-  const userInitial = (user?.fullName?.charAt(0) || user?.firstName?.charAt(0) || 'E').toUpperCase();
+  // ✅ User info - Utiliser Apollo si disponible, sinon Clerk
+  const userName = apolloUser?.name || clerkUser?.fullName || clerkUser?.firstName || 'Étudiant';
+  const userEmail = apolloUser?.email || clerkUser?.primaryEmailAddress?.emailAddress || '';
+  const userAvatar = apolloUser?.image;
+  const userInitial = (apolloUser?.name?.charAt(0) || clerkUser?.fullName?.charAt(0) || clerkUser?.firstName?.charAt(0) || 'E').toUpperCase();
 
   return (
     <SidebarProvider>
@@ -158,11 +165,22 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
             <SidebarMenu>
               <SidebarMenuItem>
                 <div className="flex items-center gap-3 px-2 py-2">
-                  <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                    <span className="text-sm font-semibold text-blue-600">
-                      {userInitial}
-                    </span>
-                  </div>
+                  {/* ✅ Utiliser Avatar de Shadcn/ui */}
+                  {apolloLoading ? (
+                    <div className="h-8 w-8 rounded-full bg-gray-200 animate-pulse" />
+                  ) : (
+                    <Avatar className="h-8 w-8">
+                      {userAvatar && (
+                        <AvatarImage
+                          src={userAvatar}
+                          alt={userName}
+                        />
+                      )}
+                      <AvatarFallback className="bg-blue-500 text-white text-xs font-semibold">
+                        {userInitial}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{userName}</p>
                     <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
@@ -189,13 +207,8 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
                   </Link>
                 </Button>
 
-                <UserButton
-                  appearance={{
-                    elements: {
-                      avatarBox: 'h-8 w-8',
-                    }
-                  }}
-                />
+                {/* ✅ UserMenuDropdown avec Avatar synchronisé */}
+                <UserMenuDropdown />
               </div>
             </div>
           </div>

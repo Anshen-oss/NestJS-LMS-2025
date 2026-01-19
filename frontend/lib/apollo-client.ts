@@ -1,3 +1,5 @@
+// lib/apolloClient.ts - CORRIGÉ v2
+
 'use client';
 
 import { ApolloClient, InMemoryCache, createHttpLink, from } from '@apollo/client';
@@ -6,135 +8,85 @@ import { onError } from '@apollo/client/link/error';
 import { useAuth } from '@clerk/nextjs';
 import { useMemo } from 'react';
 
-// ✅ Configuration
 const GRAPHQL_URI = process.env.NEXT_PUBLIC_GRAPHQL_URL || 'http://localhost:4000/graphql';
+const PUBLIC_OPERATIONS = ['GetAllCourses', 'GetCourseBySlug', 'GetPublicCourses'];
 
-// ✅ Liste des opérations publiques (pas besoin d'auth)
-const PUBLIC_OPERATIONS = [
-  'GetAllCourses',
-  'GetCourseBySlug',
-  'GetPublicCourses',
-];
-
-// ✅ HTTP Link
 const httpLink = createHttpLink({
   uri: GRAPHQL_URI,
-  credentials: 'include', // Pour les cookies si nécessaire
+  credentials: 'include',
 });
 
-// ✅ Hook pour créer le client Apollo avec auth Clerk
 export function useApolloClient() {
-  const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { getToken } = useAuth();  // ✅ Enlever isLoaded et isSignedIn
 
   return useMemo(() => {
-    // ✅ Auth Link - Ajoute le token Clerk aux headers
     const authLink = setContext(async (operation, { headers }) => {
       const operationName = operation.operationName || 'Unknown';
 
-      // Si opération publique, skip le token
+      // ✅ Si c'est une opération publique, pas besoin de token
       if (PUBLIC_OPERATIONS.includes(operationName)) {
-        console.log(`🌐 Public operation: ${operationName}`);
+        console.log(`📢 Public operation: ${operationName}`);
         return { headers };
       }
 
-      // Si pas encore chargé ou pas connecté, skip le token
-      if (!isLoaded || !isSignedIn) {
-        console.log(`⏳ Auth not ready for: ${operationName}`);
-        return { headers };
-      }
-
+      // ✅ TOUJOURS essayer de récupérer le token
+      // getToken() retournera null si l'utilisateur n'est pas connecté
       try {
-        // Récupérer le token Clerk
         const token = await getToken();
-
         if (token) {
-          console.log(`🔑 Token added for: ${operationName}`);
+          console.log(`🔐 Adding token to operation: ${operationName}`);
+          return {
+            headers: {
+              ...headers,
+              authorization: `Bearer ${token}`,
+            },
+          };
         } else {
-          console.warn(`⚠️ No token available for: ${operationName}`);
+          console.log(`⚠️ No token available for operation: ${operationName}`);
+          return { headers };
         }
-
-        return {
-          headers: {
-            ...headers,
-            authorization: token ? `Bearer ${token}` : '',
-          },
-        };
       } catch (error) {
-        //console.error(`❌ Error getting token for ${operationName}:`, error);
+        console.error(`❌ Error getting token for ${operationName}:`, error);
         return { headers };
       }
     });
 
-    // ✅ Error Link - Gestion des erreurs
-    const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) => {
-      const operationName = operation.operationName || 'Unknown';
-
-      // GraphQL Errors
+    const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
       if (graphQLErrors) {
         graphQLErrors.forEach(({ message, locations, path, extensions }) => {
-          console.group(`❌ GraphQL Error - ${operationName}`);
+          console.group(`❌ GraphQL Error - ${operation.operationName}`);
           console.error('Message:', message);
-          console.error('Path:', path);
-          console.error('Locations:', locations);
-          console.error('Extensions:', extensions); // ← AJOUTER
           console.error('Full Error:', { message, locations, path, extensions });
-
-          if (extensions?.code === 'UNAUTHENTICATED') {
-            console.error('🔐 Authentication required!');
-            console.error('Operation:', operationName);
-            console.error('Variables:', operation.variables);
-          }
-
           console.groupEnd();
         });
       }
-
-      // Network Errors
       if (networkError) {
-        console.group(`❌ Network Error - ${operationName}`);
-        console.error('NetworkError full:', JSON.stringify(networkError, null, 2));
-
+        console.group(`❌ Network Error`);
         console.error('Error:', networkError);
-        console.error('Operation:', operationName);
         console.groupEnd();
       }
     });
 
-    // ✅ Créer le client Apollo
     return new ApolloClient({
       link: from([errorLink, authLink, httpLink]),
       cache: new InMemoryCache({
         typePolicies: {
           Query: {
             fields: {
-              // Cache personnalisé si nécessaire
-              publicCourses: {
-                merge(existing = [], incoming) {
-                  return incoming;
-                },
-              },
+              publicCourses: { merge(existing = [], incoming) { return incoming; } },
             },
           },
         },
       }),
       defaultOptions: {
-        watchQuery: {
-          fetchPolicy: 'cache-and-network',
-          errorPolicy: 'all',
-        },
-        query: {
-          fetchPolicy: 'network-only',
-          errorPolicy: 'all',
-        },
-        mutate: {
-          errorPolicy: 'all',
-        },
+        watchQuery: { fetchPolicy: 'cache-and-network', errorPolicy: 'all' },
+        query: { fetchPolicy: 'network-only', errorPolicy: 'all' },
+        mutate: { errorPolicy: 'all' },
       },
     });
-  }, [getToken, isLoaded, isSignedIn]);
+  }, [getToken]);
 }
 
-// ✅ Helper pour vérifier si une opération est publique
 export function isPublicOperation(operationName: string | undefined): boolean {
   return PUBLIC_OPERATIONS.includes(operationName || '');
 }

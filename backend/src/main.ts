@@ -2,21 +2,34 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
 import * as express from 'express';
-import { graphqlUploadExpress } from 'graphql-upload-ts'; // 🆕 IMPORT
+import { graphqlUploadExpress } from 'graphql-upload-ts';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // 🆕 MIDDLEWARE POUR UPLOADS (AVANT les autres middlewares)
+  // ✅ CORS EN PREMIER (avant tout)
+  app.enableCors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
+
+  // ✅ Parser JSON standard pour toutes les routes
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+
+  // ✅ GraphQL upload SEULEMENT pour /graphql (PAS pour /api/upload!)
   app.use(
+    '/graphql',
     graphqlUploadExpress({
-      maxFileSize: 10 * 1024 * 1024, // 10MB
+      maxFileSize: 10 * 1024 * 1024,
       maxFiles: 5,
     }),
   );
 
-  // 🔑 CLÉE: Middleware qui injecte rawBody pour les webhooks
+  // 🔑 Webhooks Stripe
   app.use(
     '/webhooks/stripe',
     express.raw({ type: 'application/json' }),
@@ -30,6 +43,7 @@ async function bootstrap() {
     },
   );
 
+  // 🔑 Webhooks Clerk
   app.use(
     '/webhooks/clerk',
     express.raw({ type: 'application/json' }),
@@ -42,17 +56,6 @@ async function bootstrap() {
       express.json()(req, res, next);
     },
   );
-
-  // JSON normal pour le reste
-  app.use(express.json());
-
-  // CORS
-  app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  });
 
   app.use(cookieParser());
 

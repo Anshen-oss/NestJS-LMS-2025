@@ -66,6 +66,13 @@ export class User {
   @Field(() => String, { nullable: true })
   stripeCustomerId?: string | null;
 
+  // ✅ AJOUTER CES CHAMPS
+  @Field(() => String, { nullable: true })
+  avatarUrl?: string | null;
+
+  @Field(() => String, { nullable: true })
+  avatarKey?: string | null;
+
   @Field(() => Date)
   createdAt: Date;
 
