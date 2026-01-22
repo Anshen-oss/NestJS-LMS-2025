@@ -1,5 +1,3 @@
-// lib/apolloClient.ts - CORRIGÉ v2
-
 'use client';
 
 import { ApolloClient, InMemoryCache, createHttpLink, from } from '@apollo/client';
@@ -17,24 +15,22 @@ const httpLink = createHttpLink({
 });
 
 export function useApolloClient() {
-  const { getToken } = useAuth();  // ✅ Enlever isLoaded et isSignedIn
+  const { getToken } = useAuth();
 
   return useMemo(() => {
     const authLink = setContext(async (operation, { headers }) => {
       const operationName = operation.operationName || 'Unknown';
 
-      // ✅ Si c'est une opération publique, pas besoin de token
       if (PUBLIC_OPERATIONS.includes(operationName)) {
         console.log(`📢 Public operation: ${operationName}`);
         return { headers };
       }
 
-      // ✅ TOUJOURS essayer de récupérer le token
-      // getToken() retournera null si l'utilisateur n'est pas connecté
       try {
         const token = await getToken();
+        console.log(`🔐 Token: ${token ? 'YES' : 'NO'} for ${operationName}`);
+
         if (token) {
-          console.log(`🔐 Adding token to operation: ${operationName}`);
           return {
             headers: {
               ...headers,
@@ -84,7 +80,7 @@ export function useApolloClient() {
         mutate: { errorPolicy: 'all' },
       },
     });
-  }, [getToken]);
+  }, []);
 }
 
 export function isPublicOperation(operationName: string | undefined): boolean {

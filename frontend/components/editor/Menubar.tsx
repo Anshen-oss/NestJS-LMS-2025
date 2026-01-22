@@ -1,8 +1,3 @@
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { TooltipTrigger } from "@radix-ui/react-tooltip";
 import { type Editor } from "@tiptap/react";
@@ -25,10 +20,10 @@ import {
   Undo,
 } from "lucide-react";
 import { useState } from "react";
+import { ImageLibraryModal } from "../media/ImageLibraryModal";
 import { Button } from "../ui/button";
 import { Toggle } from "../ui/toggle";
 import { Tooltip, TooltipContent, TooltipProvider } from "../ui/tooltip";
-import { ImageUpload } from "./ImageUpload";
 import { LinkDialog } from "./LinkDialog";
 
 interface iAppProps {
@@ -36,7 +31,7 @@ interface iAppProps {
 }
 
 export function Menubar({ editor }: iAppProps) {
-  const [showImageUpload, setShowImageUpload] = useState(false);
+  const [showImageLibrary, setShowImageLibrary] = useState(false);
   const [showLinkDialog, setShowLinkDialog] = useState(false);
 
   if (!editor) {
@@ -45,7 +40,6 @@ export function Menubar({ editor }: iAppProps) {
 
   const addImage = (url: string) => {
     editor.chain().focus().setImage({ src: url }).run();
-    setShowImageUpload(false);
   };
 
   const addLink = (url: string, text?: string) => {
@@ -179,24 +173,25 @@ export function Menubar({ editor }: iAppProps) {
             <TooltipContent>Heading 3</TooltipContent>
           </Tooltip>
 
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Toggle
+                size="sm"
+                pressed={editor.isActive("paragraph")}
+                onPressedChange={() =>
+                  editor.chain().focus().setParagraph().run()
+                }
+                className={cn(
+                  editor.isActive("paragraph") &&
+                    "bg-muted text-muted-foreground"
+                )}
+              >
+                <FileText />
+              </Toggle>
+            </TooltipTrigger>
+            <TooltipContent>Paragraph</TooltipContent>
+          </Tooltip>
 
-<Tooltip>
-  <TooltipTrigger asChild>
-    <Toggle
-      size="sm"
-      pressed={editor.isActive("paragraph")}
-      onPressedChange={() =>
-        editor.chain().focus().setParagraph().run()
-      }
-      className={cn(
-        editor.isActive("paragraph") && "bg-muted text-muted-foreground"
-      )}
-    >
-      <FileText />
-    </Toggle>
-  </TooltipTrigger>
-  <TooltipContent>Paragraph</TooltipContent>
-</Tooltip>
           {/* Lists */}
           <Tooltip>
             <TooltipTrigger asChild>
@@ -303,22 +298,20 @@ export function Menubar({ editor }: iAppProps) {
 
         {/* Image & Link */}
         <div className="flex flex-wrap gap-1">
-          {/* Image Upload */}
-          <Popover open={showImageUpload} onOpenChange={setShowImageUpload}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <PopoverTrigger asChild>
-                  <Button size="sm" variant="ghost" type="button">
-                    <ImageIcon />
-                  </Button>
-                </PopoverTrigger>
-              </TooltipTrigger>
-              <TooltipContent>Insert Image</TooltipContent>
-            </Tooltip>
-            <PopoverContent className="w-80">
-              <ImageUpload onImageUploaded={addImage} />
-            </PopoverContent>
-          </Popover>
+          {/* Image Library Modal */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="sm"
+                variant="ghost"
+                type="button"
+                onClick={() => setShowImageLibrary(true)}
+              >
+                <ImageIcon />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Insert Image from Library</TooltipContent>
+          </Tooltip>
 
           {/* Link */}
           <Tooltip>
@@ -371,6 +364,13 @@ export function Menubar({ editor }: iAppProps) {
           </Tooltip>
         </div>
       </TooltipProvider>
+
+      {/* Image Library Modal */}
+      <ImageLibraryModal
+        isOpen={showImageLibrary}
+        onClose={() => setShowImageLibrary(false)}
+        onImageSelected={addImage}
+      />
 
       {/* Link Dialog */}
       <LinkDialog

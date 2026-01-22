@@ -13,6 +13,7 @@ import { CoursesModule } from './modules/courses/courses.module';
 import { EnrollmentModule } from './modules/enrollment/enrollment.module';
 import { InstructorModule } from './modules/instructor/instructor.module';
 import { LessonsModule } from './modules/lessons/lessons.module';
+import { MediaLibraryModule } from './modules/media-library/media-library.module';
 import { ProgressModule } from './modules/progress/progress.module';
 import { S3Module } from './modules/s3/s3.module';
 import { StripeModule } from './modules/stripe/stripe.module';
@@ -49,6 +50,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     AnalyticsModule,
     StudentModule,
     UploadModule,
+    MediaLibraryModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppResolver],
