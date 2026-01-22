@@ -1231,6 +1231,8 @@ export type UploadUrlResponse = {
 export type User = {
   __typename?: 'User';
   _count?: Maybe<UserCounts>;
+  avatarKey?: Maybe<Scalars['String']['output']>;
+  avatarUrl?: Maybe<Scalars['String']['output']>;
   banExpires?: Maybe<Scalars['DateTime']['output']>;
   banReason?: Maybe<Scalars['String']['output']>;
   banned?: Maybe<Scalars['Boolean']['output']>;
@@ -1316,7 +1318,7 @@ export type UpdateUserAvatarMutationVariables = Exact<{
 }>;
 
 
-export type UpdateUserAvatarMutation = { __typename?: 'Mutation', updateUserAvatar: { __typename?: 'UpdateUserAvatarResponse', success: boolean, message?: string | null, user?: { __typename?: 'User', id: string, email?: string | null, name?: string | null, role?: UserRole | null, createdAt: any, updatedAt?: any | null } | null } };
+export type UpdateUserAvatarMutation = { __typename?: 'Mutation', updateUserAvatar: { __typename?: 'UpdateUserAvatarResponse', success: boolean, message?: string | null, user?: { __typename?: 'User', id: string, email?: string | null, name?: string | null, role?: UserRole | null, avatarUrl?: string | null, createdAt: any, updatedAt?: any | null } | null } };
 
 export type CreateChapterMutationVariables = Exact<{
   input: CreateChapterInput;
@@ -1782,6 +1784,7 @@ export const UpdateUserAvatarDocument = gql`
       email
       name
       role
+      avatarUrl
       createdAt
       updatedAt
     }

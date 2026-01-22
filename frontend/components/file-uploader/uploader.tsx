@@ -1,18 +1,18 @@
 "use client";
 
+import { useConstructUrl } from "@/hooks/use-construct-url";
+import { cn } from "@/lib/utils";
 import { useCallback, useEffect, useState } from "react";
 import { FileRejection, useDropzone } from "react-dropzone";
+import { toast } from "sonner";
+import { v4 as uuidv4 } from "uuid";
 import { Card, CardContent } from "../ui/card";
-import { cn } from "@/lib/utils";
 import {
   RenderEmptyState,
   RenderErrorState,
   RenderUploadedState,
   RenderUploadingState,
 } from "./RenderState";
-import { toast } from "sonner";
-import { v4 as uuidv4 } from "uuid";
-import { useConstructUrl } from "@/hooks/use-construct-url";
 
 interface UploaderState {
   id: string | null;
@@ -45,21 +45,6 @@ export function Uploader({ value, onChange, fileTypeAccepted }: iAppProps) {
     key: value,
     objectUrl: value ? fileURL : undefined,
   });
-
-  /* const hasKey = !!value && value.trim().length > 0;
-  const fileURL = useConstructUrl(hasKey ? value : undefined);
-
-  const [fileState, setFileState] = useState<UploaderState>({
-    error: false,
-    file: null,
-    id: null,
-    uploading: false,
-    progress: 0,
-    isDeleting: false,
-    fileType: "image",
-    key: hasKey ? value : undefined,
-    objectUrl: fileURL, // undefined si pas de clé
-  }); */
 
   const uploadFile = useCallback(
     async (file: File) => {

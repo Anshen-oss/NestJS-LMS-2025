@@ -277,6 +277,11 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
+type DeleteMediaResponse {
+  message: String
+  success: Boolean!
+}
+
 input EnrollInCourseInput {
   courseId: String!
 }
@@ -386,6 +391,24 @@ type LessonProgress {
   userId: String!
 }
 
+type MediaAssetType {
+  createdAt: DateTime!
+  description: String
+  filename: String!
+  height: Int!
+  id: String!
+  isPublic: Boolean!
+  lastUsedAt: DateTime
+  size: Int!
+  tags: [String!]!
+  urlLarge: String!
+  urlMedium: String!
+  urlOriginal: String!
+  urlThumbnail: String!
+  usageCount: Int!
+  width: Int!
+}
+
 type MessageOutput {
   content: String!
   createdAt: DateTime!
@@ -435,6 +458,9 @@ type Mutation {
   deleteLesson(id: String!): Boolean!
   deleteLessonAttachment(id: String!): Boolean!
 
+  """Soft delete media (recoverable for 30 days)"""
+  deleteMedia(mediaId: String!): DeleteMediaResponse!
+
   """Delete video progress (reset)"""
   deleteVideoProgress(lessonId: String!): Boolean!
   enrollInCourse(input: EnrollInCourseInput!): EnrollmentResponse!
@@ -464,6 +490,9 @@ type Mutation {
   """Envoie un message à l'instructor du cours"""
   studentSendMessage(content: String!, courseId: String, instructorId: String!): SendMessageOutput!
   toggleLessonCompletion(lessonId: String!): LessonProgress!
+
+  """Track media usage for analytics"""
+  trackMediaUsage(mediaId: String!): Boolean!
 
   """Unban user (ADMIN only)"""
   unbanUser(userId: String!): User!
@@ -531,6 +560,15 @@ type Query {
 
   """Données complètes des revenus de l'instructeur"""
   getInstructorRevenue(period: RevenueInstructorPeriod! = LAST_30_DAYS): InstructorRevenueResponse!
+
+  """Get single media by ID"""
+  getMediaById(id: String!): MediaAssetType
+
+  """Get total count of user media"""
+  getMyMediaCount: Float!
+
+  """Get paginated list of user media library"""
+  getMyMediaLibrary(skip: Int! = 0, take: Int! = 20): [MediaAssetType!]!
 
   """Get user by ID"""
   getUserById(userId: String!): User!

@@ -59,6 +59,16 @@ model User {
   // 🆕 Relations - Preferences (Phase 16)
   preferences      UserPreferences?  @relation("UserPreferences")
 
+  // 🖼️ AVATAR REFACTOR (Phase 20)
+  /// Foreign key to MediaAsset.id for user's avatar
+  avatarMediaId String?
+
+  /// Relation to MediaAsset
+  avatar MediaAsset? @relation("UserAvatar", fields: [avatarMediaId], references: [id], onDelete: SetNull)
+
+  /// All images uploaded by this user
+  uploads MediaAsset[] @relation("MediaUploadedBy")
+
   @@map("user")
 }
 
@@ -151,6 +161,13 @@ model Course {
   enrollments    Enrollment[]
   conversations  Conversation[]  // Phase 15: Messages optionnel par cours
 
+  // 🎨 Cover image (Phase 20)
+  /// Foreign key to MediaAsset for course cover image
+  imageMediaId String?
+
+  /// Relation to MediaAsset - access cover image data
+  image MediaAsset? @relation("CourseImage", fields: [imageMediaId], references: [id], onDelete: SetNull)
+
   @@index([slug])
   @@index([status])
   @@index([userId])
@@ -199,6 +216,13 @@ model Lesson {
   attachments    LessonAttachment[]
   lessonProgress LessonProgress[]
   videoProgress  VideoProgress[]
+
+  // 🖼️ Lesson image (Phase 20)
+  /// Foreign key to MediaAsset for lesson illustration/thumbnail
+  imageMediaId String?
+
+  /// Relation to MediaAsset
+  image MediaAsset? @relation("LessonImage", fields: [imageMediaId], references: [id], onDelete: SetNull)
 
   @@index([chapterId])
 }
@@ -364,4 +388,109 @@ model Message {
   @@index([status])            // Compter les messages non-lus rapidement
 
   @@map("message")
+}
+
+// ============================================================================
+// MediaLibrary System (Phase 18)
+// ============================================================================
+// Centralized image/media asset management with deduplication, multiple
+// resolutions, and soft deletion for cost optimization on S3/Tigris.
+// ============================================================================
+
+model MediaAsset {
+  // 🆔 PRIMARY IDENTIFIERS
+  id String @id @default(cuid())
+
+  /// S3 composite key - UNIQUE to prevent duplicates
+  /// Format: "{hash}/{uploadedById}" to organize by user in S3
+  key String @unique
+
+  // 📝 FILE METADATA
+  /// Original filename as uploaded by user
+  filename String
+
+  /// MIME type for validation + proper serving
+  mimeType String
+
+  /// File size in bytes
+  size Int
+
+  /// Original image dimensions (before resizing)
+  width Int
+  height Int
+
+  // 🔐 DEDUPLICATION HASH
+  /// SHA-256 hash of original file binary
+  fileHash String @unique
+
+  /// Reference count - how many MediaAssets point to same S3 files?
+  refCount Int @default(1)
+
+  // 🖼️ S3 URLS - MULTIPLE RESOLUTIONS
+  /// Full resolution URL (up to 2000×2000px)
+  urlOriginal String
+
+  /// Large resolution (1200×1200px, WebP)
+  urlLarge String
+
+  /// Medium resolution (500×500px, WebP)
+  urlMedium String
+
+  /// Thumbnail (150×150px, WebP)
+  urlThumbnail String
+
+  // 📊 METADATA & ORGANIZATION
+  /// User-provided description for SEO + accessibility
+  description String?
+
+  /// Array of tags for categorization + searching
+  tags String[] @default([])
+
+  // 👤 OWNERSHIP & PERMISSIONS
+  /// User ID of who uploaded this asset
+  uploadedById String
+  uploadedBy User @relation("MediaUploadedBy", fields: [uploadedById], references: [id], onDelete: Cascade)
+
+  /// Is this image shareable with other instructors?
+  isPublic Boolean @default(false)
+
+  // 🗑️ SOFT DELETE & LIFECYCLE
+  /// Soft delete flag
+  isDeleted Boolean @default(false)
+
+  /// When was this asset soft-deleted?
+  deletedAt DateTime?
+
+  /// Has this asset been physically removed from S3?
+  purgedFromS3 Boolean @default(false)
+
+  // 📈 ANALYTICS & USAGE TRACKING
+  /// How many times has this image been used?
+  usageCount Int @default(0)
+
+  /// Last timestamp this image was actively used
+  lastUsedAt DateTime?
+
+  // ⏰ AUDIT TRAIL
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 🔗 RELATIONS - WHERE IS THIS IMAGE USED?
+  /// User avatars using this image
+  usedByAvatars User[] @relation("UserAvatar")
+
+  /// Course cover images using this asset
+  courses Course[] @relation("CourseImage")
+
+  /// Lesson thumbnail/illustration images
+  lessons Lesson[] @relation("LessonImage")
+
+  // 🔍 DATABASE INDEXES FOR PERFORMANCE
+  @@index([uploadedById])
+  @@index([isPublic])
+  @@index([isDeleted])
+  @@index([createdAt])
+  @@index([usageCount])
+  @@index([deletedAt])
+  @@index([fileHash])
 }

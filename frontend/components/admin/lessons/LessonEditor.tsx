@@ -1,5 +1,6 @@
 "use client";
 
+import { ImageLibraryModal } from "@/components/media/ImageLibraryModal";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,7 +22,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  useGetUploadUrlMutation,
   useUpdateLessonContentMutation,
 } from "@/lib/generated/graphql";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
@@ -39,13 +39,12 @@ import {
   Edit,
   Eye,
   FileText,
-  ImageIcon,
+  Image as ImageIcon,
   Link as LinkIcon,
   Loader2,
   Paperclip,
   Save,
   TableIcon,
-  Upload
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -74,17 +73,13 @@ export function LessonEditor({
   const safeContent = initialContent || "";
 
   const [updateLessonContent, { loading }] = useUpdateLessonContentMutation();
-  const [getUploadUrl] = useGetUploadUrlMutation();
 
-  // States pour les liens
+  // ✅ Image upload functions have been moved to ImageLibraryModal in the Menubar
   const [showLinkDialog, setShowLinkDialog] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
+  const [showImageLibrary, setShowImageLibrary] = useState(false);
 
-  // States pour les images
-  const [showImageDialog, setShowImageDialog] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
+  // ✅ Image upload a été déplacé au Menubar avec ImageLibraryModal
 
   // States pour publication et preview
   const [isPublishedLocal, setIsPublishedLocal] = useState(isPublished);
@@ -322,78 +317,15 @@ const handleSave = async () => {
     setLinkUrl("");
   };
 
+  // ✅ Ajouter une image depuis ImageLibraryModal
+  const addImage = (url: string) => {
+    if (!editor) return;
+    editor.chain().focus().setImage({ src: url }).run();
+    setShowImageLibrary(false);
+  };
+
   // Gérer la sélection d'image
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file");
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be less than 5MB");
-      return;
-    }
-
-    setSelectedFile(file);
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // Uploader l'image
-  const handleUploadImage = async () => {
-    if (!selectedFile || !editor) return;
-
-    setUploadingImage(true);
-
-    try {
-      // 1. Demander l'URL pré-signée
-      const { data } = await getUploadUrl({
-        variables: {
-          fileName: selectedFile.name,
-          contentType: selectedFile.type,
-        },
-      });
-
-      if (!data?.getUploadUrl) {
-        throw new Error("Failed to get upload URL");
-      }
-
-      const { uploadUrl, publicUrl } = data.getUploadUrl;
-
-      // 2. Uploader vers S3
-      const uploadResponse = await fetch(uploadUrl, {
-        method: "PUT",
-        body: selectedFile,
-        headers: {
-          "Content-Type": selectedFile.type,
-        },
-      });
-
-      if (!uploadResponse.ok) {
-        throw new Error("Failed to upload image");
-      }
-
-      // 3. Insérer dans l'éditeur
-      editor.chain().focus().setImage({ src: publicUrl }).run();
-
-      toast.success("Image uploaded successfully!");
-      setShowImageDialog(false);
-      setSelectedFile(null);
-      setImagePreview(null);
-    } catch (error) {
-      console.error("Upload error:", error);
-      toast.error("Failed to upload image");
-    } finally {
-      setUploadingImage(false);
-    }
-  };
+  // ✅ Image upload functions have been moved to ImageLibraryModal in the Menubar
 
   // Insérer une vidéo YouTube
 const handleAddYoutube = () => {
@@ -591,11 +523,11 @@ return (
                 <Code className="w-4 h-4" />
               </Button>
 
-              {/* Image */}
+              {/* Image Library Modal */}
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowImageDialog(true)}
+                onClick={() => setShowImageLibrary(true)}
               >
                 <ImageIcon className="w-4 h-4" />
               </Button>
@@ -756,72 +688,14 @@ return (
       </DialogContent>
     </Dialog>
 
-    {/* Dialog pour uploader une image */}
-    <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Upload Image</DialogTitle>
-          <DialogDescription>
-            Select an image to insert into your lesson content
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="image">Image File</Label>
-            <Input
-              id="image"
-              type="file"
-              accept="image/*"
-              onChange={handleFileSelect}
-              disabled={uploadingImage}
-            />
-            <p className="text-xs text-muted-foreground">
-              Max size: 5MB. Formats: JPG, PNG, GIF, WebP
-            </p>
-          </div>
+    {/* Image Library Modal */}
+    <ImageLibraryModal
+      isOpen={showImageLibrary}
+      onClose={() => setShowImageLibrary(false)}
+      onImageSelected={addImage}
+    />
 
-          {imagePreview && (
-            <div className="border rounded-lg p-4">
-              <p className="text-sm font-medium mb-2">Preview:</p>
-              <img
-                src={imagePreview}
-                alt="Preview"
-                className="max-w-full h-auto rounded-lg"
-              />
-            </div>
-          )}
-        </div>
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setShowImageDialog(false);
-              setSelectedFile(null);
-              setImagePreview(null);
-            }}
-            disabled={uploadingImage}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleUploadImage}
-            disabled={!selectedFile || uploadingImage}
-          >
-            {uploadingImage ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Uploading...
-              </>
-            ) : (
-              <>
-                <Upload className="mr-2 h-4 w-4" />
-                Upload
-              </>
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    {/* Image upload est géré par ImageLibraryModal dans le Menubar */}
   </div>
 );
 }

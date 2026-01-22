@@ -322,4 +322,29 @@ export class S3Service {
       throw new BadRequestException("Impossible de supprimer l'ancien avatar");
     }
   }
+
+  /**
+   * Upload un fichier directement à S3
+   */
+  async uploadFile(
+    fileBuffer: Buffer,
+    key: string,
+    contentType: string,
+  ): Promise<string> {
+    try {
+      const command = new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+        Body: fileBuffer,
+        ContentType: contentType,
+        CacheControl: 'public, max-age=31536000',
+      });
+
+      await this.s3Client.send(command);
+      const publicUrl = `${this.publicUrl}/${key}`;
+      return publicUrl;
+    } catch (error) {
+      throw new BadRequestException(`S3 upload failed: ${error.message}`);
+    }
+  }
 }
