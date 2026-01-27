@@ -391,6 +391,31 @@ type LessonProgress {
   userId: String!
 }
 
+type MediaAsset {
+  createdAt: DateTime!
+  deletedAt: DateTime
+  description: String
+  fileHash: String!
+  filename: String!
+  height: Float!
+  id: ID!
+  isDeleted: Boolean!
+  isPublic: Boolean!
+  key: String!
+  lastUsedAt: DateTime
+  mimeType: String!
+  size: Float!
+  tags: [String!]!
+  updatedAt: DateTime!
+  uploadedById: String!
+  urlLarge: String!
+  urlMedium: String!
+  urlOriginal: String!
+  urlThumbnail: String!
+  usageCount: Float!
+  width: Float!
+}
+
 type MediaAssetType {
   createdAt: DateTime!
   description: String
@@ -503,7 +528,7 @@ type Mutation {
   updateLessonProgress(input: UpdateProgressInput!, lessonId: String!): LessonProgress!
 
   """Met à jour l'avatar de l'utilisateur actuellement authentifié"""
-  updateUserAvatar(avatarKey: String!, avatarUrl: String!): UpdateUserAvatarResponse!
+  updateUserAvatar(avatarMediaId: String!): UpdateUserAvatarResponse!
 
   """Update user preferences"""
   updateUserPreferences(input: UpdateUserPreferencesInput!): UserPreferences!
@@ -889,7 +914,9 @@ type UploadUrlResponse {
 
 type User {
   _count: UserCounts
+  avatar: MediaAsset
   avatarKey: String
+  avatarMediaId: String
   avatarUrl: String
   banExpires: DateTime
   banReason: String

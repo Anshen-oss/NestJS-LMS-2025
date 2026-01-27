@@ -1,145 +1,281 @@
 'use client';
 
-import { MediaPicker } from '@/components/media/MediaPicker';
 import { Button } from '@/components/ui/button';
-import { gql, useMutation, useQuery } from '@apollo/client';
-import { Camera } from 'lucide-react';
+import { useAuth } from '@clerk/nextjs';
+import { Upload } from 'lucide-react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-
-// ============================================================================
-// GRAPHQL OPERATIONS
-// ============================================================================
-
-const GET_CURRENT_USER = gql`
-  query GetCurrentUser {
-    getCurrentUser {
-      id
-      name
-      email
-      image
-      avatar {
-        id
-        urlMedium
-        urlLarge
-      }
-    }
-  }
-`;
-
-const UPDATE_USER_AVATAR = gql`
-  mutation UpdateUserAvatar($avatarMediaId: String!) {
-    updateUserAvatar(avatarMediaId: $avatarMediaId) {
-      id
-      email
-      name
-      image
-      avatar {
-        id
-        urlThumbnail
-        urlMedium
-        urlLarge
-      }
-    }
-  }
-`;
-
-// ============================================================================
-// PAGE: AVATAR SETTINGS
-// ============================================================================
 
 interface MediaAsset {
   id: string;
+  filename: string;
   urlMedium: string;
   urlLarge: string;
-  [key: string]: any;
 }
 
 export default function AvatarSettingsPage() {
-  const [showPicker, setShowPicker] = useState(false);
+  const [currentAvatar, setCurrentAvatar] = useState<string>('/default-avatar.png');
+  const [userName, setUserName] = useState('');
+  const [userEmail, setUserEmail] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<MediaAsset | null>(null);
+  const [images, setImages] = useState<MediaAsset[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const { getToken } = useAuth();
+  const itemsPerPage = 6;
 
-  // Get current user
-  const { data, loading } = useQuery(GET_CURRENT_USER);
-  const user = data?.getCurrentUser;
+  useEffect(() => {
+    const loadUser = async () => {
+      const token = await getToken();
+      if (!token) return;
 
-  // Update avatar mutation
-  const [updateAvatar, { loading: isUpdating }] = useMutation(
-    UPDATE_USER_AVATAR,
-    {
-      refetchQueries: [{ query: GET_CURRENT_USER }],
-      onCompleted: () => {
-        toast.success('Avatar updated successfully');
-        setShowPicker(false);
-      },
-      onError: (error) => {
-        toast.error(error.message || 'Failed to update avatar');
-      },
-    }
-  );
-
-  /**
-   * Handle avatar selection from MediaPicker
-   */
-  const handleSelectAvatarAction = async (media: MediaAsset) => {
-    try {
-      await updateAvatar({
-        variables: {
-          avatarMediaId: media.id,
-        },
+      const res = await fetch('http://localhost:4000/api/user/me', {
+        headers: { 'Authorization': `Bearer ${token}` },
       });
-    } catch (error) {
-      console.error(error);
+      const data = await res.json();
+      setCurrentAvatar(data.avatar?.urlMedium || data.image || '/default-avatar.png');
+      setUserName(data.name);
+      setUserEmail(data.email);
+    };
+    loadUser();
+  }, [getToken]);
+
+  useEffect(() => {
+    const loadImages = async () => {
+      try {
+        setLoading(true);
+        const token = await getToken();
+        if (!token) return;
+
+        const res = await fetch('http://localhost:4000/api/user/media?limit=100', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        const data = await res.json();
+        setImages(data.assets || []);
+      } catch (error) {
+        console.error('Error loading images:', error);
+        toast.error('Failed to load images');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadImages();
+  }, [getToken]);
+
+  // ✅ SIMPLE FILE UPLOAD
+const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  try {
+    setIsUploading(true);
+    const token = await getToken();
+    if (!token) {
+      toast.error('Not authenticated');
+      return;
     }
-  };
 
-  if (loading) {
-    return <div>Loading...</div>;
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await fetch('http://localhost:4000/api/user/upload-avatar', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    // ✅ RÉCUPÈRE LE MESSAGE D'ERREUR DU BACKEND
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || 'Upload failed');
+    }
+
+    const data = await res.json();
+    console.log('✅ Upload success:', data);
+
+    toast.success('Image uploaded! Reloading...');
+    setTimeout(() => window.location.reload(), 1000);
+  } catch (error) {
+    console.error('❌ Error:', error);
+    // ✅ AFFICHE LE VRAI MESSAGE
+    toast.error(error instanceof Error ? error.message : 'Failed to upload image');
+    setIsUploading(false);
   }
+};
 
-  // Current avatar URL - fallback to image or default
-  const currentAvatarUrl =
-    user?.avatar?.urlMedium || user?.image || '/default-avatar.png';
+const handleConfirmAvatar = async () => {
+  if (!selectedImage) return;
+
+  try {
+    setIsUpdating(true);
+    const token = await getToken();
+    if (!token) {
+      toast.error('Not authenticated');
+      return;
+    }
+
+    const res = await fetch('http://localhost:4000/api/user/avatar', {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ avatarMediaId: selectedImage.id })
+    });
+
+    if (!res.ok) throw new Error('Failed to update');
+
+    console.log('✅ Avatar updated successfully');
+    window.dispatchEvent(new CustomEvent('avatar-updated'));
+
+    setCurrentAvatar(selectedImage.urlMedium);
+    setSelectedImage(null);
+
+    toast.success('Avatar updated!');
+    setIsUpdating(false);
+
+  } catch (error) {
+    console.error('❌ Error updating avatar:', error);
+    toast.error('Failed to update avatar');
+    setIsUpdating(false);
+  }
+};
+
+  const displayedImages = images.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+  const totalPages = Math.ceil(images.length / itemsPerPage);
 
   return (
-    <div className="max-w-md mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-6">Profile Picture</h1>
+    <div className="max-w-6xl mx-auto py-8 px-4">
+      <h1 className="text-2xl font-bold mb-6">Change Profile Picture</h1>
 
-      {/* Current avatar preview */}
-      <div className="mb-6">
-        <div className="relative w-32 h-32 mx-auto">
-          <Image
-            src={currentAvatarUrl}
-            alt="Current avatar"
-            fill
-            className="rounded-full object-cover"
-          />
-          <div className="absolute bottom-0 right-0 bg-blue-500 text-white p-2 rounded-full">
-            <Camera className="w-4 h-4" />
+      {/* Current Avatar */}
+      <div className="grid grid-cols-2 gap-8 mb-12">
+        <div>
+          <h2 className="text-lg font-bold mb-4">Current Avatar</h2>
+          <div className="relative w-40 h-40 bg-gray-100 rounded-full overflow-hidden">
+            <Image
+              src={currentAvatar}
+              alt="avatar"
+              fill
+              className="object-cover"
+              priority
+            />
           </div>
+          <p className="text-gray-600 mt-4">{userEmail}</p>
+          <p className="text-sm text-gray-500">{userName}</p>
         </div>
+
+        {/* Selected Avatar Preview */}
+        {selectedImage && (
+          <div>
+            <h2 className="text-lg font-bold mb-4">Preview</h2>
+            <div className="relative w-40 h-40 bg-gray-100 rounded-full overflow-hidden">
+              <Image
+                src={selectedImage.urlMedium}
+                alt="preview"
+                fill
+                className="object-cover"
+              />
+            </div>
+            <div className="flex gap-2 mt-4">
+              <Button
+                variant="outline"
+                onClick={() => setSelectedImage(null)}
+              >
+                Change
+              </Button>
+              <Button
+                onClick={handleConfirmAvatar}
+                disabled={isUpdating}
+              >
+                {isUpdating ? 'Saving...' : '✅ Confirm'}
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Change avatar button */}
-      <Button
-        onClick={() => setShowPicker(true)}
-        className="w-full"
-        disabled={isUpdating}
-      >
-        {isUpdating ? 'Updating...' : 'Change Avatar'}
-      </Button>
+      {/* Simple File Upload */}
+      <div className="border-t pt-8 mb-8">
+        <h2 className="text-lg font-bold mb-4">📤 Upload a new image</h2>
+        <label className="block">
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-gray-400 transition">
+            <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+            <p className="text-gray-600">Drag & drop or click to upload</p>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileUpload}
+              disabled={isUploading}
+              className="hidden"
+            />
+          </div>
+        </label>
+        {isUploading && <p className="mt-2 text-blue-600">Uploading...</p>}
+      </div>
 
-      {/* Media picker modal */}
-      {showPicker && (
-        <div className="mt-4">
-          <MediaPicker
-            onSelectAction={handleSelectAvatarAction}
-            previewSize="medium"
-            buttonLabel="Choose Avatar"
-            showUpload={true}
-          />
-        </div>
-      )}
+      {/* Image Gallery */}
+      <div className="border-t pt-8">
+        <h2 className="text-lg font-bold mb-4">Select from your library ({images.length} images)</h2>
+
+        {loading ? (
+          <p className="text-gray-600">Loading images...</p>
+        ) : images.length === 0 ? (
+          <p className="text-gray-600">No images yet. Upload one above!</p>
+        ) : (
+          <>
+            {/* Grid */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              {displayedImages.map((img) => (
+                <button
+                  key={img.id}
+                  onClick={() => setSelectedImage(img)}
+                  className={`relative w-full h-32 rounded-lg overflow-hidden border-2 transition ${
+                    selectedImage?.id === img.id
+                      ? 'border-blue-500 ring-2 ring-blue-300'
+                      : 'border-gray-200 hover:border-gray-400'
+                  }`}
+                >
+                  <Image
+                    src={img.urlMedium}
+                    alt={img.filename}
+                    fill
+                    className="object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex gap-2 justify-center">
+                <Button
+                  variant="outline"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  ← Previous
+                </Button>
+                <span className="px-4 py-2">
+                  Page {page} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                >
+                  Next →
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

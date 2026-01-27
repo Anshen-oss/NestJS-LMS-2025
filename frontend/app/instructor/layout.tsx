@@ -1,5 +1,7 @@
 'use client';
 
+import { InstructorUserProvider, useInstructorUser } from '@/app/contexts/InstructorUserContext';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
   Sidebar,
@@ -15,7 +17,8 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
-import { UserButton, useUser } from '@clerk/nextjs';
+import { UserMenuDropdown } from '@/components/UserMenuDropdown';
+import { useUser } from '@clerk/nextjs';
 import {
   BarChart3,
   BookOpen,
@@ -31,16 +34,15 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ReactNode } from 'react';
 
-export default function InstructorLayout({ children }: { children: ReactNode }) {
+function InstructorLayoutContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { user, isLoaded } = useUser();
+  const { user: clerkUser, isLoaded: clerkLoaded } = useUser();
+  const { user: instructorUser, loading: userLoading } = useInstructorUser();
 
-  // Vérifier que l'utilisateur est INSTRUCTOR
-  const userRole = user?.publicMetadata?.role as string | undefined;
-  const isInstructor = isLoaded && user && userRole === 'INSTRUCTOR';
+  const userRole = clerkUser?.publicMetadata?.role as string | undefined;
+  const isInstructor = clerkLoaded && clerkUser && userRole === 'INSTRUCTOR';
 
-  // Pendant le chargement
-  if (!isLoaded) {
+  if (!clerkLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -51,17 +53,12 @@ export default function InstructorLayout({ children }: { children: ReactNode }) 
     );
   }
 
-  // Si pas instructor, afficher message
   if (!isInstructor) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center px-4">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Accès Refusé
-          </h1>
-          <p className="text-gray-600 mb-8">
-            Cette page est réservée aux instructeurs.
-          </p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Accès Refusé</h1>
+          <p className="text-gray-600 mb-8">Cette page est réservée aux instructeurs.</p>
           <Button asChild>
             <Link href="/">Retour à l'accueil</Link>
           </Button>
@@ -70,61 +67,24 @@ export default function InstructorLayout({ children }: { children: ReactNode }) 
     );
   }
 
-  // Menu items pour instructor
   const menuItems = [
-    {
-      title: 'Dashboard',
-      icon: LayoutDashboard,
-      href: '/instructor',
-      description: 'Vue d\'ensemble',
-    },
-    {
-      title: 'Mes Cours',
-      icon: BookOpen,
-      href: '/instructor/courses',
-      description: 'Gérer mes cours',
-    },
-    {
-      title: 'Créer un cours',
-      icon: Video,
-      href: '/instructor/courses/new',
-      description: 'Nouveau cours',
-    },
-    {
-      title: 'Étudiants',
-      icon: Users,
-      href: '/instructor/students',
-      description: 'Mes étudiants',
-    },
-    {
-      title: 'Analytics',
-      icon: BarChart3,
-      href: '/instructor/analytics',
-      description: 'Statistiques',
-    },
-    {
-      title: 'Revenus',
-      icon: DollarSign,
-      href: '/instructor/revenue',
-      description: 'Finances',
-    },
-    {
-      title: 'Messages',
-      icon: MessageSquare,
-      href: '/instructor/messages',
-      description: 'Communications',
-    },
+    { title: 'Dashboard', icon: LayoutDashboard, href: '/instructor', description: 'Vue d\'ensemble' },
+    { title: 'Mes Cours', icon: BookOpen, href: '/instructor/courses', description: 'Gérer mes cours' },
+    { title: 'Créer un cours', icon: Video, href: '/instructor/courses/new', description: 'Nouveau cours' },
+    { title: 'Étudiants', icon: Users, href: '/instructor/students', description: 'Mes étudiants' },
+    { title: 'Analytics', icon: BarChart3, href: '/instructor/analytics', description: 'Statistiques' },
+    { title: 'Revenus', icon: DollarSign, href: '/instructor/revenue', description: 'Finances' },
+    { title: 'Messages', icon: MessageSquare, href: '/instructor/messages', description: 'Communications' },
   ];
 
-  // User info
-  const userName = user?.fullName || user?.firstName || 'Instructeur';
-  const userEmail = user?.primaryEmailAddress?.emailAddress || '';
-  const userInitial = (user?.fullName?.charAt(0) || user?.firstName?.charAt(0) || 'I').toUpperCase();
+  const userName = instructorUser?.name || clerkUser?.fullName || clerkUser?.firstName || 'Instructeur';
+  const userEmail = instructorUser?.email || clerkUser?.primaryEmailAddress?.emailAddress || '';
+ const userAvatar = instructorUser?.avatar?.urlMedium || instructorUser?.image;
+  const userInitial = (instructorUser?.name?.charAt(0) || clerkUser?.fullName?.charAt(0) || clerkUser?.firstName?.charAt(0) || 'I').toUpperCase();
 
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
-        {/* Sidebar */}
         <Sidebar>
           <SidebarHeader className="border-b px-6 py-4">
             <div className="flex items-center gap-2">
@@ -181,11 +141,16 @@ export default function InstructorLayout({ children }: { children: ReactNode }) 
             <SidebarMenu>
               <SidebarMenuItem>
                 <div className="flex items-center gap-3 px-2 py-2">
-                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-                    <span className="text-sm font-semibold text-white">
-                      {userInitial}
-                    </span>
-                  </div>
+                  {userLoading ? (
+                    <div className="h-8 w-8 rounded-full bg-gray-200 animate-pulse" />
+                  ) : (
+                    <Avatar className="h-8 w-8">
+                      {userAvatar && <AvatarImage src={userAvatar} alt={userName} />}
+                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white text-xs font-semibold">
+                        {userInitial}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{userName}</p>
                     <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
@@ -196,39 +161,35 @@ export default function InstructorLayout({ children }: { children: ReactNode }) 
           </SidebarFooter>
         </Sidebar>
 
-        {/* Main Content */}
         <main className="flex-1 flex flex-col overflow-hidden">
-          {/* Header sticky */}
           <div className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="flex h-14 items-center justify-between px-4">
               <SidebarTrigger />
-
-              {/* Right side */}
               <div className="flex items-center gap-2">
                 <Button variant="ghost" size="sm" asChild>
-                  <Link href="/">
-                    <Home className="h-4 w-4 mr-2" />
-                    Accueil
-                  </Link>
+                  <Link href="/"><Home className="h-4 w-4 mr-2" />Accueil</Link>
                 </Button>
-
-                <UserButton
-                  appearance={{
-                    elements: {
-                      avatarBox: 'h-8 w-8',
-                    }
-                  }}
+                <UserMenuDropdown
+                  avatar={userAvatar}
+                  name={userName}
+                  email={userEmail}
+                  isLoading={userLoading}
                 />
               </div>
             </div>
           </div>
 
-          {/* Contenu scrollable */}
-          <div className="flex-1 overflow-auto">
-            {children}
-          </div>
+          <div className="flex-1 overflow-auto">{children}</div>
         </main>
       </div>
     </SidebarProvider>
+  );
+}
+
+export default function InstructorLayout({ children }: { children: ReactNode }) {
+  return (
+    <InstructorUserProvider>
+      <InstructorLayoutContent children={children} />
+    </InstructorUserProvider>
   );
 }

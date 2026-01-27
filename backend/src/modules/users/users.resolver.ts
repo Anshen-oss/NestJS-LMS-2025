@@ -8,9 +8,8 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import {
   PromoteUserInput,
   UpdateUserRoleInput,
-} from './dto/promote-user.input'; // ← Import local
+} from './dto/promote-user.input';
 
-// Type pour les stats
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { UpdateUserPreferencesInput } from './dto/update-user-preferences.input';
 import { UpdateUserProfileInput } from './dto/update-user-profile.input';
@@ -19,9 +18,7 @@ import { UserPreferences } from './entities/user-preferences.entity';
 import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
 
-import { S3Service } from '../s3/s3.service';
-
-// 🆕 TYPE GRAPHQL POUR LA MUTATION
+// 🖼️ TYPE GRAPHQL POUR LA MUTATION
 @ObjectType('UpdateUserAvatarResponse')
 class UpdateUserAvatarResponse {
   @Field()
@@ -37,10 +34,7 @@ class UpdateUserAvatarResponse {
 @Resolver(() => User)
 @UseGuards(ClerkGqlGuard, RolesGuard)
 export class UsersResolver {
-  constructor(
-    private readonly usersService: UsersService,
-    private s3Service: S3Service,
-  ) {}
+  constructor(private readonly usersService: UsersService) {}
 
   /**
    * 📊 Query : Récupérer tous les utilisateurs (ADMIN uniquement)
@@ -102,7 +96,7 @@ export class UsersResolver {
   }
 
   /**
-   * 👑 Mutation : Promouvoir STUDENT → INSTRUCTOR
+   * 👤 Mutation : Promouvoir STUDENT → INSTRUCTOR
    */
   @Mutation(() => User, {
     description: 'Promote STUDENT to INSTRUCTOR (ADMIN only)',
@@ -112,12 +106,12 @@ export class UsersResolver {
     @Args('input') input: PromoteUserInput,
     @CurrentUser() admin: any,
   ): Promise<User> {
-    console.log(`🔐 Admin ${admin.email} promoting user ${input.userId}`);
+    console.log(`📝 Admin ${admin.email} promoting user ${input.userId}`);
     return this.usersService.promoteToInstructor(input.userId);
   }
 
   /**
-   * 🔄 Mutation : Changer le rôle d'un utilisateur
+   * 📄 Mutation : Changer le rôle d'un utilisateur
    */
   @Mutation(() => User, { description: 'Update user role (ADMIN only)' })
   @Roles(UserRole.ADMIN)
@@ -126,9 +120,9 @@ export class UsersResolver {
     @CurrentUser() admin: any,
   ): Promise<User> {
     console.log(
-      `🔐 Admin ${admin.email} changing role of user ${input.userId} to ${input.newRole}`,
+      `📝 Admin ${admin.email} changing role of user ${input.userId} to ${input.newRole}`,
     );
-    return this.usersService.updateUserRole(input.userId, input.newRole); // ← newRole au lieu de role
+    return this.usersService.updateUserRole(input.userId, input.newRole);
   }
 
   /**
@@ -154,17 +148,16 @@ export class UsersResolver {
   }
 
   /**
-   * 🆕 Met à jour l'avatar de l'utilisateur actuellement authentifié
+   * 🖼️ Met à jour l'avatar de l'utilisateur actuellement authentifié
    *
    * Processus:
-   * 1. Récupère l'utilisateur actuellement authentifié
+   * 1. Récupère l'utilisateur authentifié
    * 2. Appelle users.service.updateUserAvatar()
-   * 3. Retourne l'utilisateur mis à jour
+   * 3. Retourne l'utilisateur mis à jour avec la relation avatar
    *
    * @param currentUser - L'utilisateur authentifié (injecté par @CurrentUser)
-   * @param avatarUrl - URL publique du nouvel avatar (S3)
-   * @param avatarKey - Clé S3 du nouvel avatar
-   * @returns UpdateUserAvatarResponse avec user mis à jour
+   * @param avatarMediaId - ID du MediaAsset à utiliser comme avatar
+   * @returns UpdateUserAvatarResponse avec user et avatar mis à jour
    */
   @Mutation(() => UpdateUserAvatarResponse, {
     description:
@@ -173,16 +166,14 @@ export class UsersResolver {
   @UseGuards(ClerkGqlGuard)
   async updateUserAvatar(
     @CurrentUser() currentUser: User,
-    @Args('avatarUrl') avatarUrl: string,
-    @Args('avatarKey') avatarKey: string,
+    @Args('avatarMediaId') avatarMediaId: string,
   ): Promise<UpdateUserAvatarResponse> {
-    console.log('📤 Mutation updateUserAvatar pour user:', currentUser.id);
+    console.log('🖼️ Mutation updateUserAvatar pour user:', currentUser.id);
 
     try {
       const updatedUser = await this.usersService.updateUserAvatar(
         currentUser.id,
-        avatarUrl,
-        avatarKey,
+        avatarMediaId,
       );
 
       return {

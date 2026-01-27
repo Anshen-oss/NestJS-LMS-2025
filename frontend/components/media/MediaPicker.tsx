@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useMutation, useQuery } from '@apollo/client';
+import { useAuth } from '@clerk/nextjs';
 import { Image, Loader2, Upload } from 'lucide-react';
 import React, { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -34,8 +35,8 @@ interface MediaAsset {
 }
 
 interface MediaPickerProps {
-  onSelectAction: (media: MediaAsset) => void;  // ← Renamed with "Action" suffix
-  onUploadAction?: (media: MediaAsset) => void; // ← Renamed with "Action" suffix
+  onSelectAction: (media: MediaAsset) => void;
+  onUploadAction?: (media: MediaAsset) => void;
   previewSize?: 'thumb' | 'medium' | 'large';
   autoOpen?: boolean;
   showUpload?: boolean;
@@ -54,6 +55,7 @@ export function MediaPicker({
   showUpload = true,
   buttonLabel = 'Select Image',
 }: MediaPickerProps) {
+  const { getToken } = useAuth();
   const [isOpen, setIsOpen] = useState(autoOpen);
   const [selectedMedia, setSelectedMedia] = useState<MediaAsset | null>(null);
   const [isUploadingNew, setIsUploadingNew] = useState(false);
@@ -74,7 +76,7 @@ export function MediaPicker({
           variables: { mediaId: media.id },
         });
 
-        onSelectAction(media); // ← Use the renamed prop
+        onSelectAction(media);
         setIsOpen(false);
         toast.success('Image selected');
       } catch (error) {
@@ -93,12 +95,25 @@ export function MediaPicker({
       setIsUploadingNew(true);
 
       try {
+        // 🔑 Récupère le token Clerk
+        const token = await getToken();
+        console.log('🔑 Token reçu:', token ? 'YES ✅' : 'NO ❌');
+
+        if (!token) {
+          throw new Error('Not authenticated - no token available');
+        }
+
         const formData = new FormData();
         formData.append('file', file);
 
-        const response = await fetch('/api/media/upload', {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
+        const response = await fetch(`${apiUrl}/api/media/upload`, {
           method: 'POST',
           body: formData,
+          headers: {
+            'Authorization': `Bearer ${token}`,  // ✅ Ajoute le token!
+          },
         });
 
         if (!response.ok) {
@@ -122,7 +137,7 @@ export function MediaPicker({
         };
 
         onSelectAction(newMedia);
-        onUploadAction?.(newMedia); // ← Use the renamed prop
+        onUploadAction?.(newMedia);
 
         await refetch();
 
@@ -145,7 +160,7 @@ export function MediaPicker({
         }
       }
     },
-    [onSelectAction, onUploadAction, refetch]
+    [onSelectAction, onUploadAction, refetch, getToken]
   );
 
   const handleUploadClick = useCallback(() => {

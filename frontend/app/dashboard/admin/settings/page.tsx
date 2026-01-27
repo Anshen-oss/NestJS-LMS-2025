@@ -24,13 +24,23 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 // ==================== GRAPHQL MUTATION ====================
+
 const UPDATE_USER_AVATAR = gql`
-  mutation UpdateUserAvatar($avatarUrl: String!) {
-    updateUserAvatar(avatarUrl: $avatarUrl) {
-      id
-      image
-      name
-      email
+  mutation UpdateUserAvatar($avatarMediaId: String!) {
+    updateUserAvatar(avatarMediaId: $avatarMediaId) {
+      success
+      message
+      user {
+        id
+        image
+        name
+        email
+        avatar {
+          id
+          urlLarge
+          urlMedium
+        }
+      }
     }
   }
 `;
@@ -41,9 +51,11 @@ export default function AdminSettingsPage() {
 
   // 🔄 Mutation pour avatar
   const [updateAvatarMutation, { loading: avatarLoading }] = useMutation(UPDATE_USER_AVATAR, {
-    onCompleted: () => {
-      toast.success('✅ Avatar mis à jour avec succès!');
-      refetch();
+    onCompleted: (data) => {
+      if (data?.updateUserAvatar?.success) {
+        toast.success('✅ Avatar mis à jour avec succès!');
+        refetch();  // Refetch les données du user
+      }
     },
     onError: (error) => {
       toast.error(`❌ Erreur: ${error.message}`);
@@ -93,11 +105,11 @@ export default function AdminSettingsPage() {
     try {
       await updateAvatarMutation({
         variables: {
-          avatarUrl: media.urlLarge || media.urlMedium || media.urlOriginal,
+          avatarMediaId: media.id,  // ← Passe l'ID du MediaAsset!
         }
       });
     } catch (error) {
-      console.error('❌ Erreur lors de la mise à jour de l\'avatar:', error);
+      console.error('❌ Erreur:', error);
     }
   };
 

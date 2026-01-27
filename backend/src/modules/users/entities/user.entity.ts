@@ -1,5 +1,7 @@
 import { Field, ID, ObjectType, registerEnumType } from '@nestjs/graphql';
 import { UserRole } from '@prisma/client';
+
+import { MediaAsset } from 'src/modules/media-library/entities/media-asset.entity';
 import { UserPreferences } from './user-preferences.entity';
 
 registerEnumType(UserRole, {
@@ -66,7 +68,7 @@ export class User {
   @Field(() => String, { nullable: true })
   stripeCustomerId?: string | null;
 
-  // ✅ AJOUTER CES CHAMPS
+  // ✅ Champs pour l'ANCIEN système (garder pour compatibilité)
   @Field(() => String, { nullable: true })
   avatarUrl?: string | null;
 
@@ -82,7 +84,7 @@ export class User {
   @Field(() => UserCounts, { nullable: true })
   _count?: UserCounts;
 
-  // AJOUTER ces champs à la classe User ObjectType :
+  // ✅ Champs de profil enrichi
   @Field(() => String, { nullable: true })
   bio?: string | null;
 
@@ -95,6 +97,14 @@ export class User {
   @Field(() => Date, { nullable: true })
   lastLoginAt?: Date | null;
 
+  // ✅ Relations
   @Field(() => UserPreferences, { nullable: true })
   preferences?: UserPreferences | null;
+
+  // 🖼️ NOUVEAU SYSTÈME - Avatar MediaAsset
+  @Field(() => String, { nullable: true })
+  avatarMediaId?: string | null;
+
+  @Field(() => MediaAsset, { nullable: true })
+  avatar?: MediaAsset | null;
 }

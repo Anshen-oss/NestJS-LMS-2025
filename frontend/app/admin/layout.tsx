@@ -168,7 +168,7 @@ export default function AdminLayout({
                 <SidebarMenu>
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild>
-                      <Link href="/admin/settings">
+                      <Link href="/dashboard/admin/settings">
                         <Settings className="h-4 w-4" />
                         <span>Paramètres</span>
                       </Link>
