@@ -10,21 +10,21 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useUserSettings } from '@/hooks/useUserProfile';
-
 import {
   Bell,
+  Camera,
   Globe,
   Loader2,
   Palette,
   Save,
   Shield,
-  User,
-  Video
+  User
 } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-export default function StudentSettingsPage() {
-  // 🎣 Hook combiné pour tout les settings
+export default function AdminSettingsPage() {
+  // 🎣 Hook combiné pour tous les settings
   const { user, updateProfile, updatePreferences, loading, errors, refetch } = useUserSettings();
 
   // États locaux pour le formulaire
@@ -33,7 +33,7 @@ export default function StudentSettingsPage() {
     lastName: '',
     bio: '',
     profession: '',
-    dateOfBirth: '', // Format: YYYY-MM-DD
+    dateOfBirth: '',
   });
 
   const [preferences, setPreferences] = useState({
@@ -54,7 +54,6 @@ export default function StudentSettingsPage() {
   // 🔄 Charger les données du user quand elles arrivent
   useEffect(() => {
     if (user) {
-      // 🔧 FIX : Convertir la date ISO en format YYYY-MM-DD pour l'input date
       const formattedDateOfBirth = user.dateOfBirth
         ? new Date(user.dateOfBirth).toISOString().split('T')[0]
         : '';
@@ -64,10 +63,9 @@ export default function StudentSettingsPage() {
         lastName: user.name?.split(' ').slice(1).join(' ') || '',
         bio: user.bio || '',
         profession: user.profession || '',
-        dateOfBirth: formattedDateOfBirth, // ✅ Format correct
+        dateOfBirth: formattedDateOfBirth,
       });
 
-      // Charger les préférences si elles existent
       if (user.preferences) {
         setPreferences({
           emailNotifications: user.preferences.emailNotifications ?? true,
@@ -92,7 +90,7 @@ export default function StudentSettingsPage() {
       await updateProfile({
         bio: formData.bio,
         profession: formData.profession,
-        dateOfBirth: formData.dateOfBirth, // Format YYYY-MM-DD ✅
+        dateOfBirth: formData.dateOfBirth,
       });
       await refetch();
     } finally {
@@ -114,7 +112,7 @@ export default function StudentSettingsPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
+        <Loader2 className="w-12 h-12 animate-spin text-purple-600" />
       </div>
     );
   }
@@ -133,35 +131,37 @@ export default function StudentSettingsPage() {
         <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
           <TabsTrigger
             value="profile"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-3"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:bg-transparent px-6 py-3"
           >
             <User className="w-4 h-4 mr-2" />
             Profil
           </TabsTrigger>
           <TabsTrigger
+            value="avatar"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:bg-transparent px-6 py-3"
+          >
+            <Link href="/admin/settings/avatar" className="flex items-center gap-2">
+              <Camera className="w-4 h-4" />
+              Avatar
+            </Link>
+          </TabsTrigger>
+          <TabsTrigger
             value="notifications"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-3"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:bg-transparent px-6 py-3"
           >
             <Bell className="w-4 h-4 mr-2" />
             Notifications
           </TabsTrigger>
           <TabsTrigger
-            value="learning"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-3"
-          >
-            <Video className="w-4 h-4 mr-2" />
-            Apprentissage
-          </TabsTrigger>
-          <TabsTrigger
             value="preferences"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-3"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:bg-transparent px-6 py-3"
           >
             <Palette className="w-4 h-4 mr-2" />
             Préférences
           </TabsTrigger>
           <TabsTrigger
             value="security"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-3"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:bg-transparent px-6 py-3"
           >
             <Shield className="w-4 h-4 mr-2" />
             Sécurité
@@ -174,28 +174,11 @@ export default function StudentSettingsPage() {
             <Card className="bg-white">
               <CardHeader>
                 <CardTitle>Informations personnelles</CardTitle>
-                <CardDescription>
+                <CardDescription className='text-gray-600'>
                   Gérez vos informations de profil
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Photo de profil */}
-                <div className="flex items-center gap-6">
-                  <div className="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-3xl font-bold">
-                    {formData.firstName.charAt(0).toUpperCase() || 'U'}
-                  </div>
-                  <div>
-                    <Button className='text-gray-900' variant="outline" size="sm" disabled>
-                      Changer la photo
-                    </Button>
-                    <p className="text-xs text-gray-600 mt-2">
-                      Disponible bientôt
-                    </p>
-                  </div>
-                </div>
-
-                <Separator />
-
                 {/* Bio */}
                 <div className="space-y-2">
                   <Label htmlFor="bio">Biographie</Label>
@@ -249,13 +232,12 @@ export default function StudentSettingsPage() {
                 <Button
                   onClick={handleSaveProfile}
                   disabled={isSaving || loading}
-                  className="w-full"
+                  className="w-full bg-purple-600 hover:bg-purple-700"
                 >
                   <Save className="w-4 h-4 mr-2" />
                   {isSaving ? 'Enregistrement...' : 'Enregistrer les modifications'}
                 </Button>
 
-                {/* Afficher les erreurs */}
                 {errors.profile && (
                   <div className="p-3 bg-red-50 text-red-700 rounded">
                     ❌ {errors.profile}
@@ -358,7 +340,7 @@ export default function StudentSettingsPage() {
                 <Button
                   onClick={handleSavePreferences}
                   disabled={isSaving || loading}
-                  className="w-full"
+                  className="w-full bg-purple-600 hover:bg-purple-700"
                 >
                   <Save className="w-4 h-4 mr-2" />
                   {isSaving ? 'Enregistrement...' : 'Enregistrer'}
@@ -369,94 +351,6 @@ export default function StudentSettingsPage() {
                     ❌ {errors.preferences}
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* APPRENTISSAGE TAB */}
-        <TabsContent value="learning" className="mt-6">
-          <div className="max-w-2xl space-y-6">
-            <Card className="bg-white">
-              <CardHeader>
-                <CardTitle>Préférences vidéo</CardTitle>
-                <CardDescription>
-                  Configurez la lecture des vidéos de cours
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="video-quality">Qualité vidéo</Label>
-                  <Select
-                    value={preferences.videoQuality}
-                    onValueChange={(value) =>
-                      setPreferences({ ...preferences, videoQuality: value })
-                    }
-                  >
-                    <SelectTrigger id="video-quality">
-                      <SelectValue placeholder="Sélectionner la qualité" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="auto">Automatique</SelectItem>
-                      <SelectItem value="1080p">1080p (Full HD)</SelectItem>
-                      <SelectItem value="720p">720p (HD)</SelectItem>
-                      <SelectItem value="480p">480p</SelectItem>
-                      <SelectItem value="360p">360p</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-gray-500">
-                    La qualité automatique s'adapte à votre connexion
-                  </p>
-                </div>
-
-                <Separator />
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="autoplay" className="text-base">
-                      Lecture automatique
-                    </Label>
-                    <p className="text-sm text-gray-500">
-                      Lancer automatiquement la leçon suivante
-                    </p>
-                  </div>
-                  <Switch
-                    id="autoplay"
-                    checked={preferences.autoplay}
-                    onCheckedChange={(checked) =>
-                      setPreferences({ ...preferences, autoplay: checked })
-                    }
-                  />
-                </div>
-
-                <Separator />
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="subtitles" className="text-base">
-                      Sous-titres activés par défaut
-                    </Label>
-                    <p className="text-sm text-gray-500">
-                      Afficher les sous-titres automatiquement
-                    </p>
-                  </div>
-                  <Switch
-                    id="subtitles"
-                    checked={preferences.subtitles}
-                    onCheckedChange={(checked) =>
-                      setPreferences({ ...preferences, subtitles: checked })
-                    }
-                  />
-                </div>
-
-                <Button
-                  onClick={handleSavePreferences}
-                  disabled={isSaving || loading}
-                  className="w-full"
-                >
-                  <Save className="w-4 h-4 mr-2" />
-                  {isSaving ? 'Enregistrement...' : 'Enregistrer'}
-                </Button>
               </CardContent>
             </Card>
           </div>
@@ -524,7 +418,7 @@ export default function StudentSettingsPage() {
                 <Button
                   onClick={handleSavePreferences}
                   disabled={isSaving || loading}
-                  className="w-full"
+                  className="w-full bg-purple-600 hover:bg-purple-700"
                 >
                   <Save className="w-4 h-4 mr-2" />
                   {isSaving ? 'Enregistrement...' : 'Enregistrer'}
@@ -532,71 +426,54 @@ export default function StudentSettingsPage() {
               </CardContent>
             </Card>
 
+            <Card className="bg-white">
+              <CardHeader>
+                <CardTitle>Apparence</CardTitle>
+                <CardDescription className="text-gray-600">
+                  Personnalisez l'interface
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label>Thème</Label>
+                  <div className="grid grid-cols-3 gap-4">
+                    <Button
+                      variant={preferences.theme === 'light' ? 'default' : 'outline'}
+                      className="h-20 flex flex-col items-center justify-center"
+                      onClick={() => setPreferences({ ...preferences, theme: 'light' })}
+                    >
+                      <div className="w-8 h-8 rounded-full bg-white border-2 mb-2"></div>
+                      Clair
+                    </Button>
+                    <Button
+                      variant={preferences.theme === 'dark' ? 'default' : 'outline'}
+                      className="h-20 flex flex-col items-center justify-center"
+                      onClick={() => setPreferences({ ...preferences, theme: 'dark' })}
+                    >
+                      <div className="w-8 h-8 rounded-full bg-gray-900 mb-2"></div>
+                      Sombre
+                    </Button>
+                    <Button
+                      variant={preferences.theme === 'auto' ? 'default' : 'outline'}
+                      className="h-20 flex flex-col items-center justify-center"
+                      onClick={() => setPreferences({ ...preferences, theme: 'auto' })}
+                    >
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-white to-gray-900 mb-2"></div>
+                      Auto
+                    </Button>
+                  </div>
+                </div>
 
-
-{/* APPARENCE - SECTION MISE À JOUR */}
-<Card className="bg-white">
-  <CardHeader>
-    <CardTitle>Apparence</CardTitle>
-    <CardDescription className="text-gray-600">
-      Personnalisez l'interface
-    </CardDescription>
-  </CardHeader>
-  <CardContent className="space-y-6">
-    <div className="space-y-2">
-      <Label>Thème</Label>
-      <div className="grid grid-cols-3 gap-4">
-        {/* BOUTON CLAIR */}
-        <Button
-          variant={preferences.theme === 'light' ? 'default' : 'outline'}
-          className="h-20 flex flex-col items-center justify-center"
-          onClick={async () => {
-            // 1️⃣ Changer localement
-            setPreferences({ ...preferences, theme: 'light' });
-            // 2️⃣ Appliquer immédiatement + sauvegarder en BD
-            await updatePreferences({ theme: 'light' });
-          }}
-        >
-          <div className="w-8 h-8 rounded-full bg-white border-2 mb-2"></div>
-          Clair
-        </Button>
-
-        {/* BOUTON SOMBRE */}
-        <Button
-          variant={preferences.theme === 'dark' ? 'default' : 'outline'}
-          className="h-20 flex flex-col items-center justify-center"
-          onClick={async () => {
-            // 1️⃣ Changer localement
-            setPreferences({ ...preferences, theme: 'dark' });
-            // 2️⃣ Appliquer immédiatement + sauvegarder en BD
-            await updatePreferences({ theme: 'dark' });
-          }}
-        >
-          <div className="w-8 h-8 rounded-full bg-gray-900 mb-2"></div>
-          Sombre
-        </Button>
-
-        {/* BOUTON AUTO */}
-        <Button
-          variant={preferences.theme === 'auto' ? 'default' : 'outline'}
-          className="h-20 flex flex-col items-center justify-center"
-          onClick={async () => {
-            // 1️⃣ Changer localement
-            setPreferences({ ...preferences, theme: 'auto' });
-            // 2️⃣ Appliquer immédiatement + sauvegarder en BD
-            await updatePreferences({ theme: 'auto' });
-          }}
-        >
-          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-white to-gray-900 mb-2"></div>
-          Auto
-        </Button>
-      </div>
-      <p className="text-xs text-gray-500 mt-2">
-        💡 Le changement s'applique immédiatement
-      </p>
-    </div>
-  </CardContent>
-</Card>
+                <Button
+                  onClick={handleSavePreferences}
+                  disabled={isSaving || loading}
+                  className="w-full bg-purple-600 hover:bg-purple-700"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {isSaving ? 'Enregistrement...' : 'Enregistrer'}
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 

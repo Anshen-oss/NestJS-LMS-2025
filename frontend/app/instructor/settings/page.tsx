@@ -31,7 +31,7 @@ const AvatarTab = dynamic(
   { loading: () => <div>Loading...</div> }
 );
 
-export default function StudentSettingsPage() {
+export default function InstructorSettingsPage() {
   // 🎣 Hook combiné pour tout les settings
   const { user, updateProfile, updatePreferences, loading, errors, refetch } = useUserSettings();
 

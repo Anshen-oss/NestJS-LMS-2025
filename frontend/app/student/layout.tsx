@@ -1,5 +1,6 @@
 'use client';
 
+import { useStudentUser } from '@/app/contexts/StudentUserContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,7 +18,6 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { UserMenuDropdown } from '@/components/UserMenuDropdown';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useUser } from '@clerk/nextjs';
 import {
   BookOpen,
@@ -35,8 +35,8 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { user: clerkUser, isLoaded: clerkLoaded } = useUser();
 
-  // ✅ IMPORTANT: Utiliser Apollo SEULEMENT après que Clerk soit chargé
-  const { user: apolloUser, loading: apolloLoading } = useCurrentUser();
+  // ✅ NEW: Use StudentUserContext for avatar sync
+  const { user: studentUser, loading: studentLoading } = useStudentUser();
 
   // Vérifier que l'utilisateur est STUDENT
   const userRole = clerkUser?.publicMetadata?.role as string | undefined;
@@ -101,11 +101,11 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
     },
   ];
 
-  // ✅ User info - Utiliser Apollo si disponible, sinon Clerk
-  const userName = apolloUser?.name || clerkUser?.fullName || clerkUser?.firstName || 'Étudiant';
-  const userEmail = apolloUser?.email || clerkUser?.primaryEmailAddress?.emailAddress || '';
-  const userAvatar = apolloUser?.image;
-  const userInitial = (apolloUser?.name?.charAt(0) || clerkUser?.fullName?.charAt(0) || clerkUser?.firstName?.charAt(0) || 'E').toUpperCase();
+  // ✅ User info - Utiliser Context pour avatar, Clerk pour le reste
+  const userName = studentUser?.name || clerkUser?.fullName || clerkUser?.firstName || 'Étudiant';
+  const userEmail = studentUser?.email || clerkUser?.primaryEmailAddress?.emailAddress || '';
+  const userAvatar = studentUser?.avatar?.urlMedium || studentUser?.image;
+  const userInitial = (studentUser?.name?.charAt(0) || clerkUser?.fullName?.charAt(0) || clerkUser?.firstName?.charAt(0) || 'E').toUpperCase();
 
   return (
     <SidebarProvider>
@@ -165,8 +165,8 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
             <SidebarMenu>
               <SidebarMenuItem>
                 <div className="flex items-center gap-3 px-2 py-2">
-                  {/* ✅ Utiliser Avatar de Shadcn/ui */}
-                  {apolloLoading ? (
+                  {/* ✅ Utiliser Avatar avec sync */}
+                  {studentLoading ? (
                     <div className="h-8 w-8 rounded-full bg-gray-200 animate-pulse" />
                   ) : (
                     <Avatar className="h-8 w-8">
@@ -208,7 +208,12 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
                 </Button>
 
                 {/* ✅ UserMenuDropdown avec Avatar synchronisé */}
-                <UserMenuDropdown />
+                <UserMenuDropdown
+                  avatar={userAvatar}
+                  name={userName}
+                  email={userEmail}
+                  isLoading={studentLoading}
+/>
               </div>
             </div>
           </div>
