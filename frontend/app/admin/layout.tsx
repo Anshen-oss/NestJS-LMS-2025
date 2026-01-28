@@ -1,5 +1,7 @@
 'use client';
 
+import { useAdminUser } from '@/app/contexts/AdminUserContext';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
   Sidebar,
@@ -15,7 +17,8 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
-import { UserButton, useUser } from '@clerk/nextjs';
+import { UserMenuDropdown } from '@/components/UserMenuDropdown';
+import { useUser } from '@clerk/nextjs';
 import {
   BarChart3,
   BookOpen,
@@ -34,17 +37,20 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { user, isLoaded } = useUser();
+  const { user: clerkUser, isLoaded: clerkLoaded } = useUser();
+
+  // ✅ NEW: Import context user pour avatar sync
+  const { user: adminUser, loading: adminLoading } = useAdminUser();
 
   // Récupérer le rôle depuis metadata
-  const userRole = user?.publicMetadata?.role as string | undefined;
+  const userRole = clerkUser?.publicMetadata?.role as string | undefined;
 
-  const isAuthorized = isLoaded && user && (
+  const isAuthorized = clerkLoaded && clerkUser && (
     userRole === 'ADMIN' || userRole === 'INSTRUCTOR'
   );
 
   // Pendant le chargement
-  if (!isLoaded) {
+  if (!clerkLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50">
         <div className="text-center">
@@ -69,19 +75,17 @@ export default function AdminLayout({
             Page introuvable
           </h2>
           <p className="text-gray-600 mb-8 max-w-md mx-auto">
-            {!user
+            {!clerkUser
               ? "Vous devez être connecté pour accéder à cette page."
               : "Vous n'avez pas les permissions nécessaires pour accéder à cette page."}
           </p>
           <div className="flex gap-4 justify-center">
-
-              <a href="/"
+            <a href="/"
               className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"
             >
               Retour à l'accueil
             </a>
-
-              <a href="/sign-in"
+            <a href="/sign-in"
               className="px-6 py-3 border border-purple-600 text-purple-600 rounded-lg font-medium hover:bg-purple-50 transition-colors"
             >
               Se connecter
@@ -120,10 +124,11 @@ export default function AdminLayout({
     },
   ];
 
-  // Helpers pour affichage utilisateur
-  const userName = user?.fullName || user?.firstName || 'Admin';
-  const userEmail = user?.primaryEmailAddress?.emailAddress || '';
-  const userInitial = (user?.fullName?.charAt(0) || user?.firstName?.charAt(0) || 'A').toUpperCase();
+  // ✅ Helpers pour affichage utilisateur
+  const userName = adminUser?.name || clerkUser?.fullName || clerkUser?.firstName || 'Admin';
+  const userEmail = adminUser?.email || clerkUser?.primaryEmailAddress?.emailAddress || '';
+  const userAvatar = adminUser?.avatar?.urlMedium || adminUser?.image;
+  const userInitial = (adminUser?.name?.charAt(0) || clerkUser?.fullName?.charAt(0) || clerkUser?.firstName?.charAt(0) || 'A').toUpperCase();
 
   return (
     <SidebarProvider>
@@ -183,11 +188,22 @@ export default function AdminLayout({
             <SidebarMenu>
               <SidebarMenuItem>
                 <div className="flex items-center gap-3 px-2 py-2">
-                  <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
-                    <span className="text-sm font-semibold text-purple-600">
-                      {userInitial}
-                    </span>
-                  </div>
+                  {/* ✅ Utiliser Avatar avec sync */}
+                  {adminLoading ? (
+                    <div className="h-8 w-8 rounded-full bg-gray-200 animate-pulse" />
+                  ) : (
+                    <Avatar className="h-8 w-8">
+                      {userAvatar && (
+                        <AvatarImage
+                          src={userAvatar}
+                          alt={userName}
+                        />
+                      )}
+                      <AvatarFallback className="bg-purple-500 text-white text-xs font-semibold">
+                        {userInitial}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{userName}</p>
                     <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
@@ -214,15 +230,13 @@ export default function AdminLayout({
                     Accueil
                   </Link>
                 </Button>
-
-                {/* Clerk UserButton */}
-                <UserButton
-                  appearance={{
-                    elements: {
-                      avatarBox: 'h-8 w-8',
-                    }
-                  }}
-                />
+                  {/* ✅ UserMenuDropdown avec Avatar synchronisé */}
+                  <UserMenuDropdown
+                    avatar={userAvatar}
+                    name={userName}
+                    email={userEmail}
+                    isLoading={adminLoading}
+                  />
               </div>
             </div>
           </div>

@@ -1,15 +1,7 @@
-// 'use client';
-
-// import client from '@/lib/apollo-client';
-// import { ApolloProvider } from '@apollo/client';
-// import { ReactNode } from 'react';
-
-// export function Providers({ children }: { children: ReactNode }) {
-//   return <ApolloProvider client={client}>{children}</ApolloProvider>;
-// }
-
 'use client';
 
+import { AdminUserProvider } from '@/app/contexts/AdminUserContext';
+import { StudentUserProvider } from '@/app/contexts/StudentUserContext';
 import { useApolloClient } from '@/lib/apollo-client';
 import { ApolloProvider } from '@apollo/client';
 import { ReactNode } from 'react';
@@ -17,5 +9,13 @@ import { ReactNode } from 'react';
 export function Providers({ children }: { children: ReactNode }) {
   const client = useApolloClient();
 
-  return <ApolloProvider client={client}>{children}</ApolloProvider>;
+  return (
+    <AdminUserProvider>
+      <StudentUserProvider>
+        <ApolloProvider client={client}>
+          {children}
+        </ApolloProvider>
+      </StudentUserProvider>
+    </AdminUserProvider>
+  );
 }

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+// import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
@@ -12,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useUserSettings } from '@/hooks/useUserProfile';
 import {
   Bell,
+  Camera,
   Globe,
   Loader2,
   Palette,
@@ -20,9 +22,16 @@ import {
   User,
   Video
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-export default function StudentSettingsPage() {
+const AvatarTab = dynamic(
+  () => import('./avatar/page').then(mod => ({ default: mod.default })),
+  { loading: () => <div>Loading...</div> }
+);
+
+export default function InstructorSettingsPage() {
   // 🎣 Hook combiné pour tout les settings
   const { user, updateProfile, updatePreferences, loading, errors, refetch } = useUserSettings();
 
@@ -138,6 +147,17 @@ export default function StudentSettingsPage() {
             Profil
           </TabsTrigger>
           <TabsTrigger
+          value="avatar"
+          className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-3"
+        >
+          <Link href="/instructor/settings/avatar" className="inline-block">
+          <div className="rounded-none border-b-2 border-transparent hover:border-blue-600 px-6 py-3 cursor-pointer flex items-center gap-2">
+            <Camera className="w-4 h-4" />
+            Avatar
+          </div>
+        </Link>
+        </TabsTrigger>
+          <TabsTrigger
             value="notifications"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-3"
           >
@@ -173,27 +193,13 @@ export default function StudentSettingsPage() {
             <Card className="bg-white">
               <CardHeader>
                 <CardTitle>Informations personnelles</CardTitle>
-                <CardDescription>
+                <CardDescription className='text-gray-600'>
                   Gérez vos informations de profil
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Photo de profil */}
-                <div className="flex items-center gap-6">
-                  <div className="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-3xl font-bold">
-                    {formData.firstName.charAt(0).toUpperCase() || 'U'}
-                  </div>
-                  <div>
-                    <Button className='text-gray-900' variant="outline" size="sm" disabled>
-                      Changer la photo
-                    </Button>
-                    <p className="text-xs text-gray-600 mt-2">
-                      Disponible bientôt
-                    </p>
-                  </div>
-                </div>
 
-                <Separator />
 
                 {/* Bio */}
                 <div className="space-y-2">
@@ -601,6 +607,7 @@ export default function StudentSettingsPage() {
             </Card>
           </div>
         </TabsContent>
+        {/* AVATAR TAB */}
       </Tabs>
     </div>
   );

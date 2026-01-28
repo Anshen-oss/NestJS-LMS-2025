@@ -2,16 +2,17 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AvatarUpload } from '@/components/user/AvatarUpload';
+import { Textarea } from '@/components/ui/textarea';
 import { useUserSettings } from '@/hooks/useUserProfile';
-
 import {
   Bell,
+  Camera,
   Globe,
   Loader2,
   Palette,
@@ -20,14 +21,12 @@ import {
   User,
   Video
 } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 export default function StudentSettingsPage() {
-  // 🎣 Hook combiné pour tout les settings
+  // 🎣 Hook combiné pour tous les settings
   const { user, updateProfile, updatePreferences, loading, errors, refetch } = useUserSettings();
-
-  // ❌ SUPPRIMÉ: const [userAvatar, setUserAvatar] = useState<string | undefined>();
-  // ✅ UTILISÉ DIRECTEMENT: user?.image
 
   // États locaux pour le formulaire
   const [formData, setFormData] = useState({
@@ -35,7 +34,7 @@ export default function StudentSettingsPage() {
     lastName: '',
     bio: '',
     profession: '',
-    dateOfBirth: '', // Format: YYYY-MM-DD
+    dateOfBirth: '',
   });
 
   const [preferences, setPreferences] = useState({
@@ -56,7 +55,6 @@ export default function StudentSettingsPage() {
   // 🔄 Charger les données du user quand elles arrivent
   useEffect(() => {
     if (user) {
-      // 🔧 FIX : Convertir la date ISO en format YYYY-MM-DD pour l'input date
       const formattedDateOfBirth = user.dateOfBirth
         ? new Date(user.dateOfBirth).toISOString().split('T')[0]
         : '';
@@ -66,10 +64,9 @@ export default function StudentSettingsPage() {
         lastName: user.name?.split(' ').slice(1).join(' ') || '',
         bio: user.bio || '',
         profession: user.profession || '',
-        dateOfBirth: formattedDateOfBirth, // ✅ Format correct
+        dateOfBirth: formattedDateOfBirth,
       });
 
-      // Charger les préférences si elles existent
       if (user.preferences) {
         setPreferences({
           emailNotifications: user.preferences.emailNotifications ?? true,
@@ -94,7 +91,7 @@ export default function StudentSettingsPage() {
       await updateProfile({
         bio: formData.bio,
         profession: formData.profession,
-        dateOfBirth: formData.dateOfBirth, // Format YYYY-MM-DD ✅
+        dateOfBirth: formData.dateOfBirth,
       });
       await refetch();
     } finally {
@@ -141,6 +138,15 @@ export default function StudentSettingsPage() {
             Profil
           </TabsTrigger>
           <TabsTrigger
+            value="avatar"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-3"
+          >
+            <Link href="/student/settings/avatar" className="flex items-center gap-2">
+              <Camera className="w-4 h-4" />
+              Avatar
+            </Link>
+          </TabsTrigger>
+          <TabsTrigger
             value="notifications"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-6 py-3"
           >
@@ -176,49 +182,65 @@ export default function StudentSettingsPage() {
             <Card className="bg-white">
               <CardHeader>
                 <CardTitle>Informations personnelles</CardTitle>
-                <AvatarUpload
-                  currentAvatarUrl={user?.image}  // ✅ Directement depuis user
-                  currentUserName={user?.name || 'Utilisateur'}
-                  onSuccess={(newUrl) => {
-                    console.log('✅ Avatar URL reçue:', newUrl);
-                    // ✅ Ne pas appeler setUserAvatar (qui n'existe plus)
-                    // Les données viendront du refetch
-                  }}
-                  onUploadComplete={async () => {
-                    console.log('🔄 Appelant refetch...');
-                    await refetch();
-                    console.log('✅ refetch terminé');
-                  }}
-                />
-                <CardDescription>
+                <CardDescription className='text-gray-600'>
                   Gérez vos informations de profil
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Suppression du placeholder inutile */}
-                {/* Les autres champs: Bio, Profession, Date de naissance... */}
-
-                <Separator />
-
                 {/* Bio */}
                 <div className="space-y-2">
-                  {/* ... */}
+                  <Label htmlFor="bio">Biographie</Label>
+                  <Textarea
+                    id="bio"
+                    placeholder="Parlez un peu de vous..."
+                    rows={4}
+                    value={formData.bio}
+                    onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                    maxLength={500}
+                    className='text-gray-600'
+                  />
+                  <p className="text-xs text-gray-800">
+                    {formData.bio.length}/500 caractères
+                  </p>
                 </div>
 
                 {/* Profession */}
                 <div className="space-y-2">
-                  {/* ... */}
+                  <Label htmlFor="profession">Profession</Label>
+                  <Input
+                    id="profession"
+                    placeholder="Ex: Développeur Web, Designer..."
+                    value={formData.profession}
+                    onChange={(e) => setFormData({ ...formData, profession: e.target.value })}
+                    maxLength={100}
+                    className='text-gray-600'
+                  />
+                  <p className="text-xs text-gray-600">
+                    {formData.profession.length}/100 caractères
+                  </p>
                 </div>
 
                 {/* Date de naissance */}
                 <div className="space-y-2">
-                  {/* ... */}
+                  <Label htmlFor="dateOfBirth">Date de naissance (optionnel)</Label>
+                  <Input
+                    id="dateOfBirth"
+                    type="date"
+                    value={formData.dateOfBirth}
+                    onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                    className='text-gray-600'
+                  />
+                  {formData.dateOfBirth && (
+                    <p className="text-xs text-gray-500">
+                      Sélectionné : {new Date(formData.dateOfBirth).toLocaleDateString('fr-FR')}
+                    </p>
+                  )}
                 </div>
 
                 <Button
                   onClick={handleSaveProfile}
                   disabled={isSaving || loading}
-                  className="w-full"
+                  className="w-full bg-blue-600 hover:bg-blue-700"
                 >
                   <Save className="w-4 h-4 mr-2" />
                   {isSaving ? 'Enregistrement...' : 'Enregistrer les modifications'}
@@ -326,7 +348,7 @@ export default function StudentSettingsPage() {
                 <Button
                   onClick={handleSavePreferences}
                   disabled={isSaving || loading}
-                  className="w-full"
+                  className="w-full bg-blue-600 hover:bg-blue-700"
                 >
                   <Save className="w-4 h-4 mr-2" />
                   {isSaving ? 'Enregistrement...' : 'Enregistrer'}
@@ -420,7 +442,7 @@ export default function StudentSettingsPage() {
                 <Button
                   onClick={handleSavePreferences}
                   disabled={isSaving || loading}
-                  className="w-full"
+                  className="w-full bg-blue-600 hover:bg-blue-700"
                 >
                   <Save className="w-4 h-4 mr-2" />
                   {isSaving ? 'Enregistrement...' : 'Enregistrer'}
@@ -492,7 +514,7 @@ export default function StudentSettingsPage() {
                 <Button
                   onClick={handleSavePreferences}
                   disabled={isSaving || loading}
-                  className="w-full"
+                  className="w-full bg-blue-600 hover:bg-blue-700"
                 >
                   <Save className="w-4 h-4 mr-2" />
                   {isSaving ? 'Enregistrement...' : 'Enregistrer'}
@@ -500,7 +522,6 @@ export default function StudentSettingsPage() {
               </CardContent>
             </Card>
 
-            {/* APPARENCE - SECTION MISE À JOUR */}
             <Card className="bg-white">
               <CardHeader>
                 <CardTitle>Apparence</CardTitle>
@@ -512,55 +533,41 @@ export default function StudentSettingsPage() {
                 <div className="space-y-2">
                   <Label>Thème</Label>
                   <div className="grid grid-cols-3 gap-4">
-                    {/* BOUTON CLAIR */}
                     <Button
                       variant={preferences.theme === 'light' ? 'default' : 'outline'}
                       className="h-20 flex flex-col items-center justify-center"
-                      onClick={async () => {
-                        // 1️⃣ Changer localement
-                        setPreferences({ ...preferences, theme: 'light' });
-                        // 2️⃣ Appliquer immédiatement + sauvegarder en BD
-                        await updatePreferences({ theme: 'light' });
-                      }}
+                      onClick={() => setPreferences({ ...preferences, theme: 'light' })}
                     >
                       <div className="w-8 h-8 rounded-full bg-white border-2 mb-2"></div>
                       Clair
                     </Button>
-
-                    {/* BOUTON SOMBRE */}
                     <Button
                       variant={preferences.theme === 'dark' ? 'default' : 'outline'}
                       className="h-20 flex flex-col items-center justify-center"
-                      onClick={async () => {
-                        // 1️⃣ Changer localement
-                        setPreferences({ ...preferences, theme: 'dark' });
-                        // 2️⃣ Appliquer immédiatement + sauvegarder en BD
-                        await updatePreferences({ theme: 'dark' });
-                      }}
+                      onClick={() => setPreferences({ ...preferences, theme: 'dark' })}
                     >
                       <div className="w-8 h-8 rounded-full bg-gray-900 mb-2"></div>
                       Sombre
                     </Button>
-
-                    {/* BOUTON AUTO */}
                     <Button
                       variant={preferences.theme === 'auto' ? 'default' : 'outline'}
                       className="h-20 flex flex-col items-center justify-center"
-                      onClick={async () => {
-                        // 1️⃣ Changer localement
-                        setPreferences({ ...preferences, theme: 'auto' });
-                        // 2️⃣ Appliquer immédiatement + sauvegarder en BD
-                        await updatePreferences({ theme: 'auto' });
-                      }}
+                      onClick={() => setPreferences({ ...preferences, theme: 'auto' })}
                     >
                       <div className="w-8 h-8 rounded-full bg-gradient-to-r from-white to-gray-900 mb-2"></div>
                       Auto
                     </Button>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    💡 Le changement s'applique immédiatement
-                  </p>
                 </div>
+
+                <Button
+                  onClick={handleSavePreferences}
+                  disabled={isSaving || loading}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {isSaving ? 'Enregistrement...' : 'Enregistrer'}
+                </Button>
               </CardContent>
             </Card>
           </div>

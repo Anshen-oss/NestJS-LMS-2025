@@ -296,6 +296,12 @@ export type DateRangeType = {
   startDate: Scalars['DateTime']['output'];
 };
 
+export type DeleteMediaResponse = {
+  __typename?: 'DeleteMediaResponse';
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
 export type EnrollInCourseInput = {
   courseId: Scalars['String']['input'];
 };
@@ -413,6 +419,51 @@ export type LessonProgress = {
   userId: Scalars['String']['output'];
 };
 
+export type MediaAsset = {
+  __typename?: 'MediaAsset';
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  fileHash: Scalars['String']['output'];
+  filename: Scalars['String']['output'];
+  height: Scalars['Float']['output'];
+  id: Scalars['ID']['output'];
+  isDeleted: Scalars['Boolean']['output'];
+  isPublic: Scalars['Boolean']['output'];
+  key: Scalars['String']['output'];
+  lastUsedAt?: Maybe<Scalars['DateTime']['output']>;
+  mimeType: Scalars['String']['output'];
+  size: Scalars['Float']['output'];
+  tags: Array<Scalars['String']['output']>;
+  updatedAt: Scalars['DateTime']['output'];
+  uploadedById: Scalars['String']['output'];
+  urlLarge: Scalars['String']['output'];
+  urlMedium: Scalars['String']['output'];
+  urlOriginal: Scalars['String']['output'];
+  urlThumbnail: Scalars['String']['output'];
+  usageCount: Scalars['Float']['output'];
+  width: Scalars['Float']['output'];
+};
+
+export type MediaAssetType = {
+  __typename?: 'MediaAssetType';
+  createdAt: Scalars['DateTime']['output'];
+  description?: Maybe<Scalars['String']['output']>;
+  filename: Scalars['String']['output'];
+  height: Scalars['Int']['output'];
+  id: Scalars['String']['output'];
+  isPublic: Scalars['Boolean']['output'];
+  lastUsedAt?: Maybe<Scalars['DateTime']['output']>;
+  size: Scalars['Int']['output'];
+  tags: Array<Scalars['String']['output']>;
+  urlLarge: Scalars['String']['output'];
+  urlMedium: Scalars['String']['output'];
+  urlOriginal: Scalars['String']['output'];
+  urlThumbnail: Scalars['String']['output'];
+  usageCount: Scalars['Int']['output'];
+  width: Scalars['Int']['output'];
+};
+
 export type MessageOutput = {
   __typename?: 'MessageOutput';
   content: Scalars['String']['output'];
@@ -458,6 +509,8 @@ export type Mutation = {
   deleteFile: Scalars['Boolean']['output'];
   deleteLesson: Scalars['Boolean']['output'];
   deleteLessonAttachment: Scalars['Boolean']['output'];
+  /** Soft delete media (recoverable for 30 days) */
+  deleteMedia: DeleteMediaResponse;
   /** Delete video progress (reset) */
   deleteVideoProgress: Scalars['Boolean']['output'];
   enrollInCourse: EnrollmentResponse;
@@ -481,6 +534,8 @@ export type Mutation = {
   /** Envoie un message à l'instructor du cours */
   studentSendMessage: SendMessageOutput;
   toggleLessonCompletion: LessonProgress;
+  /** Track media usage for analytics */
+  trackMediaUsage: Scalars['Boolean']['output'];
   /** Unban user (ADMIN only) */
   unbanUser: User;
   updateChapter: Chapter;
@@ -574,6 +629,11 @@ export type MutationDeleteLessonAttachmentArgs = {
 };
 
 
+export type MutationDeleteMediaArgs = {
+  mediaId: Scalars['String']['input'];
+};
+
+
 export type MutationDeleteVideoProgressArgs = {
   lessonId: Scalars['String']['input'];
 };
@@ -662,6 +722,11 @@ export type MutationToggleLessonCompletionArgs = {
 };
 
 
+export type MutationTrackMediaUsageArgs = {
+  mediaId: Scalars['String']['input'];
+};
+
+
 export type MutationUnbanUserArgs = {
   userId: Scalars['String']['input'];
 };
@@ -695,8 +760,7 @@ export type MutationUpdateLessonProgressArgs = {
 
 
 export type MutationUpdateUserAvatarArgs = {
-  avatarKey: Scalars['String']['input'];
-  avatarUrl: Scalars['String']['input'];
+  avatarMediaId: Scalars['String']['input'];
 };
 
 
@@ -754,6 +818,12 @@ export type Query = {
   getCurrentUser: User;
   /** Données complètes des revenus de l'instructeur */
   getInstructorRevenue: InstructorRevenueResponse;
+  /** Get single media by ID */
+  getMediaById?: Maybe<MediaAssetType>;
+  /** Get total count of user media */
+  getMyMediaCount: Scalars['Float']['output'];
+  /** Get paginated list of user media library */
+  getMyMediaLibrary: Array<MediaAssetType>;
   /** Get user by ID */
   getUserById: User;
   /** Get user statistics */
@@ -854,6 +924,17 @@ export type QueryGetCourseForEditArgs = {
 
 export type QueryGetInstructorRevenueArgs = {
   period?: RevenueInstructorPeriod;
+};
+
+
+export type QueryGetMediaByIdArgs = {
+  id: Scalars['String']['input'];
+};
+
+
+export type QueryGetMyMediaLibraryArgs = {
+  skip?: Scalars['Int']['input'];
+  take?: Scalars['Int']['input'];
 };
 
 
@@ -1231,7 +1312,9 @@ export type UploadUrlResponse = {
 export type User = {
   __typename?: 'User';
   _count?: Maybe<UserCounts>;
+  avatar?: Maybe<MediaAsset>;
   avatarKey?: Maybe<Scalars['String']['output']>;
+  avatarMediaId?: Maybe<Scalars['String']['output']>;
   avatarUrl?: Maybe<Scalars['String']['output']>;
   banExpires?: Maybe<Scalars['DateTime']['output']>;
   banReason?: Maybe<Scalars['String']['output']>;
@@ -1313,12 +1396,11 @@ export type VideoProgress = {
 };
 
 export type UpdateUserAvatarMutationVariables = Exact<{
-  avatarUrl: Scalars['String']['input'];
-  avatarKey: Scalars['String']['input'];
+  avatarMediaId: Scalars['String']['input'];
 }>;
 
 
-export type UpdateUserAvatarMutation = { __typename?: 'Mutation', updateUserAvatar: { __typename?: 'UpdateUserAvatarResponse', success: boolean, message?: string | null, user?: { __typename?: 'User', id: string, email?: string | null, name?: string | null, role?: UserRole | null, avatarUrl?: string | null, createdAt: any, updatedAt?: any | null } | null } };
+export type UpdateUserAvatarMutation = { __typename?: 'Mutation', updateUserAvatar: { __typename?: 'UpdateUserAvatarResponse', success: boolean, message?: string | null, user?: { __typename?: 'User', id: string, email?: string | null, name?: string | null, role?: UserRole | null, image?: string | null, createdAt: any, updatedAt?: any | null, avatar?: { __typename?: 'MediaAsset', id: string, urlMedium: string, urlLarge: string, urlOriginal: string } | null } | null } };
 
 export type CreateChapterMutationVariables = Exact<{
   input: CreateChapterInput;
@@ -1578,7 +1660,7 @@ export type GetCourseWithLessonsQuery = { __typename?: 'Query', course: { __type
 export type GetCurrentUserQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetCurrentUserQuery = { __typename?: 'Query', getCurrentUser: { __typename?: 'User', id: string, clerkId?: string | null, name?: string | null, email?: string | null, image?: string | null, role?: UserRole | null, bio?: string | null, profession?: string | null, dateOfBirth?: any | null, emailVerified?: boolean | null, banned?: boolean | null, createdAt: any, updatedAt?: any | null, preferences?: { __typename?: 'UserPreferences', id: string, emailNotifications: boolean, courseUpdates: boolean, weeklyDigest: boolean, marketingEmails: boolean, videoQuality: string, autoplay: boolean, subtitles: boolean, language: string, timezone: string, theme: string, createdAt: any, updatedAt: any } | null } };
+export type GetCurrentUserQuery = { __typename?: 'Query', getCurrentUser: { __typename?: 'User', id: string, clerkId?: string | null, name?: string | null, email?: string | null, image?: string | null, role?: UserRole | null, bio?: string | null, profession?: string | null, dateOfBirth?: any | null, emailVerified?: boolean | null, banned?: boolean | null, createdAt: any, updatedAt?: any | null, avatar?: { __typename?: 'MediaAsset', id: string, urlMedium: string, urlLarge: string, urlOriginal: string } | null, preferences?: { __typename?: 'UserPreferences', id: string, emailNotifications: boolean, courseUpdates: boolean, weeklyDigest: boolean, marketingEmails: boolean, videoQuality: string, autoplay: boolean, subtitles: boolean, language: string, timezone: string, theme: string, createdAt: any, updatedAt: any } | null } };
 
 export type GetInstructorStatsQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1775,8 +1857,8 @@ export type DeleteVideoProgressMutation = { __typename?: 'Mutation', deleteVideo
 
 
 export const UpdateUserAvatarDocument = gql`
-    mutation UpdateUserAvatar($avatarUrl: String!, $avatarKey: String!) {
-  updateUserAvatar(avatarUrl: $avatarUrl, avatarKey: $avatarKey) {
+    mutation UpdateUserAvatar($avatarMediaId: String!) {
+  updateUserAvatar(avatarMediaId: $avatarMediaId) {
     success
     message
     user {
@@ -1784,9 +1866,15 @@ export const UpdateUserAvatarDocument = gql`
       email
       name
       role
-      avatarUrl
+      image
       createdAt
       updatedAt
+      avatar {
+        id
+        urlMedium
+        urlLarge
+        urlOriginal
+      }
     }
   }
 }
@@ -1806,8 +1894,7 @@ export type UpdateUserAvatarMutationFn = Apollo.MutationFunction<UpdateUserAvata
  * @example
  * const [updateUserAvatarMutation, { data, loading, error }] = useUpdateUserAvatarMutation({
  *   variables: {
- *      avatarUrl: // value for 'avatarUrl'
- *      avatarKey: // value for 'avatarKey'
+ *      avatarMediaId: // value for 'avatarMediaId'
  *   },
  * });
  */
@@ -3508,6 +3595,12 @@ export const GetCurrentUserDocument = gql`
     banned
     createdAt
     updatedAt
+    avatar {
+      id
+      urlMedium
+      urlLarge
+      urlOriginal
+    }
     preferences {
       id
       emailNotifications

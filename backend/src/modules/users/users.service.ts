@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { S3Service } from '../s3/s3.service';
+import { MediaLibraryService } from '../media-library/services/media-library.service';
 import { UserPreferences } from './entities/user-preferences.entity';
 import { User } from './entities/user.entity';
 
@@ -13,7 +13,7 @@ import { User } from './entities/user.entity';
 export class UsersService {
   constructor(
     private prisma: PrismaService,
-    private s3Service: S3Service,
+    private mediaLibraryService: MediaLibraryService,
   ) {}
 
   /**
@@ -55,6 +55,7 @@ export class UsersService {
       where: { id: userId },
       include: {
         preferences: true,
+        avatar: true,
         coursesCreated: {
           select: {
             id: true,
@@ -91,6 +92,7 @@ export class UsersService {
       where: { id: userId },
       include: {
         preferences: true,
+        avatar: true,
       },
     });
 
@@ -142,6 +144,7 @@ export class UsersService {
       },
       include: {
         preferences: true,
+        avatar: true,
       },
     });
 
@@ -232,6 +235,9 @@ export class UsersService {
     const updatedUser = await this.prisma.user.update({
       where: { id: userId },
       data: { role: UserRole.INSTRUCTOR },
+      include: {
+        avatar: true,
+      },
     });
 
     console.log(`✅ User ${user.email} promoted to INSTRUCTOR`);
@@ -257,6 +263,9 @@ export class UsersService {
     const updatedUser = await this.prisma.user.update({
       where: { id: userId },
       data: { role: newRole },
+      include: {
+        avatar: true,
+      },
     });
 
     console.log(
@@ -293,6 +302,9 @@ export class UsersService {
         banReason: reason,
         banExpires: expiresAt,
       },
+      include: {
+        avatar: true,
+      },
     }) as Promise<User>;
   }
 
@@ -303,6 +315,9 @@ export class UsersService {
         banned: false,
         banReason: null,
         banExpires: null,
+      },
+      include: {
+        avatar: true,
       },
     }) as Promise<User>;
   }
@@ -332,29 +347,24 @@ export class UsersService {
   }
 
   /**
-   * 🆕 Met à jour l'avatar d'un utilisateur
+   * 🖼️ Met à jour l'avatar d'un utilisateur avec un MediaAsset
    *
    * Processus:
    * 1. Valide que l'utilisateur existe
-   * 2. Récupère l'ancien avatarKey (pour suppression)
-   * 3. Sauvegarde les nouvelles valeurs en BD
-   * 4. Supprime l'ancien avatar de S3
-   * 5. Retourne l'utilisateur mis à jour
+   * 2. Valide que le MediaAsset existe
+   * 3. Met à jour la relation avatarMediaId
+   * 4. Retourne l'utilisateur avec son avatar mis à jour
    *
    * @param userId - ID de l'utilisateur
-   * @param avatarUrl - URL publique du nouvel avatar (S3)
-   * @param avatarKey - Clé S3 du nouvel avatar
-   * @returns User mis à jour avec le nouvel avatar
-   * @throws NotFoundException si utilisateur n'existe pas
+   * @param avatarMediaId - ID du MediaAsset à utiliser comme avatar
+   * @returns User mis à jour avec la relation avatar
+   * @throws NotFoundException si utilisateur ou MediaAsset n'existe pas
    */
-  async updateUserAvatar(
-    userId: string,
-    avatarUrl: string,
-    avatarKey: string,
-  ): Promise<User> {
+  async updateUserAvatar(userId: string, avatarMediaId: string): Promise<User> {
     console.log('🖼️ Mise à jour avatar pour user:', userId);
+    console.log('📸 Avatar MediaId:', avatarMediaId);
 
-    // ✅ ÉTAPE 1 : Vérifier que l'utilisateur existe
+    // ✅ Vérifier que l'utilisateur existe
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
@@ -363,39 +373,107 @@ export class UsersService {
       throw new NotFoundException(`Utilisateur ${userId} non trouvé`);
     }
 
-    // ✅ ÉTAPE 2 : Récupérer l'ancien avatarKey pour suppression
-    const oldAvatarKey = user.avatarKey;
-    console.log('🔍 Ancien avatarKey:', oldAvatarKey || 'aucun');
+    // ✅ Vérifier que le MediaAsset existe
+    const mediaAsset = await this.prisma.mediaAsset.findUnique({
+      where: { id: avatarMediaId },
+    });
 
-    // ✅ ÉTAPE 3 : Sauvegarder les nouvelles valeurs en BD
-    console.log('💾 Sauvegarde en BD...');
+    if (!mediaAsset) {
+      throw new NotFoundException(`MediaAsset ${avatarMediaId} non trouvé`);
+    }
+
+    // ✅ Mettre à jour la relation avatarMediaId
     const updatedUser = await this.prisma.user.update({
       where: { id: userId },
       data: {
-        image: avatarUrl,
-        avatarKey,
+        avatarMediaId,
       },
       include: {
         preferences: true,
+        avatar: true,
       },
     });
 
-    console.log('✅ User sauvegardé en BD');
+    console.log('✅ Avatar mis à jour avec succès');
+    console.log('🖼️ Avatar URL:', mediaAsset.urlLarge || mediaAsset.urlMedium);
 
-    // ✅ ÉTAPE 4 : Supprimer l'ancien avatar de S3 (si existe)
-    if (oldAvatarKey) {
-      console.log('🗑️ Suppression ancien avatar de S3...');
-      try {
-        await this.s3Service.deleteUserAvatar(oldAvatarKey);
-        console.log('✅ Ancien avatar supprimé de S3');
-      } catch (error) {
-        // Ne pas bloquer si suppression échoue
-        console.warn('⚠️ Erreur suppression ancien avatar:', error);
-      }
+    return updatedUser as User;
+  }
+  async getUserWithAvatar(userId: string) {
+    console.log('🔍 getUserWithAvatar:', userId);
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        avatar: {
+          select: {
+            id: true,
+            urlMedium: true,
+            urlLarge: true,
+          },
+        },
+      },
+    });
+
+    return user;
+  }
+
+  async getUserMedia(userId: string, limit: number = 50) {
+    try {
+      console.log(
+        `📸 getUserMedia called for userId: ${userId}, limit: ${limit}`,
+      );
+
+      const assets = await this.prisma.mediaAsset.findMany({
+        where: { uploadedById: userId },
+        select: {
+          id: true,
+          filename: true,
+          urlMedium: true,
+          urlLarge: true,
+        },
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      });
+
+      console.log(`📸 Found ${assets.length} images`);
+      return { assets };
+    } catch (error) {
+      console.error('❌ Error in getUserMedia:', error);
+      throw error;
     }
+  }
 
-    // ✅ ÉTAPE 5 : Retourner l'utilisateur mis à jour
-    console.log('🎉 Avatar mis à jour avec succès');
-    return updatedUser;
+  // src/modules/users/users.service.ts
+
+  async uploadAvatarFile(
+    userId: string,
+    file: Express.Multer.File,
+  ): Promise<any> {
+    try {
+      console.log(`📤 Uploading file: ${file.originalname}`);
+
+      // ✅ Utilise uploadMedia avec file.buffer
+      const mediaAsset = await this.mediaLibraryService.uploadMedia(
+        file.buffer, // ✅ Buffer du fichier
+        file.originalname,
+        userId,
+      );
+
+      console.log('✅ File uploaded:', mediaAsset.mediaId);
+
+      return {
+        success: true,
+        media: {
+          id: mediaAsset.mediaId,
+          filename: mediaAsset.filename,
+          urlMedium: mediaAsset.urlMedium,
+          urlLarge: mediaAsset.urlLarge,
+        },
+      };
+    } catch (error) {
+      console.error('❌ Upload error:', error);
+      throw error;
+    }
   }
 }

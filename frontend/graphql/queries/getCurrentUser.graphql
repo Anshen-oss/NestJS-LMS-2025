@@ -13,6 +13,12 @@ query GetCurrentUser {
     banned
     createdAt
     updatedAt
+    avatar {  # ← Ajoute ça!
+      id
+      urlMedium
+      urlLarge
+      urlOriginal
+    }
     preferences {
       id
       emailNotifications

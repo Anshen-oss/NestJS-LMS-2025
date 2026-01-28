@@ -1,10 +1,9 @@
-// avatarMutations.ts
 
 import { gql } from '@apollo/client';
 
 export const UPDATE_USER_AVATAR = gql`
-  mutation UpdateUserAvatar($avatarUrl: String!, $avatarKey: String!) {
-    updateUserAvatar(avatarUrl: $avatarUrl, avatarKey: $avatarKey) {
+  mutation UpdateUserAvatar($avatarMediaId: String!) {
+    updateUserAvatar(avatarMediaId: $avatarMediaId) {
       success
       message
       user {
@@ -12,9 +11,15 @@ export const UPDATE_USER_AVATAR = gql`
         email
         name
         role
-        avatarUrl
+        image
         createdAt
         updatedAt
+        avatar {
+          id
+          urlMedium
+          urlLarge
+          urlOriginal
+        }
       }
     }
   }
