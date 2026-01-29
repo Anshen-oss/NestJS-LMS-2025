@@ -145,6 +145,7 @@ type Course {
   status: CourseStatus!
   stripePriceId: String
   title: String!
+  totalRevenue: Float
   updatedAt: DateTime!
   userId: String!
 }
@@ -558,6 +559,7 @@ input PromoteUserInput {
 type Query {
   """Statistiques globales de la plateforme (ADMIN uniquement)"""
   adminStats: AdminStats!
+  allCoursesAdmin(status: CourseStatus): [Course!]!
   chaptersByCourse(courseId: String!): [Chapter!]!
 
   """Détails complets d'une conversation avec tous les messages"""

@@ -103,6 +103,18 @@ export class CoursesResolver {
     return this.coursesService.getChaptersByCourse(courseId);
   }
 
+  @Query(() => [Course], { name: 'allCoursesAdmin' })
+  @UseGuards(ClerkGqlGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async getAllCoursesAdmin(
+    @Args('status', { type: () => CourseStatus, nullable: true })
+    status?: CourseStatus,
+    @CurrentUser() user?: User,
+  ) {
+    console.log('👑 getAllCoursesAdmin by:', user?.email);
+    return this.coursesService.getAllCoursesForAdmin(status);
+  }
+
   // ═══════════════════════════════════════════════════════════
   //                        MUTATIONS
   // ═══════════════════════════════════════════════════════════

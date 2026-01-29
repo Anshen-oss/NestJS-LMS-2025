@@ -168,6 +168,7 @@ export type Course = {
   status: CourseStatus;
   stripePriceId?: Maybe<Scalars['String']['output']>;
   title: Scalars['String']['output'];
+  totalRevenue?: Maybe<Scalars['Float']['output']>;
   updatedAt: Scalars['DateTime']['output'];
   userId: Scalars['String']['output'];
 };
@@ -798,6 +799,7 @@ export type Query = {
   __typename?: 'Query';
   /** Statistiques globales de la plateforme (ADMIN uniquement) */
   adminStats: AdminStats;
+  allCoursesAdmin: Array<Course>;
   chaptersByCourse: Array<Chapter>;
   /** Détails complets d'une conversation avec tous les messages */
   conversationDetail: ConversationDetailOutput;
@@ -872,6 +874,11 @@ export type Query = {
   users: Array<User>;
   /** API version */
   version: Scalars['String']['output'];
+};
+
+
+export type QueryAllCoursesAdminArgs = {
+  status?: InputMaybe<CourseStatus>;
 };
 
 
@@ -1625,6 +1632,13 @@ export type IsEnrolledQueryVariables = Exact<{
 
 
 export type IsEnrolledQuery = { __typename?: 'Query', isEnrolled: boolean };
+
+export type GetAllCoursesAdminQueryVariables = Exact<{
+  status?: InputMaybe<CourseStatus>;
+}>;
+
+
+export type GetAllCoursesAdminQuery = { __typename?: 'Query', allCoursesAdmin: Array<{ __typename?: 'Course', id: string, title: string, slug: string, imageUrl?: string | null, price: number, status: CourseStatus, level: CourseLevel, category: string, createdAt: any, enrollmentsCount?: number | null, totalRevenue?: number | null, chaptersCount?: number | null, createdBy: { __typename?: 'CourseCreator', id: string, name: string, email?: string | null } }> };
 
 export type GetAllCoursesQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -3270,6 +3284,65 @@ export type IsEnrolledQueryHookResult = ReturnType<typeof useIsEnrolledQuery>;
 export type IsEnrolledLazyQueryHookResult = ReturnType<typeof useIsEnrolledLazyQuery>;
 export type IsEnrolledSuspenseQueryHookResult = ReturnType<typeof useIsEnrolledSuspenseQuery>;
 export type IsEnrolledQueryResult = Apollo.QueryResult<IsEnrolledQuery, IsEnrolledQueryVariables>;
+export const GetAllCoursesAdminDocument = gql`
+    query GetAllCoursesAdmin($status: CourseStatus) {
+  allCoursesAdmin(status: $status) {
+    id
+    title
+    slug
+    imageUrl
+    price
+    status
+    level
+    category
+    createdAt
+    createdBy {
+      id
+      name
+      email
+    }
+    enrollmentsCount
+    totalRevenue
+    chaptersCount
+  }
+}
+    `;
+
+/**
+ * __useGetAllCoursesAdminQuery__
+ *
+ * To run a query within a React component, call `useGetAllCoursesAdminQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetAllCoursesAdminQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetAllCoursesAdminQuery({
+ *   variables: {
+ *      status: // value for 'status'
+ *   },
+ * });
+ */
+export function useGetAllCoursesAdminQuery(baseOptions?: Apollo.QueryHookOptions<GetAllCoursesAdminQuery, GetAllCoursesAdminQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetAllCoursesAdminQuery, GetAllCoursesAdminQueryVariables>(GetAllCoursesAdminDocument, options);
+      }
+export function useGetAllCoursesAdminLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetAllCoursesAdminQuery, GetAllCoursesAdminQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetAllCoursesAdminQuery, GetAllCoursesAdminQueryVariables>(GetAllCoursesAdminDocument, options);
+        }
+// @ts-ignore
+export function useGetAllCoursesAdminSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<GetAllCoursesAdminQuery, GetAllCoursesAdminQueryVariables>): Apollo.UseSuspenseQueryResult<GetAllCoursesAdminQuery, GetAllCoursesAdminQueryVariables>;
+export function useGetAllCoursesAdminSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetAllCoursesAdminQuery, GetAllCoursesAdminQueryVariables>): Apollo.UseSuspenseQueryResult<GetAllCoursesAdminQuery | undefined, GetAllCoursesAdminQueryVariables>;
+export function useGetAllCoursesAdminSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetAllCoursesAdminQuery, GetAllCoursesAdminQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetAllCoursesAdminQuery, GetAllCoursesAdminQueryVariables>(GetAllCoursesAdminDocument, options);
+        }
+export type GetAllCoursesAdminQueryHookResult = ReturnType<typeof useGetAllCoursesAdminQuery>;
+export type GetAllCoursesAdminLazyQueryHookResult = ReturnType<typeof useGetAllCoursesAdminLazyQuery>;
+export type GetAllCoursesAdminSuspenseQueryHookResult = ReturnType<typeof useGetAllCoursesAdminSuspenseQuery>;
+export type GetAllCoursesAdminQueryResult = Apollo.QueryResult<GetAllCoursesAdminQuery, GetAllCoursesAdminQueryVariables>;
 export const GetAllCoursesDocument = gql`
     query GetAllCourses {
   courses {
