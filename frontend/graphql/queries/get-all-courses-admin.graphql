@@ -1,0 +1,24 @@
+query GetAllCoursesAdmin($status: CourseStatus) {
+  allCoursesAdmin(status: $status) {
+    id
+    title
+    slug
+    imageUrl
+    price
+    status
+    level
+    category
+    createdAt
+
+    createdBy {
+      id
+      name
+      email
+    }
+
+    # Stats
+    enrollmentsCount
+    totalRevenue
+    chaptersCount
+  }
+}

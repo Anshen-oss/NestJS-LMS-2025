@@ -76,4 +76,7 @@ export class Course {
 
   @Field(() => Int, { nullable: true })
   enrollmentsCount?: number;
+
+  @Field(() => Float, { nullable: true })
+  totalRevenue?: number | null;
 }

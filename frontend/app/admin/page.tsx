@@ -43,6 +43,7 @@ import {
   UserX
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 // ==================== GRAPHQL QUERIES ====================
@@ -66,7 +67,8 @@ const GET_ALL_COURSES = gql`
       title
       description
       price
-      isPublished
+        status         # ✅ CHANGE EN status
+      publishedAt    # ✅ OU AJOUTE publishedAt
       imageUrl
       instructor {
         id
@@ -434,6 +436,7 @@ function UsersManagement() {
 // ==================== MAIN COMPONENT ====================
 
 export default function AdminDashboard() {
+   const router = useRouter();
   const { data: statsData, loading: statsLoading } = useQuery<{ adminStats: AdminStats }>(
     GET_ADMIN_STATS
   );
@@ -500,9 +503,24 @@ export default function AdminDashboard() {
       {/* Tabs for Management */}
       <Tabs defaultValue="courses" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="courses">Gestion des Cours</TabsTrigger>
-          <TabsTrigger value="users">Gestion des Utilisateurs</TabsTrigger>
-          <TabsTrigger value="analytics">Analytiques</TabsTrigger>
+          <TabsTrigger
+            value="courses"
+            onClick={() => router.push("/admin/courses")}
+          >
+            Gestion des Cours
+          </TabsTrigger>
+          <TabsTrigger
+            value="users"
+            onClick={() => router.push("/admin/users")}
+          >
+            Gestion des Utilisateurs
+          </TabsTrigger>
+          <TabsTrigger
+            value="analytics"
+            onClick={() => router.push("/admin/analytics")}
+          >
+            Analytiques
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="courses" className="space-y-4">

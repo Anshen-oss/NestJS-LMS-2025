@@ -253,6 +253,32 @@ export class CoursesService {
     }));
   }
 
+  async getAllCoursesForAdmin(statusFilter?: CourseStatus) {
+    const courses = await this.prisma.course.findMany({
+      where: statusFilter ? { status: statusFilter } : {},
+      orderBy: { createdAt: 'desc' },
+      include: {
+        createdBy: {
+          select: { id: true, name: true, email: true, role: true },
+        },
+        enrollments: {
+          select: { id: true, amount: true, status: true },
+        },
+        chapters: { select: { id: true } },
+      },
+    });
+
+    return courses.map((course) => ({
+      ...course,
+      enrollmentsCount: course.enrollments.length,
+      totalRevenue: course.enrollments.reduce(
+        (sum, e) => sum + (e.amount || 0),
+        0,
+      ),
+      chaptersCount: course.chapters.length,
+    }));
+  }
+
   // ═══════════════════════════════════════════════════════════
   //                    MUTATIONS (CREATE)
   // ═══════════════════════════════════════════════════════════
