@@ -67,18 +67,7 @@ const GET_ALL_COURSES = gql`
       title
       description
       price
-        status         # ✅ CHANGE EN status
-      publishedAt    # ✅ OU AJOUTE publishedAt
       imageUrl
-      instructor {
-        id
-        name
-        email
-      }
-      _count {
-        enrollments
-        chapters
-      }
       createdAt
     }
   }
@@ -94,7 +83,7 @@ const GET_ALL_USERS = gql`
       createdAt
       _count {
         enrollments
-        courses
+        coursesCreated
       }
     }
   }
@@ -102,12 +91,13 @@ const GET_ALL_USERS = gql`
 
 // ==================== TYPES ====================
 
-interface AdminStats {
-  totalUsers: number;
-  totalCourses: number;
-  totalRevenue: number;
-  activeStudents: number;
-  recentEnrollments: number;
+interface Course {
+  id: string;
+  title: string;
+  description: string | null;
+  price: number;
+  imageUrl: string | null;
+  createdAt: string;
 }
 
 interface Course {
@@ -212,11 +202,8 @@ function CoursesManagement() {
             <TableHeader>
               <TableRow>
                 <TableHead>Titre</TableHead>
-                <TableHead>Instructeur</TableHead>
+                <TableHead>Description</TableHead>
                 <TableHead>Prix</TableHead>
-                <TableHead>Statut</TableHead>
-                <TableHead>Étudiants</TableHead>
-                <TableHead>Chapitres</TableHead>
                 <TableHead>Date de création</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -233,41 +220,14 @@ function CoursesManagement() {
                           className="h-10 w-10 rounded object-cover"
                         />
                       )}
-                      <div>
-                        <div className="font-medium">{course.title}</div>
-                        {course.description && (
-                          <div className="text-xs text-muted-foreground line-clamp-1">
-                            {course.description}
-                          </div>
-                        )}
-                      </div>
+                      {course.title}
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <div className="font-medium">{course.instructor.name}</div>
-                      <div className="text-muted-foreground">{course.instructor.email}</div>
-                    </div>
+                  <TableCell className="text-sm text-muted-foreground line-clamp-1">
+                    {course.description || '-'}
                   </TableCell>
                   <TableCell>
                     {course.price > 0 ? `${course.price.toFixed(2)}€` : 'Gratuit'}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={course.isPublished ? 'default' : 'secondary'}>
-                      {course.isPublished ? 'Publié' : 'Brouillon'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      {course._count.enrollments}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <BookOpen className="h-4 w-4 text-muted-foreground" />
-                      {course._count.chapters}
-                    </div>
                   </TableCell>
                   <TableCell>
                     {new Date(course.createdAt).toLocaleDateString('fr-FR')}
@@ -315,7 +275,6 @@ function CoursesManagement() {
             <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
             <AlertDialogDescription>
               Cette action est irréversible. Le cours sera définitivement supprimé.
-              Si des étudiants sont inscrits, la suppression sera refusée.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

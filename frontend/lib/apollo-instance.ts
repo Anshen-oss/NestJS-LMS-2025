@@ -5,7 +5,7 @@ import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
 
 const GRAPHQL_URI = process.env.NEXT_PUBLIC_GRAPHQL_URL || 'http://localhost:4000/graphql';
-const PUBLIC_OPERATIONS = ['GetAllCourses', 'GetCourseBySlug', 'GetPublicCourses'];
+const PUBLIC_OPERATIONS = ['GetCourseBySlug', 'GetPublicCourses'];
 
 let apolloClient: ApolloClient<any> | null = null;
 let currentGetToken: (() => Promise<string | null>) | null = null;
