@@ -21,21 +21,8 @@ export class UsersService {
    */
   async getAllUsers(): Promise<User[]> {
     return this.prisma.user.findMany({
-      select: {
-        id: true,
-        clerkId: true,
-        name: true,
-        email: true,
-        role: true,
-        image: true,
-        emailVerified: true,
-        banned: true,
-        createdAt: true,
-        updatedAt: true,
-        bio: true,
-        profession: true,
-        dateOfBirth: true,
-        lastLoginAt: true,
+      include: {
+        // ✅ Change SELECT en INCLUDE
         _count: {
           select: {
             coursesCreated: true,
@@ -44,7 +31,7 @@ export class UsersService {
         },
       },
       orderBy: { createdAt: 'desc' },
-    }) as Promise<User[]>;
+    });
   }
 
   /**
